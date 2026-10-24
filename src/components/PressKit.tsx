@@ -21,25 +21,25 @@ Alongside his artist projects, Khalid curates playlists through PlayLSD. Some Eu
       title: 'Official Artist Portrait',
       type: 'Primary Artist Photo',
       resolution: 'High-Res Square (1080x1080)',
-      url: 'https://ugc.production.linktr.ee/6605408b-cfe6-457c-b2e4-ef32ca95dafe_606073c7-35ba-44be-8675-092b4bf21316.jpeg',
+      url: './images/6605408b-cfe6-457c-b2e4-ef32ca95dafe_606073c7-35ba-44be-8675',
     },
     {
       title: 'Flagship Artwork — 1by1',
       type: 'Single Artwork',
       resolution: 'Hi-Res Cover Art (3000x3000)',
-      url: 'https://ugc.production.linktr.ee/466abdcf-2371-4aff-bca9-cecfe6c0192d_ab67616d0000b27331cf5a17a5870893b547f1ac.jpeg',
+      url: './images/466abdcf-2371-4aff-bca9-cecfe6c0192d_ab67616d0000b27331cf5a1',
     },
     {
       title: 'Monolithic Flow Artwork',
       type: 'Release Visual',
       resolution: 'Hi-Res Cover Art (3000x3000)',
-      url: 'https://ugc.production.linktr.ee/fe615147-7f4b-4f6b-a1e9-2a0ae82b5aba_ab67616d0000b2735b82331b23fe80fe873e4c31.jpeg',
+      url: './images/fe615147-7f4b-4f6b-a1e9-2a0ae82b5aba_ab67616d0000b2735b82331',
     },
     {
       title: 'Billboard Bangladesh Session',
       type: 'Performance Visual',
       resolution: 'Feature Visual',
-      url: 'https://ugc.production.linktr.ee/c9bb35e3-554b-4c19-bb6b-70dd266922ed_image.png',
+      url: './images/c9bb35e3-554b-4c19-bb6b-70dd266922ed_image.png',
     },
   ];
 

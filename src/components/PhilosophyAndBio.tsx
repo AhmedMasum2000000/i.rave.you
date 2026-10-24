@@ -54,7 +54,7 @@ export const PhilosophyAndBio: React.FC = () => {
             <div className="p-6 sm:p-8 rounded-3xl glass-card space-y-5">
               <div className="flex items-center gap-4">
                 <img
-                  src="https://ugc.production.linktr.ee/6605408b-cfe6-457c-b2e4-ef32ca95dafe_606073c7-35ba-44be-8675-092b4bf21316.jpeg"
+                  src="./images/6605408b-cfe6-457c-b2e4-ef32ca95dafe_606073c7-35ba-44be-8675"
                   alt="Khalid Bin Alam (অপূর্ব)"
                   className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500/20 shrink-0 shadow-md"
                 />
