@@ -44,7 +44,7 @@ function footer(a: Artist): string {
       <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}
-      <span>${esc(a.origin)}</span>
+      <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="#/acnd">ACND</a></span></span>
     </footer>
     <a class="a-sleeve" href="#/" aria-label="Back to I Rave You">
       <span class="a-sleeve-art"><span>I RAVE YOU</span><span class="bn">অপূর্ব ◐ ACND</span></span>

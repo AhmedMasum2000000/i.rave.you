@@ -91,6 +91,7 @@ export function mountChrome(): void {
         ${clock()}
         <a class="m-presave" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save now</span><span>→</span></a>
         <a class="m-page mono" href="${NEXT_RELEASE.page}" target="_blank" rel="noopener">Release page ↗</a>
+        <p class="credit">Site by <a href="${route('#/acnd')}" data-close>ACND</a></p>
       </aside>
     </div>`;
 

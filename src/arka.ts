@@ -242,6 +242,7 @@ document.getElementById('app')!.innerHTML = `
         ${id === 'ash' ? '' : `<a class="btn btn-ghost" href="${asset('frequency-unity/')}">Read the feature: Beyond the Capital</a>`}
       </div>
       <p class="p-fine mono">${m.mix ? `No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.` : 'No models were harmed in the making of this application. Hearts may be.'}</p>
+      <p class="credit">Site by ACND</p>
     </section>
   </div>`;
 
