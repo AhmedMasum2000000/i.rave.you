@@ -187,7 +187,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     heroAlt: 'ACND standing on a rain-slicked Dhaka street at night, lit by neon.',
     role: 'Producer · DJ · Composer',
     origin: 'Dhaka, Bangladesh',
-    info: ['“Down In Bossa” — next single', 'Profi Music · a Warner sublabel', '29.10.2026 00:00', 'Prod. by ACND®', 'Dhaka, Bangladesh', '©2026'],
+    info: ['“Down In Bossa” — next single', 'Profi Music · a Warner sublabel', '29.10.2026 00:00', 'Prod. by ACND®', 'Dhaka, Bangladesh', '2026'],
     statement:
       'ACND is the light half — the one that ascends. Techno, melodic techno, acid and progressive, built to be felt in the chest before it is understood in the head.',
     bio: [

@@ -30,5 +30,7 @@ All content lives in [`src/data.ts`](src/data.ts): tracklist and timestamps, rel
 
 ## Unlisted pages
 
-`afw26/acnd-7q4x2k/` and `afw26/apurba-9m1v8t/` are Arka Fashion Week '26 pitch pages. Nothing links
-to them and they are `noindex`. Share the URLs directly. Their paths are set in `src/secret.ts`.
+Arka Fashion Week '26 pitch pages: `afw26/acnd-7q4x2k/`, `afw26/apurba-9m1v8t/` and
+`afw26/ash-army-3k8w5n/`. Nothing links to them and they are `noindex`. Share the URLs directly.
+Their paths are set in `src/secret.ts`. Ash Army's page has no mix and shows `public/img/ash-army.jpg`
+once that file exists.

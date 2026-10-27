@@ -28,7 +28,9 @@ interface Pitch {
   sign: string;
 }
 
-const PITCH: Record<ArtistId, Pitch> = {
+type PitchId = ArtistId | 'ash';
+
+const PITCH: Record<PitchId, Pitch> = {
   acnd: {
     kicker: 'To: the Arka Fashion Week creative team · Re: AFW ’26 Collective Live',
     title: 'ACND',
@@ -88,17 +90,104 @@ const PITCH: Record<ArtistId, Pitch> = {
     close: 'Every collection needs its shadow to show its shape. Book the dark half — and ask about the other one. Selected applicants will be contacted; we’ll keep the volume up until then.',
     sign: '— অপূর্ব',
   },
+  ash: {
+    kicker: 'To: the Arka Fashion Week creative team · Re: AFW ’26 Collective Live',
+    title: 'ASH ARMY',
+    sub: 'Pop hearts, dance-floor lungs, K-pop swagger. One Bangladeshi producer with a very loud plan to unite people through music.',
+    answers: [
+      { q: 'Type of performer', a: '● DJ · Producer', aside: 'Writes the hooks, then drops them on you personally.' },
+      { q: 'Stage name', a: 'Ash Army (Md. Shahabuddin)', aside: 'One person. Army-sized output.' },
+      { q: 'From', a: 'Hajiganj, Chandpur, Bangladesh', aside: 'Chandpur is famous for hilsa. Now also for drops.' },
+      { q: 'Producing since', a: 'Age 16', aside: 'Most of us were still choosing a ringtone.' },
+      { q: 'Sound', a: 'Emotional pop melodies × high-energy dance rhythms × K-pop influence', aside: 'The only set where a K-pop stan and a techno head end up hugging.' },
+      { q: 'Range', a: 'Bigroom · Dance · EDM · Future Bass · House · Progressive House · Tech-House · Techno · Hard Techno · K-Pop', aside: 'Ten genres. The runway gets a whole season in one set.' },
+      { q: 'Grew up on', a: 'Martin Garrix · DJ Snake · W&W · The Chainsmokers', aside: 'Main-stage DNA, festival-sized hooks.' },
+      { q: 'Label home', a: 'Profi Music roster', aside: 'Signed, sealed, and already delivering.' },
+      { q: 'Set duration & slot', a: 'Your call', aside: 'Name the slot. He brings the hands-in-the-air moment.' },
+    ],
+    numbers: [
+      { n: '16', label: 'the age he started producing' },
+      { n: '10', label: 'genres he works across, from future bass to hard techno' },
+      { n: 'EN|DE', label: 'his bio already ships in two languages. The global vision is not a figure of speech.' },
+      { n: '3', label: 'festival dates on Arka’s calendar, 4–6 December. Point at one.' },
+    ],
+    risks: [
+      ['K-pop fan chants during the drop', 'High', 'Embraced'],
+      ['Runway quietly turns into a main stage', 'Medium', 'Barricades optional'],
+      ['Big-room drop rattles the lighting rig', 'Low', 'Lighting crew, hold on'],
+      ['Audience unites across borders', 'Certain', 'It is literally the mission statement'],
+    ],
+    close: 'Rooted in Bangladesh, built for the world, and one runway away from proving it. Selected applicants will be contacted. His phone is on loud.',
+    sign: '— Ash Army',
+  },
 };
 
-const id = (document.body.dataset.pitch as ArtistId) || 'acnd';
-const a = ARTISTS[id];
+/** Per-page look and evidence. Ash Army sits outside the duality: own colour, no mix. */
+interface Meta {
+  name: string;
+  logo?: string;
+  photo?: string;
+  glow: string;
+  number: string;
+  /** Plays the I RAVE YOU mix and lists its tracks. */
+  mix: boolean;
+  profile?: string;
+  exhibit: { kicker: string; label: string; url: string };
+}
+
+const META: Record<PitchId, Meta> = {
+  acnd: {
+    name: 'ACND',
+    logo: ARTISTS.acnd.logo,
+    glow: 'var(--orange)',
+    number: '0001',
+    mix: true,
+    profile: asset('index.html#/acnd'),
+    exhibit: { kicker: 'EXHIBIT B · OUT 29.10 · PROFI MUSIC (WARNER MUSIC SUBLABEL)', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
+  },
+  apurba: {
+    name: 'অপূর্ব',
+    logo: ARTISTS.apurba.logo,
+    glow: 'var(--blue)',
+    number: '0002',
+    mix: true,
+    profile: asset('index.html#/apurba'),
+    exhibit: { kicker: 'EXHIBIT B · EVERY RELEASE, SET & ALIAS', label: 'All links in one place ↗', url: 'https://linktr.ee/youmeiyou' },
+  },
+  ash: {
+    name: 'Ash Army',
+    photo: 'img/ash-army.jpg',
+    glow: 'var(--amber)',
+    number: '0003',
+    mix: false,
+    exhibit: { kicker: 'EXHIBIT A · LISTEN', label: 'Ash Army on Spotify ↗', url: 'https://open.spotify.com/search/Ash%20Army' },
+  },
+};
+
+const id = ((document.body.dataset.pitch as PitchId) in PITCH ? document.body.dataset.pitch : 'acnd') as PitchId;
 const p = PITCH[id];
+const m = META[id];
 document.body.dataset.artist = id;
 document.body.dataset.view = 'pitch';
-const profile = asset(`index.html#/${id}`);
+
+const mark = m.logo
+  ? `<span class="logo p-logo"><img src="${asset(m.logo)}" alt="${esc(m.name)} logo" onerror="this.parentNode.classList.add('nologo')" /><span class="logo-text">${esc(m.name)}</span></span>`
+  : m.photo
+    ? `<img class="p-photo" src="${asset(m.photo)}" alt="${esc(m.name)}" onerror="this.remove()" />`
+    : '';
+
+const tracks = m.mix
+  ? `<span class="label mono">Exhibit A — the set you are hearing</span>
+      <ol class="p-tracks">
+        ${TRACKLIST.map(
+          (t, i) =>
+            `<li data-i="${i}"><a href="${esc(t.url)}" target="_blank" rel="noopener"><span class="mono">${fmt(t.at)}</span><span><b>${esc(t.title)}</b> — ${esc(t.artist)}</span><span class="mono">↗</span></a></li>`,
+        ).join('')}
+      </ol>`
+  : '';
 
 document.getElementById('app')!.innerHTML = `
-  <div class="pitch" style="--glow:${id === 'acnd' ? 'var(--orange)' : 'var(--blue)'}">
+  <div class="pitch" style="--glow:${m.glow}">
     <header class="p-top mono">
       <span>AFW ’26 · COLLECTIVE LIVE</span>
       <span>CONFIDENTIAL-ISH · DEC 4–6</span>
@@ -106,14 +195,14 @@ document.getElementById('app')!.innerHTML = `
 
     <section class="p-hero">
       <p class="p-kicker mono">${esc(p.kicker)}</p>
-      <span class="logo p-logo"><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" onerror="this.parentNode.classList.add('nologo')" /><span class="logo-text">${esc(a.name)}</span></span>
+      ${mark}
       <h1 class="p-title">${esc(p.title)}</h1>
       <p class="p-sub" data-words>${esc(p.sub)}</p>
-      <div class="p-stamp" aria-hidden="true">APPLICANT<br/>№ ${id === 'acnd' ? '0001' : '0002'}</div>
+      <div class="p-stamp" aria-hidden="true">APPLICANT<br/>№ ${m.number}</div>
     </section>
 
     <section class="p-form">
-      <span class="label mono">● THE APPLICATION, ANNOTATED</span>
+      <span class="label mono">The application, annotated</span>
       <ol class="p-answers">
         ${p.answers
           .map(
@@ -133,7 +222,7 @@ document.getElementById('app')!.innerHTML = `
     </section>
 
     <section class="p-risk">
-      <span class="label mono">● RISK ASSESSMENT</span>
+      <span class="label mono">Risk assessment</span>
       <table>
         <thead><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
         <tbody>${p.risks.map((r) => `<tr data-reveal><td>${esc(r[0])}</td><td class="mono">${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('')}</tbody>
@@ -141,42 +230,26 @@ document.getElementById('app')!.innerHTML = `
     </section>
 
     <section class="p-proof">
-      <span class="label mono">● EXHIBIT A — THE SET YOU ARE HEARING</span>
-      <ol class="p-tracks">
-        ${TRACKLIST.map(
-          (t, i) =>
-            `<li data-i="${i}"><a href="${esc(t.url)}" target="_blank" rel="noopener"><span class="mono">${fmt(t.at)}</span><span><b>${esc(t.title)}</b> — ${esc(t.artist)}</span><span class="mono">↗</span></a></li>`,
-        ).join('')}
-      </ol>
-      ${
-        id === 'acnd'
-          ? `<a class="p-presave" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener">
-              <span class="mono">EXHIBIT B · OUT 29.10 · PROFI MUSIC (WARNER MUSIC SUBLABEL)</span>
-              <b>“${esc(NEXT_RELEASE.title)}” — pre-save ↗</b>
-            </a>`
-          : `<a class="p-presave" href="https://linktr.ee/youmeiyou" target="_blank" rel="noopener">
-              <span class="mono">EXHIBIT B · EVERY RELEASE, SET & ALIAS</span>
-              <b>All links in one place ↗</b>
-            </a>`
-      }
+      ${tracks}
+      <a class="p-presave" href="${m.exhibit.url}" target="_blank" rel="noopener">
+        <span class="mono">${esc(m.exhibit.kicker)}</span>
+        <b>${esc(m.exhibit.label)}</b>
+      </a>
     </section>
 
     <section class="p-close">
       <p data-words>${esc(p.close)}</p>
       <p class="p-sign">${esc(p.sign)}</p>
       <div class="p-ctas">
-        <a class="btn" href="${profile}">Open the artist profile →</a>
-        <a class="btn btn-ghost" href="${asset('index.html')}">Enter I RAVE YOU ◐</a>
+        ${m.profile ? `<a class="btn" href="${m.profile}">Open the artist profile →</a>` : `<a class="btn" href="${m.exhibit.url}" target="_blank" rel="noopener">Listen to Ash Army ↗</a>`}
+        <a class="btn btn-ghost" href="${asset('index.html')}">Enter I RAVE YOU</a>
       </div>
-      <p class="p-fine mono">No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.</p>
+      <p class="p-fine mono">${m.mix ? `No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.` : 'No models were harmed in the making of this application. Hearts may be.'}</p>
     </section>
   </div>`;
 
 const io = revealOnScroll(document);
 void io;
-
-const items = [...document.querySelectorAll<HTMLElement>('.p-tracks li')];
-onTrack((_, i) => items.forEach((li, k) => li.classList.toggle('playing', k === i)));
 
 const title = document.querySelector<HTMLElement>('.p-title')!;
 const loop = (): void => {
@@ -185,9 +258,13 @@ const loop = (): void => {
 };
 requestAnimationFrame(loop);
 
-mountNowPlaying();
-void mountGate({
-  kicker: id === 'acnd' ? 'For Arka Fashion Week ’26 — from ACND' : 'For Arka Fashion Week ’26 — from অপূর্ব',
-  line: 'Sound on. This application comes with its own soundtrack.',
-  cta: 'Open the application',
-});
+if (m.mix) {
+  const items = [...document.querySelectorAll<HTMLElement>('.p-tracks li')];
+  onTrack((_, i) => items.forEach((li, k) => li.classList.toggle('playing', k === i)));
+  mountNowPlaying();
+  void mountGate({
+    kicker: `For Arka Fashion Week ’26 — from ${m.name}`,
+    line: 'Sound on. This application comes with its own soundtrack.',
+    cta: 'Open the application',
+  });
+}

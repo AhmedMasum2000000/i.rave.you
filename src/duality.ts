@@ -69,7 +69,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
-    const n = Math.round(Math.min(900, (W * H) / 1600));
+    const n = Math.round(Math.min(520, (W * H) / 2600));
     ps.length = 0;
     for (let i = 0; i < n; i++) ps.push(spawn(true));
   };
@@ -80,7 +80,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     vx: 0,
     vy: 0,
     life: Math.random() * 400 + 100,
-    glow: Math.random() < 0.07,
+    glow: Math.random() < 0.035,
     size: Math.random() < 0.1 ? 2 : 1,
   });
 
@@ -188,7 +188,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       if (!p.glow) continue;
       const dark = isDark(p.x, p.y, t, lv.low);
       const s = 10 + lv.high * 40;
-      g.globalAlpha = 0.5 + lv.beat * 0.5;
+      g.globalAlpha = 0.35 + lv.beat * 0.4;
       g.drawImage(dark ? blueGlow : orangeGlow, p.x - s / 2, p.y - s / 2, s, s);
     }
     g.globalAlpha = 1;
@@ -203,58 +203,23 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.globalCompositeOperation = 'difference';
     g.strokeStyle = '#f4f3ef';
     g.fillStyle = '#f4f3ef';
-    ring(g, cx, cy, R * 1.35, -rot * 1.7, 72, 4, 1);
-    ring(g, cx, cy, R * 1.62, rot * 0.9, 24, 10, 1.5);
-    g.setLineDash([2, 10]);
-    g.beginPath();
-    g.arc(cx, cy, R * 2.05 + lv.low * 20, 0, Math.PI * 2);
-    g.stroke();
-    g.setLineDash([]);
+    ring(g, cx, cy, R * 1.5, -rot * 0.6, 120, 3, 1);
 
     const spec = spectrum();
-    const bars = 96;
+    const bars = 128;
     for (let i = 0; i < bars; i++) {
       const v = spec.length ? spec[Math.floor((i / bars) * spec.length * 0.6)] / 255 : 0.1 + 0.05 * Math.sin(t * 3 + i);
       const ang = (i / bars) * Math.PI * 2 + rot * 0.5;
       const r0 = R * 1.12;
-      const r1 = r0 + 4 + v * R * 0.35;
-      g.lineWidth = 2;
+      const r1 = r0 + 2 + v * R * 0.28;
+      g.lineWidth = 1;
       g.beginPath();
       g.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0);
       g.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1);
       g.stroke();
     }
 
-    // Scanner line sweeping down, beat-flashed.
-    const sy = ((t * 90) % (H + 200)) - 100;
-    g.globalAlpha = 0.25 + lv.beat * 0.5;
-    g.fillRect(0, sy, W, 1);
-    g.globalAlpha = 1;
-
-    // Crosshair on the cursor.
-    if (mouseX >= 0) {
-      g.lineWidth = 1;
-      g.beginPath();
-      g.moveTo(mouseX - 14, mouseY);
-      g.lineTo(mouseX + 14, mouseY);
-      g.moveTo(mouseX, mouseY - 14);
-      g.lineTo(mouseX, mouseY + 14);
-      g.stroke();
-      g.beginPath();
-      g.arc(mouseX, mouseY, 22 + lv.beat * 10, 0, Math.PI * 2);
-      g.stroke();
-    }
     g.globalCompositeOperation = 'source-over';
-
-    // ── glitch slices on hard kicks ──
-    if (!reduced && lv.beat > 0.55) {
-      for (let k = 0; k < 3; k++) {
-        const y = Math.random() * H;
-        const h = 4 + Math.random() * 24;
-        const off = (Math.random() - 0.5) * 60 * lv.beat;
-        g.drawImage(canvas, 0, y * dpr, W * dpr, h * dpr, off, y, W, h);
-      }
-    }
 
     // ── click flood ──
     if (floodState) {
@@ -297,7 +262,7 @@ function ring(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, ro
   g.beginPath();
   for (let i = 0; i < n; i++) {
     const a = rot + (i / n) * Math.PI * 2;
-    const l = i % 6 === 0 ? len * 2 : len;
+    const l = i % 10 === 0 ? len * 2.5 : len;
     g.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
     g.lineTo(cx + Math.cos(a) * (r + l), cy + Math.sin(a) * (r + l));
   }

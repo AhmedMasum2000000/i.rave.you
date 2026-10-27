@@ -37,41 +37,28 @@ function renderHome(): void {
   document.title = 'I RAVE YOU — অপূর্ব ◐ ACND';
   const A = ARTISTS.apurba;
   const C = ARTISTS.acnd;
-  const marquee = (words: string[]): string => Array.from({ length: 6 }, () => words.map((w) => `<span>${w}</span>`).join('')).join('');
-
   app.innerHTML = `
     <main class="home">
       <canvas class="home-canvas" aria-hidden="true"></canvas>
       <header class="home-top">
-        <span class="brand">I RAVE YOU<sup>®</sup></span>
-        <span class="home-meta mono"><span data-clock>00:00:00</span> · ${MIX.bpm} BPM · <span data-coord>x0 y0</span></span>
+        <span class="brand">I Rave You</span>
+        <span class="home-meta mono">${MIX.bpm} BPM</span>
       </header>
 
       <a class="side side-dark" href="#/apurba" data-side="apurba" aria-label="Enter অপূর্ব">
-        <span class="side-index mono">01 / DARK · YIN</span>
         ${logo(A, 'side-logo')}
-        <span class="side-name bn" data-glitch="${esc(A.name)}">${esc(A.name)}</span>
-        <span class="side-sub mono">${esc(A.latin)} — ${esc(A.role)}</span>
-        <span class="side-cta">Enter the dark <i>→</i></span>
+        <span class="side-name bn">${esc(A.name)}</span>
+        <span class="side-cta mono">Enter →</span>
       </a>
 
       <a class="side side-light" href="#/acnd" data-side="acnd" aria-label="Enter ACND">
-        <span class="side-index mono">02 / LIGHT · YANG</span>
         ${logo(C, 'side-logo')}
-        <span class="side-name" data-glitch="${esc(C.name)}">${esc(C.name)}</span>
-        <span class="side-sub mono">ASCEND — ${esc(C.role)}</span>
-        <span class="side-cta"><i>←</i> Step into the light</span>
+        <span class="side-name">${esc(C.name)}</span>
+        <span class="side-cta mono">← Enter</span>
       </a>
 
-      <div class="home-center mono" aria-hidden="true">
-        <span>◐ ONE PULSE ◑</span>
-      </div>
-
-      <div class="ticker ticker-a mono" aria-hidden="true"><div>${marquee(['অপূর্ব', '◐', 'DARK', '✦', 'ACND', '◑', 'LIGHT', '✦'])}</div></div>
-      <div class="ticker ticker-b mono" aria-hidden="true"><div>${marquee(['YIN', '—', 'YANG', '—', 'I RAVE YOU', '—', 'LANGUAGE DOESN’T MATTER', '—', 'FREQUENCY DOES', '—'])}</div></div>
-
       <a class="home-release mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener">
-        <b>“${esc(NEXT_RELEASE.title)}”</b> · ${esc(NEXT_RELEASE.label)} · <span data-countdown>…</span> · PRE-SAVE ↗
+        ACND — “${esc(NEXT_RELEASE.title)}” · <span data-countdown>…</span> · Pre-save
       </a>
     </main>`;
 
@@ -99,25 +86,6 @@ function renderHome(): void {
     });
   });
 
-  const clock = app.querySelector<HTMLElement>('[data-clock]')!;
-  const coord = app.querySelector<HTMLElement>('[data-coord]')!;
-  const onMove = (e: PointerEvent): void => {
-    coord.textContent = `x${Math.round(e.clientX)} y${Math.round(e.clientY)}`;
-  };
-  window.addEventListener('pointermove', onMove);
-  cleanup.push(() => window.removeEventListener('pointermove', onMove));
-
-  // Names breathe with the low end.
-  const names = [...app.querySelectorAll<HTMLElement>('.side-name')];
-  let raf = 0;
-  const loop = (): void => {
-    const lv = sample();
-    clock.textContent = fmt(time()) + `:${String(Math.floor((time() % 1) * 100)).padStart(2, '0')}`;
-    names.forEach((n) => n.style.setProperty('--beat', lv.beat.toFixed(3)));
-    raf = requestAnimationFrame(loop);
-  };
-  raf = requestAnimationFrame(loop);
-  cleanup.push(() => cancelAnimationFrame(raf));
   cleanup.push(mountCountdown(app));
 }
 
@@ -133,11 +101,6 @@ function renderArtist(a: Artist): void {
     a.id === 'acnd'
       ? img('img/acnd.jpg', a.heroAlt, 'door-img', a.hero)
       : img(a.hero, a.heroAlt, 'door-img');
-  const letters = [...a.latin].map((ch, i, all) => {
-    const mid = (all.length - 1) / 2;
-    return `<span style="--i:${i - mid}">${esc(ch)}</span>`;
-  });
-
   app.innerHTML = `
     <div class="page" style="--glow:${glow}">
       <nav class="nav">
@@ -152,22 +115,19 @@ function renderArtist(a: Artist): void {
       </nav>
 
       <section class="hero" id="top">
-        <span class="hero-side mono">${a.id === 'acnd' ? 'YANG' : 'YIN'}</span>
-        <h1 class="chrome ${a.id === 'apurba' ? 'chrome-dark' : ''}" aria-label="${esc(a.name)}">${letters.join('')}</h1>
-        ${a.id === 'apurba' ? `<p class="hero-bn bn">${esc(a.name)}</p>` : ''}
-        <div class="door">${heroImg}<span class="door-light"></span></div>
-        <span class="hero-side hero-side-r mono">${a.id === 'acnd' ? '0' : '1'}</span>
-        <a class="hero-scroll mono" href="#statement" data-jump>Scroll ↓</a>
+        <h1 class="hero-mark" aria-label="${esc(a.name)}">${logo(a, 'hero-logo')}</h1>
+        <div class="door">${heroImg}</div>
+        <a class="hero-scroll mono" href="#statement" data-jump>Scroll</a>
       </section>
 
       <section class="statement" id="statement">
-        <span class="label mono">● ${a.id === 'acnd' ? 'THE LIGHT' : 'THE DARK'}</span>
+        <span class="label mono">01 — ${a.id === 'acnd' ? 'The light' : 'The dark'}</span>
         <p class="statement-text" data-words>${esc(a.statement)}</p>
       </section>
 
       <section class="listen" id="listen">
         <div class="panel tracks">
-          <div class="panel-head mono"><span>● NOW SPINNING</span><span>${TRACKLIST.length}</span></div>
+          <div class="panel-head mono"><span>Now playing</span><span>${TRACKLIST.length}</span></div>
           <ol class="mixlist">
             ${TRACKLIST.map(
               (t, i) => `
@@ -191,10 +151,10 @@ function renderArtist(a: Artist): void {
             <span><b data-now-time>00:00</b> · ${MIX.bpm} BPM</span>
           </div>
           <div class="vinyl-bar"><span data-now-bar></span></div>
-          <p class="vinyl-note mono">No pause. No skip. It plays because it has to.</p>
+          
         </div>
         <div class="panel note-panel">
-          <span class="panel-head mono"><span>● ${esc(a.latin)}</span></span>
+          <span class="panel-head mono"><span>${esc(a.origin)}</span></span>
           <p>${esc(a.bio[0])}</p>
           <p>${esc(a.bio[1])}</p>
         </div>
@@ -203,7 +163,7 @@ function renderArtist(a: Artist): void {
       ${
         a.id === 'acnd'
           ? `<section class="drop" id="drop">
-          <span class="label mono">● NEXT · PROFI MUSIC — ${esc(NEXT_RELEASE.labelNote.toUpperCase())}</span>
+          <span class="label mono">Next single · Profi Music, ${esc(NEXT_RELEASE.labelNote)}</span>
           <h2 class="drop-title">${esc(NEXT_RELEASE.title)}</h2>
           <div class="drop-row">
             <span class="drop-count mono" data-countdown>…</span>
@@ -214,7 +174,7 @@ function renderArtist(a: Artist): void {
       }
 
       <section class="releases" id="releases">
-        <span class="label mono">● RELEASES</span>
+        <span class="label mono">02 — Releases</span>
         <ul class="rel-list">
           ${a.releases
             .map(
@@ -232,7 +192,7 @@ function renderArtist(a: Artist): void {
       </section>
 
       <section class="extras" id="extras">
-        <span class="label mono">● ${esc(a.extras.heading.toUpperCase())}</span>
+        <span class="label mono">03 — ${esc(a.extras.heading)}</span>
         <ol class="extra-list">
           ${a.extras.items
             .map(
@@ -245,14 +205,14 @@ function renderArtist(a: Artist): void {
 
       <section class="seq" id="sequencer">
         <div class="seq-intro">
-          <span class="label mono">● SEQUENCER</span>
+          <span class="label mono">04 — Sequencer</span>
           <p>Build a loop in ${esc(a.name)}’s key. The mix politely steps aside while you play.</p>
         </div>
         <div class="seq-body"></div>
       </section>
 
       <section class="about" id="about">
-        <span class="label mono">● ${esc(a.latin)}</span>
+        <span class="label mono">05 — About</span>
         <div class="about-grid">
           <p class="about-big" data-words>${esc(a.bio[2])}</p>
           <ol class="about-notes">
@@ -268,7 +228,7 @@ function renderArtist(a: Artist): void {
 
       <section class="other">
         <a href="#/${other.id}" class="other-link" data-other>
-          <span class="mono">THE OTHER HALF →</span>
+          <span class="mono">The other half</span>
           <span class="other-name ${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)}</span>
         </a>
       </section>
@@ -276,9 +236,9 @@ function renderArtist(a: Artist): void {
       <footer class="foot">
         <div class="foot-links">${a.links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>
         <div class="foot-meta mono">
-          <a href="#/">◐ I RAVE YOU</a>
+          <a href="#/">I Rave You</a>
           <span>${esc(a.origin)}</span>
-          <span>©2026 ${esc(a.latin)}</span>
+          <span>${esc(a.latin)} 2026</span>
         </div>
         <div class="foot-word" aria-hidden="true">${esc(a.latin)}</div>
       </footer>
@@ -307,7 +267,7 @@ function renderArtist(a: Artist): void {
   const nowTime = app.querySelector<HTMLElement>('[data-now-time]')!;
   const nowBar = app.querySelector<HTMLElement>('[data-now-bar]')!;
   const disc = app.querySelector<HTMLElement>('.vinyl-disc')!;
-  const chrome = app.querySelector<HTMLElement>('.chrome')!;
+  const chrome = app.querySelector<HTMLElement>('.hero-mark')!;
   let angle = 0;
   let raf = 0;
   const loop = (): void => {

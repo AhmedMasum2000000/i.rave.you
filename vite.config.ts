@@ -13,6 +13,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         acndPitch: resolve(__dirname, `${SECRET_PATHS.acnd}/index.html`),
         apurbaPitch: resolve(__dirname, `${SECRET_PATHS.apurba}/index.html`),
+        ashPitch: resolve(__dirname, `${SECRET_PATHS.ash}/index.html`),
       },
     },
   },

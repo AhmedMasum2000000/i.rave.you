@@ -272,3 +272,10 @@
     font-size: 11px;
   }
 }
+
+.p-photo {
+  width: clamp(140px, 18vw, 240px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  box-shadow: 0 0 60px -10px var(--glow);
+}
