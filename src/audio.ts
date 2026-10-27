@@ -13,6 +13,9 @@ const POS_KEY = 'iry:mix-pos';
 let el: HTMLAudioElement | null = null;
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
+/** Separate from `master` so ducking and tab-focus fades never fight. */
+let focusGain: GainNode | null = null;
+let pauseTimer = 0;
 let analyser: AnalyserNode | null = null;
 let freq: Uint8Array<ArrayBuffer> = new Uint8Array(0);
 let started = false;
@@ -20,6 +23,8 @@ let lastIndex = -1;
 const trackListeners = new Set<(t: MixTrack, i: number) => void>();
 
 export const audioCtx = (): AudioContext | null => ctx;
+/** Where other sound (the sequencer) should connect, so it fades with the tab too. */
+export const output = (): AudioNode | null => focusGain;
 export const isStarted = (): boolean => started;
 
 export function start(): void {
@@ -44,9 +49,11 @@ export function start(): void {
   analyser.fftSize = 1024;
   analyser.smoothingTimeConstant = 0.82;
   freq = new Uint8Array(analyser.frequencyBinCount);
+  focusGain = ctx.createGain();
   src.connect(analyser);
   analyser.connect(master);
-  master.connect(ctx.destination);
+  master.connect(focusGain);
+  focusGain.connect(ctx.destination);
   master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5);
 
   void el.play().catch(() => {
@@ -56,9 +63,35 @@ export function start(): void {
   });
 
   el.addEventListener('timeupdate', onTime);
-  // Tabs that get backgrounded keep playing; nothing to pause.
   window.addEventListener('pagehide', savePos);
+  document.addEventListener('visibilitychange', onFocusChange);
+  window.addEventListener('blur', onFocusChange);
+  window.addEventListener('focus', onFocusChange);
   setInterval(savePos, 4000);
+}
+
+/**
+ * Leaving the tab (or the window) fades the mix out and pauses it in place;
+ * coming back resumes from the same spot and fades it in again.
+ */
+function onFocusChange(): void {
+  if (!ctx || !focusGain || !el) return;
+  const away = document.hidden || !document.hasFocus();
+  const g = focusGain.gain;
+  g.cancelScheduledValues(ctx.currentTime);
+  g.setValueAtTime(g.value, ctx.currentTime);
+  clearTimeout(pauseTimer);
+  if (away) {
+    g.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+    pauseTimer = window.setTimeout(() => {
+      el?.pause();
+      savePos();
+    }, 850);
+  } else {
+    void ctx.resume();
+    if (el.paused) void el.play().catch(() => undefined);
+    g.linearRampToValueAtTime(1, ctx.currentTime + 1.2);
+  }
 }
 
 function savePos(): void {

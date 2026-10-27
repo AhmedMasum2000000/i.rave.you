@@ -1,4 +1,4 @@
-import { audioCtx, duck } from './audio';
+import { audioCtx, duck, output } from './audio';
 
 /**
  * A 16-step drum machine, after the sequencer on the reference site. Every
@@ -36,7 +36,12 @@ const SCALES: Record<string, number[]> = {
 
 const hz = (m: number): number => 440 * 2 ** ((m - 69) / 12);
 
-export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm: number): () => void {
+export function mountSequencer(
+  root: HTMLElement,
+  artist: 'acnd' | 'apurba',
+  bpm: number,
+  names: readonly string[],
+): () => void {
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
   let noise: AudioBuffer | null = null;
@@ -58,19 +63,27 @@ export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm
     });
   }
 
+  // Layout after the reference: track list beside a 4×3 control grid, then the steps.
   root.innerHTML = `
-    <div class="seq-controls">
-      <button data-a="play">▶ Play</button>
-      <button data-a="clear">Clear all</button>
-      <button data-a="copy">Copy</button>
-      <button data-a="paste" disabled>Paste</button>
-      <button data-a="rand">Chaos</button>
-      <label class="seq-bpm">BPM <input type="number" min="80" max="180" value="${tempo}" /></label>
-      <button data-a="follow" class="on">✓ Follow</button>
-      ${[0, 1, 2, 3].map((i) => `<button data-p="${i}" class="${i === 0 ? 'on' : ''}">Pattern 0${i + 1}</button>`).join('')}
+    <div class="seq-top">
+      <div class="seq-tracks">
+        <div class="panel-head mono"><span>● Tracks</span></div>
+        ${names.map((n, i) => `<button data-p="${i}" class="${i === 0 ? 'on' : ''}"><span>${n}</span><span>${i + 1}</span></button>`).join('')}
+      </div>
+      <div class="seq-controls">
+        <button data-a="play">▶ Play</button>
+        <button data-a="stop">■ Stop</button>
+        <label class="seq-bpm">BPM <input type="number" min="80" max="180" value="${tempo}" aria-label="Tempo in BPM" /></label>
+        <button data-a="clear">Clear all</button>
+        <button data-a="copy">Copy</button>
+        <button data-a="paste" disabled>Paste</button>
+        <button data-a="reset">Reset loop</button>
+        <button data-a="follow" class="on">✓ Follow on</button>
+        ${[0, 1, 2, 3].map((i) => `<button data-p="${i}" class="${i === 0 ? 'on' : ''}">Pattern 0${i + 1}</button>`).join('')}
+      </div>
     </div>
     <div class="seq-grid" role="grid" aria-label="16 step sequencer">
-      <div class="seq-head"><span></span>${Array.from({ length: STEPS }, (_, i) => `<span>${String(i + 1).padStart(2, '0')}</span>`).join('')}</div>
+      <div class="seq-head"><span class="seq-name">${names[0]}</span>${Array.from({ length: STEPS }, (_, i) => `<span>${String(i + 1).padStart(2, '0')}</span>`).join('')}</div>
       ${ROWS.map(
         (r, ri) =>
           `<div class="seq-row"><span class="seq-label">${r}</span>${Array.from(
@@ -97,7 +110,7 @@ export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm
     out = ctx.createGain();
     out.gain.value = 0.55;
     const comp = ctx.createDynamicsCompressor();
-    out.connect(comp).connect(ctx.destination);
+    out.connect(comp).connect(output() ?? ctx.destination);
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noise.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -177,9 +190,9 @@ export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm
   };
 
   const setPlaying = (on: boolean): void => {
+    if (on === playing) return;
     playing = on;
-    const btn = root.querySelector<HTMLButtonElement>('[data-a="play"]')!;
-    btn.textContent = on ? '■ Stop' : '▶ Play';
+    root.querySelector('[data-a="play"]')!.classList.toggle('on', on);
     duck(on);
     if (on) {
       const c = ensure();
@@ -211,13 +224,21 @@ export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm
     if (el.dataset.p) {
       pattern = +el.dataset.p;
       grid = parse(PATTERNS[artist][pattern]);
-      root.querySelectorAll('[data-p]').forEach((b) => b.classList.toggle('on', b === el));
+      root.querySelectorAll<HTMLElement>('[data-p]').forEach((b) => b.classList.toggle('on', b.dataset.p === el.dataset.p));
+      root.querySelector('.seq-name')!.textContent = names[pattern];
       paint();
       return;
     }
     switch (el.dataset.a) {
       case 'play':
-        setPlaying(!playing);
+        setPlaying(true);
+        break;
+      case 'stop':
+        setPlaying(false);
+        break;
+      case 'reset':
+        step = 0;
+        if (ctx) nextTime = ctx.currentTime + 0.05;
         break;
       case 'clear':
         grid = grid.map((r) => r.map(() => false));
@@ -231,14 +252,10 @@ export function mountSequencer(root: HTMLElement, artist: 'acnd' | 'apurba', bpm
         if (clipboard) grid = clipboard.map((r) => [...r]);
         paint();
         break;
-      case 'rand':
-        grid = grid.map((r, ri) => r.map((_, s) => Math.random() < (ri === 0 ? (s % 4 === 0 ? 1 : 0.05) : 0.18)));
-        paint();
-        break;
       case 'follow':
         follow = !follow;
         el.classList.toggle('on', follow);
-        el.textContent = `${follow ? '✓ ' : ''}Follow`;
+        el.textContent = follow ? '✓ Follow on' : 'Follow off';
         break;
       case 'share': {
         const code = grid.map((r) => r.reduce((n, on, s) => n | (on ? 1 << s : 0), 0).toString(16).padStart(4, '0')).join('');

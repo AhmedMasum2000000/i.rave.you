@@ -4,10 +4,12 @@ Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and
 
 - **Home** — a live yin-yang: the screen splits along an S-curve that breathes with the mix, particles
   and HUD rings invert as they cross it, and clicking a side floods the screen into that artist's world.
-- **Artist pages** (`#/apurba`, `#/acnd`) — modelled on the ascension.pegassi.be layout: arched chrome
-  wordmark over a lit doorway, word-by-word statement, tracklist + spinning record, releases,
-  IDs, a playable 16-step sequencer, about, and a jump to the other half.
-- **The mix** plays from the moment the visitor clicks the entry record, with no transport controls.
+- **Artist pages** — four routes per artist, after the ascension.pegassi.be structure on a grained black
+  canvas: home (`#/acnd`: chrome mark over a lit doorway, annotated essay, tracklist, media, bio, footnotes),
+  listen (`#/acnd/listen`), sequencer (`#/acnd/sequencer`) and about (`#/acnd/about`). Same for `#/apurba/…`.
+- **Menu & pre-save** — a site-wide MENU overlay and a live “Down In Bossa” countdown with a PRE-SAVE button.
+- **The mix** plays from the moment the visitor clicks the entry record, with no transport controls,
+  and fades out (pausing in place) whenever the tab loses focus.
   The current track ID shows (and links) in the corner. Browsers refuse audible autoplay without one
   click, which is why the entry gate exists.
 
