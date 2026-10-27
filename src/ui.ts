@@ -95,40 +95,15 @@ export function mountVibeBanner(): void {
   );
 }
 
-/** Reveal anything with [data-reveal] as it scrolls in; words light up one by one. */
+/** Reveal media and cards on scroll; keep reading text static and immediately visible. */
 export function revealOnScroll(root: ParentNode): IntersectionObserver {
-  // Wrap each word in place so footnote <sup>s and normal spacing survive.
-  root.querySelectorAll<HTMLElement>('[data-words]').forEach((el) => {
-    let i = 0;
-    for (const node of [...el.childNodes]) {
-      if (node.nodeType !== Node.TEXT_NODE) {
-        (node as HTMLElement).style?.setProperty('--i', String(i++));
-        (node as HTMLElement).classList?.add('w');
-        continue;
-      }
-      const frag = document.createDocumentFragment();
-      for (const part of (node.textContent ?? '').split(/(\s+)/)) {
-        if (!part) continue;
-        if (/^\s+$/.test(part)) {
-          frag.append(part);
-        } else {
-          const span = document.createElement('span');
-          span.className = 'w';
-          span.style.setProperty('--i', String(i++));
-          span.textContent = part;
-          frag.append(span);
-        }
-      }
-      node.replaceWith(frag);
-    }
-  });
   const io = new IntersectionObserver(
     (entries) => {
       for (const e of entries) if (e.isIntersecting) e.target.classList.add('in');
     },
     { threshold: 0.18 },
   );
-  root.querySelectorAll('[data-reveal], [data-words]').forEach((el) => io.observe(el));
+  root.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
   return io;
 }
 

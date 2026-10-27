@@ -1302,3 +1302,9 @@ body.menu-open .presave {
 body[data-artist='acnd'] .release-grid { grid-template-columns: minmax(0, 560px); }
 @media (max-width: 900px) { .release-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .release-grid { grid-template-columns: minmax(0, 1fr); } .release-portfolio { padding-top: 160px; } }
+
+/* Biographies are reading surfaces: stable text, comfortable spacing, no moving grain. */
+body[data-page='about']::after { animation: none; }
+.b-text { gap: 24px; align-content: start; }
+.b-text .a-intro { margin: 0; text-indent: 0; font-size: clamp(28px, 3vw, 42px); line-height: 1.25; color: var(--fg); }
+.b-text .b-para { margin: 0; font-size: clamp(18px, 1.5vw, 22px); font-weight: 500; line-height: 1.65; color: #c8c8c8; max-width: 68ch; }

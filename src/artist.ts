@@ -103,13 +103,13 @@ function homePage(a: Artist): string {
 
     <section class="a-essay">
       <span class="a-label mono">● The mix</span>
-      <p class="a-big a-intro" data-words>${sup(a.essay.intro)}</p>
+      <p class="a-big a-intro">${sup(a.essay.intro)}</p>
       ${a.essay.blocks
         .map(
           (b, i) => `
         <div class="a-block a-block-${i % 3}">
           <span class="a-side mono">${esc(b.label)}</span>
-          <p class="a-big" data-words>${sup(b.text)}</p>
+          <p class="a-big">${sup(b.text)}</p>
         </div>`,
         )
         .join('')}
@@ -121,7 +121,7 @@ function homePage(a: Artist): string {
 
     <section class="a-bio">
       <span class="a-label mono">● ${esc(a.latin)}</span>
-      <p class="a-big a-intro" data-words>${esc(a.bio[0])} ${esc(a.bio[1])}</p>
+      <p class="a-big a-intro">${esc(a.bio[0])} ${esc(a.bio[1])}</p>
     </section>
 
     <section class="a-columns">
@@ -170,7 +170,7 @@ function aboutPage(a: Artist): string {
       <div class="b-grid">
         <div class="b-text">
           <h1 class="a-big a-intro">${esc(a.about?.summary ?? a.statement)}</h1>
-          ${(a.about?.paragraphs ?? a.bio).map((p) => `<p class="b-para" data-words>${esc(p)}</p>`).join('')}
+          ${(a.about?.paragraphs ?? a.bio).map((p) => `<p class="b-para">${esc(p)}</p>`).join('')}
         </div>
         <aside class="about-summary"><span class="a-label mono">● At a glance</span><p>${esc(a.origin)}</p><p>${esc(a.role)}</p></aside>
       </div>
