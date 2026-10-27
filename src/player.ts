@@ -242,8 +242,10 @@ export function mountPlayer(): void {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act], [data-seek]');
     if (!el) return;
     if (el.dataset.seek) {
-      if (!isPlaying()) toggle();
+      // Jump first, then start: a paused set resumes at the new spot, not the old one.
+      const wasPlaying = isPlaying();
       seek(Number(el.dataset.seek));
+      if (!wasPlaying) toggle();
     } else if (el.dataset.act === 'prev') skip(-1);
     else if (el.dataset.act === 'next') skip(1);
     else if (el.dataset.act === 'close') open(false);

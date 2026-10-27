@@ -26,6 +26,13 @@ let freq: Uint8Array<ArrayBuffer> = new Uint8Array(0);
 let started = false;
 let lastIndex = -1;
 const trackListeners = new Set<(t: MixTrack, i: number) => void>();
+/** Each deck (media element) has its own fader into the shared analyser. */
+const deckGain = new Map<HTMLAudioElement, GainNode>();
+/** The idle deck: a jump to an unbuffered spot loads here while the set plays on. */
+let spare: HTMLAudioElement | null = null;
+/** A jump being loaded on the spare deck. */
+let cue: { target: number; timer: number } | null = null;
+let stallTimer = 0;
 
 export const audioCtx = (): AudioContext | null => ctx;
 /** Where other sound (the sequencer) should connect, so it shares the transport fades. */
@@ -33,6 +40,8 @@ export const output = (): AudioNode | null => focusGain;
 export const isStarted = (): boolean => started;
 
 let prepared = false;
+/** Attaches the on-air event handlers to a deck (set once the audio graph exists). */
+let wire: (deck: HTMLAudioElement) => void = () => {};
 
 /**
  * Attach and start buffering the set without playing it. Needs no user
@@ -44,13 +53,8 @@ export function prepare(): void {
   prepared = true;
   // Fetch only the header until the visitor wants sound: a 45-minute mix must
   // not compete with the page's own images and scripts on a phone connection.
-  el = document.createElement('audio');
-  el.loop = true;
+  el = makeDeck();
   el.preload = 'metadata';
-  el.hidden = true;
-  el.setAttribute('controlslist', 'nodownload noplaybackrate');
-  el.addEventListener('contextmenu', (e) => e.preventDefault());
-  document.body.append(el);
 
   let saved = 0;
   try {
@@ -60,9 +64,54 @@ export function prepare(): void {
   }
   attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
 
-  el.addEventListener('timeupdate', onTime);
-  el.addEventListener('play', emitState);
-  el.addEventListener('pause', emitState);
+  listen(el);
+}
+
+function makeDeck(): HTMLAudioElement {
+  const media = document.createElement('audio');
+  media.loop = true;
+  media.hidden = true;
+  media.setAttribute('controlslist', 'nodownload noplaybackrate');
+  media.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.body.append(media);
+  return media;
+}
+
+/** Events count only from the deck that is on air. */
+function onAir(media: HTMLAudioElement, type: string, fn: () => void): void {
+  media.addEventListener(type, () => {
+    if (media === el) fn();
+  });
+}
+
+function listen(media: HTMLAudioElement): void {
+  onAir(media, 'timeupdate', onTime);
+  onAir(media, 'play', emitState);
+  onAir(media, 'pause', emitState);
+}
+
+/** Route a deck through its own fader into the analyser. */
+function connectDeck(media: HTMLAudioElement, level: number): void {
+  if (!ctx || !analyser) return;
+  const gain = ctx.createGain();
+  gain.gain.value = level;
+  ctx.createMediaElementSource(media).connect(gain);
+  gain.connect(analyser);
+  deckGain.set(media, gain);
+}
+
+/**
+ * A stalled connection (a phone switching networks, a dropped socket) can
+ * leave the player waiting forever. After a few seconds, ask again from the
+ * same spot; the buffered audio in front is kept.
+ */
+function watchStall(): void {
+  clearTimeout(stallTimer);
+  stallTimer = window.setTimeout(() => {
+    if (!el || userPaused || el.paused || el.readyState >= 3 || !navigator.onLine) return;
+    el.currentTime = el.currentTime;
+    watchStall();
+  }, 4000);
 }
 
 /** Seconds of audio ready in front of the playhead (0 until prepared). */
@@ -89,7 +138,6 @@ export function start(): void {
   // 'playback' asks for larger render buffers: steadier output on phones while
   // the visuals are busy, at a latency nobody notices on a DJ mix.
   ctx = new AudioContext({ latencyHint: 'playback' });
-  const src = ctx.createMediaElementSource(media);
   master = ctx.createGain();
   master.gain.value = 1;
   analyser = ctx.createAnalyser();
@@ -101,7 +149,7 @@ export function start(): void {
   analyser.maxDecibels = -6;
   freq = new Uint8Array(analyser.frequencyBinCount);
   focusGain = ctx.createGain();
-  src.connect(analyser);
+  connectDeck(media, 1);
   analyser.connect(master);
   master.connect(focusGain);
   focusGain.connect(ctx.destination);
@@ -120,10 +168,20 @@ export function start(): void {
   };
   window.addEventListener('pointerdown', retry);
   window.addEventListener('keydown', retry);
-  media.addEventListener('playing', () => { emitState(); removeRetry(); });
+  wire = (deck) => {
+    onAir(deck, 'playing', () => { clearTimeout(stallTimer); emitState(); removeRetry(); });
+    onAir(deck, 'waiting', () => { watchStall(); emitState(); });
+    onAir(deck, 'stalled', watchStall);
+    onAir(deck, 'error', emitState);
+  };
+  wire(media);
   ctx.addEventListener('statechange', () => { emitState(); removeRetry(); });
-  media.addEventListener('waiting', emitState);
-  media.addEventListener('error', emitState);
+  // Back online: pick the set up again without waiting for the stall timer.
+  window.addEventListener('online', () => {
+    if (!el || userPaused) return;
+    if (el.readyState < 3) el.currentTime = el.currentTime;
+    play();
+  });
   play();
 
   window.addEventListener('pagehide', savePos);
@@ -175,6 +233,7 @@ export function play(): void {
 /** Fade out over ~120 ms, then pause: stopping mid-waveform pops in headphones. */
 export function pause(): void {
   if (!el) return;
+  cancelCue();
   userPaused = true;
   clearTimeout(pauseTimer);
   if (ctx && focusGain && !el.paused && ctx.state === 'running') {
@@ -211,6 +270,11 @@ export function seek(sec: number): void {
     savePos();
     return;
   }
+  // Not loaded yet: fetch it on the other deck while this one plays on.
+  if (cue || !isBuffered(target)) {
+    cueDeck(target);
+    return;
+  }
   const pending = seekTarget !== null;
   seekTarget = target;
   if (pending) return;
@@ -236,6 +300,106 @@ export function seek(sec: number): void {
   }, 35);
 }
 
+/** True when the audio at `sec` (and a moment after it) is already downloaded. */
+function isBuffered(sec: number): boolean {
+  if (!el) return false;
+  for (let i = 0; i < el.buffered.length; i++) {
+    if (el.buffered.start(i) <= sec && el.buffered.end(i) >= Math.min(sec + 3, duration() - 0.5)) return true;
+  }
+  return false;
+}
+
+function cancelCue(): void {
+  if (!cue) return;
+  clearTimeout(cue.timer);
+  cue = null;
+  spare?.pause();
+}
+
+/**
+ * Like a DJ cueing the next record: load the jump on the idle deck while the
+ * set keeps playing, then crossfade once it can play. Nothing goes silent while
+ * the network catches up.
+ */
+function cueDeck(target: number): void {
+  if (!ctx || !el) return;
+  if (!spare) {
+    spare = makeDeck();
+    spare.preload = 'auto';
+    spare.src = el.currentSrc || el.src;
+    listen(spare);
+    wire(spare);
+    connectDeck(spare, 0);
+  }
+  const next = spare;
+  if (cue) {
+    cue.target = target;
+    if (next.readyState >= 1) next.currentTime = target;
+    onTime();
+    return;
+  }
+  // Give up after a long wait and seek the playing deck instead.
+  cue = { target, timer: window.setTimeout(() => {
+    const t = cue?.target ?? target;
+    cancelCue();
+    plainSeek(t);
+  }, 15000) };
+  onTime();
+  const go = (): void => {
+    if (!cue || spare !== next) return;
+    next.currentTime = cue.target;
+    const ready = (): void => {
+      if (!cue || spare !== next) return;
+      if (next.readyState < 3 || Math.abs(next.currentTime - cue.target) > 1) {
+        next.addEventListener('canplay', ready, { once: true });
+        return;
+      }
+      void next.play().then(() => crossfade(next)).catch(() => {
+        // No permission to start a second player here (no tap): seek in place.
+        const t = cue?.target ?? target;
+        cancelCue();
+        plainSeek(t);
+      });
+    };
+    next.addEventListener('seeked', ready, { once: true });
+  };
+  if (next.readyState >= 1) go();
+  else next.addEventListener('loadedmetadata', go, { once: true });
+}
+
+function crossfade(next: HTMLAudioElement): void {
+  if (!ctx || !el || !cue) return;
+  clearTimeout(cue.timer);
+  cue = null;
+  const prev = el;
+  const now = ctx.currentTime;
+  const fade = (media: HTMLAudioElement, to: number): void => {
+    const g = deckGain.get(media)!.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(to, now + 0.25);
+  };
+  fade(prev, 0);
+  fade(next, 1);
+  el = next;
+  spare = prev;
+  window.setTimeout(() => {
+    if (spare === prev) prev.pause();
+  }, 300);
+  onTime();
+  savePos();
+  emitState();
+  if ('mediaSession' in navigator) syncPosition();
+}
+
+/** Jump on the playing deck (used when the second deck can't help). */
+function plainSeek(target: number): void {
+  if (!el) return;
+  el.currentTime = target;
+  onTime();
+  savePos();
+}
+
 /** Jump to the previous (-1) or next (+1) track ID. */
 export function skip(dir: -1 | 1): void {
   const i = trackIndexAt(time());
@@ -244,7 +408,7 @@ export function skip(dir: -1 | 1): void {
   seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
-export const time = (): number => el?.currentTime ?? 0;
+export const time = (): number => cue?.target ?? el?.currentTime ?? 0;
 export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : 2743.6);
 
 export function trackIndexAt(sec: number): number {
@@ -303,8 +467,9 @@ function mountMediaSession(): void {
   on('seekforward', (d) => seek(time() + (d.seekOffset ?? 10)));
   on('seekto', (d) => d.seekTime !== undefined && seek(d.seekTime));
   stateListeners.add(syncPosition);
-  el?.addEventListener('seeked', syncPosition);
-  el?.addEventListener('loadedmetadata', syncPosition);
+  // Captured at the document so both decks report, whichever is on air.
+  document.addEventListener('seeked', syncPosition, true);
+  document.addEventListener('loadedmetadata', syncPosition, true);
   updateMediaSession();
 }
 

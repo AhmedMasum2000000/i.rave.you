@@ -2,7 +2,7 @@ import { asset } from './paths';
 
 /** Native continuous playback: browsers buffer ahead and seek with byte ranges. */
 export function attachStream(el: HTMLAudioElement, startAt: number): void {
-  el.src = asset('audio/qbic-pulse.mp4');
+  el.src = asset(__MIX_FILE__);
   if (startAt > 0) {
     el.addEventListener('loadedmetadata', () => {
       // Preserve any newer track selection made while metadata was loading.

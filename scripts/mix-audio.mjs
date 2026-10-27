@@ -1,4 +1,4 @@
-import { createDecipheriv } from 'node:crypto';
+import { createDecipheriv, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -63,19 +63,28 @@ function continuousMix(root) {
   return Buffer.concat([init, index, ...fragments]);
 }
 
+/**
+ * The mix is published under a name that carries its content hash, so browsers
+ * may keep it for a year: a returning visitor plays from disk, not the network.
+ */
 export function mixAudioPlugin() {
-  let root;
+  let root = process.cwd();
   let audio;
+  let file;
   const getAudio = () => (audio ??= continuousMix(root));
   return {
     name: 'continuous-mix-audio',
-    configResolved(config) { root = config.root; },
+    config(config) {
+      root = resolve(config.root ?? process.cwd());
+      file = `audio/qbic-pulse.${createHash('sha256').update(getAudio()).digest('hex').slice(0, 10)}.m4a`;
+      return { define: { __MIX_FILE__: JSON.stringify(file) } };
+    },
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'audio/qbic-pulse.mp4', source: getAudio() });
+      this.emitFile({ type: 'asset', fileName: file, source: getAudio() });
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.split('?')[0] !== '/audio/qbic-pulse.mp4') return next();
+        if (req.url?.split('?')[0] !== `/${file}`) return next();
         if (req.method !== 'GET' && req.method !== 'HEAD') return next();
         const data = getAudio();
         let start = 0;
