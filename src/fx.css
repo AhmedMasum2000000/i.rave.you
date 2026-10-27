@@ -21,8 +21,7 @@ html { scroll-behavior: smooth; }
 .a-notes li > span:last-child,
 .vibe-body,
 .gate-line,
-.release-note,
-.m-legal-links span {
+.release-note {
   font-family: var(--text);
   font-weight: 500;
   letter-spacing: 0;

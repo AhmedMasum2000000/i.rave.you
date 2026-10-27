@@ -33,10 +33,11 @@ export function mountPlayer(): void {
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'Mix player');
   // The credit, said like a broadcast: who made this set, and for whom.
-  const air = `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> ${esc(MIX.show)} <em>—</em> a ${Math.round(2743.6 / 60)}-minute set by <strong>ACND</strong> × <strong class="bn">অপূর্ব</strong> for <strong>${esc(MIX.station)}</strong> (HKCR) <em>—</em> ${TRACKLIST.length} tracks, opening with their unreleased “Initiate” <em>✶</em></span>`;
+  const air = `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>ACND × <span class="bn">অপূর্ব</span></strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(2743.6 / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> (HKCR) <em>—</em> ${TRACKLIST.length} tracks, opening with their unreleased “Initiate” <em>✶</em></span>`;
+  const news = `<span class="fbar-air-item"><b class="fbar-new">New release</b> <strong>${esc(NEXT_RELEASE.title)}</strong> <em>—</em> ${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.genre)} on <strong>${esc(NEXT_RELEASE.label)}</strong> <em>—</em> out 30 Oct, <span data-days></span> <em>✶</em></span>`;
   bar.innerHTML = `
-    <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="${esc(MIX.show)}: a set by ACND and অপূর্ব for ${esc(MIX.station)}. Open the tracklist.">
-      <span class="fbar-air-run" aria-hidden="true">${air.repeat(4)}</span>
+    <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}: a set for ${esc(MIX.station)}. Open the tracklist.">
+      <span class="fbar-air-run" aria-hidden="true">${(air + news).repeat(3)}</span>
     </button>
     <div class="fbar-seek">
       <span class="fbar-time" data-t>00:00</span>
@@ -50,9 +51,14 @@ export function mountPlayer(): void {
       <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
         <img src="${asset('img/mix-art.jpg')}" alt="" width="48" height="48" />
       </button>
+      <div class="fbar-mix" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}">
+        <span class="fbar-mix-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
+        <span class="fbar-mix-t">${esc(MIX.show)} · ${esc(MIX.volume)}</span>
+      </div>
       <div class="fbar-now">
         <button type="button" class="fbar-play" aria-label="Play">${icon.play}</button>
         <button type="button" class="fbar-text" aria-controls="track-id" aria-expanded="false">
+          <span class="fbar-kick">ACND × অপূর্ব · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
           <span class="fbar-title"></span>
           <span class="fbar-artist"></span>
         </button>
@@ -83,7 +89,7 @@ export function mountPlayer(): void {
     </header>
     <div class="tid-hero">
       <span class="tid-hero-k"><b class="fbar-onair"><i></i>On air</b> Hong Kong Community Radio · HKCR</span>
-      <strong class="tid-hero-t">${esc(MIX.show)}</strong>
+      <strong class="tid-hero-t">${esc(MIX.show)} <span class="tid-hero-v">${esc(MIX.volume)}</span></strong>
       <span class="tid-hero-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
       <span class="tid-hero-s">A ${Math.round(2743.6 / 60)}-minute set made for ${esc(MIX.station)}, hosted by both artists. ${TRACKLIST.length} tracks, opening with their unreleased collaboration “Initiate”.</span>
       <a class="tid-hero-link" href="${MIX.stationUrl}" target="_blank" rel="noopener">Visit HKCR ↗</a>
@@ -297,7 +303,7 @@ export function mountPlayer(): void {
     lastFrame = stamp;
     const t = time();
     const frac = Math.min(1, t / duration());
-    knob.style.setProperty('--p', frac.toFixed(4));
+    track.style.setProperty('--p', frac.toFixed(4));
     eyeX += (lookX - eyeX) * 0.25;
     eyeY += (lookY - eyeY) * 0.25;
     pupil.style.setProperty('--ex', eyeX.toFixed(2));

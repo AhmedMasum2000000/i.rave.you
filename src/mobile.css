@@ -56,16 +56,6 @@ body .pitch p:not(.mono) { font-family: var(--font); font-weight: 700; line-heig
   body .vibe-meter { grid-template-columns: 42px minmax(0, 1fr); line-height: 1.5; }
   body .gate-credit { margin: 0; }
   body .gate-out { transform: none; filter: none; transition: opacity .2s; }
-  body .menu { clip-path: none; opacity: 0; transform: translateY(-8px); transition: opacity .2s, transform .2s, visibility .2s; }
-  body.menu-open .menu { opacity: 1; transform: none; }
-  body .m-inner { padding: calc(76px + var(--safe-top)) var(--gutter) calc(28px + var(--safe-bottom)); gap: 32px; grid-template-columns: minmax(0, 1fr); overscroll-behavior: contain; }
-  body .m-list { gap: 28px; }
-  body .m-list li { gap: 12px; transform: none; transition: opacity .2s; }
-  body .m-big { font-size: clamp(40px, 12vw, 64px); line-height: 1.1; }
-  body .m-sub { width: 100%; gap: 8px; flex-wrap: wrap; line-height: 1.5; }
-  body .m-sub a { display: inline-flex; min-height: 44px; align-items: center; padding: 6px 8px; }
-  body .m-release { max-width: 100%; }
-  body .m-release img { width: min(200px, 60vw); }
 
   /* Keep the instrument's horizontal scroll inside its own grid. */
   body .s-app { overflow-x: visible; }
@@ -97,7 +87,7 @@ body .pitch p:not(.mono) { font-family: var(--font); font-weight: 700; line-heig
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
-  body .menu, body .gate { transition: none; }
+  body .gate { transition: none; }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {

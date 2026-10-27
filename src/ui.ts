@@ -124,14 +124,88 @@ export function revealOnScroll(root: ParentNode): IntersectionObserver {
     (entries) => {
       for (const e of entries) if (e.isIntersecting) e.target.classList.add('in');
     },
-    { threshold: 0.18 },
+    // Start the reveal just before an element scrolls in, so nothing waits blank.
+    { threshold: 0, rootMargin: '0px 0px 12% 0px' },
   );
   root.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
   return io;
 }
 
+/**
+ * Type out `[data-type]` copy as it scrolls into view, through its text nodes
+ * only, so footnote markers and Bangla spans keep their markup. The block
+ * keeps its final height while typing, so nothing below it moves.
+ */
+export function typewrite(root: ParentNode): () => void {
+  const els = [...root.querySelectorAll<HTMLElement>('[data-type]')];
+  if (reducedMotion() || !els.length) return () => undefined;
+  const timers: number[] = [];
+  const run = (el: HTMLElement): void => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const nodes: { node: Text; full: string }[] = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push({ node: n as Text, full: n.textContent ?? '' });
+    const total = nodes.reduce((sum, x) => sum + x.full.length, 0);
+    if (!total) return;
+    el.style.minHeight = `${el.offsetHeight}px`;
+    nodes.forEach((x) => (x.node.textContent = ''));
+    const caret = document.createElement('span');
+    caret.className = 'tw-caret';
+    caret.setAttribute('aria-hidden', 'true');
+    el.append(caret);
+    // Short lines type briskly; long paragraphs finish within ~2.4 s.
+    const step = Math.max(8, Math.min(38, 2400 / total));
+    let i = 0;
+    let n = 0;
+    const tick = (): void => {
+      const chunk = step < 12 ? 2 : 1;
+      for (let c = 0; c < chunk && n < nodes.length; c++) {
+        const x = nodes[n];
+        x.node.textContent = x.full.slice(0, ++i);
+        if (i >= x.full.length) {
+          n++;
+          i = 0;
+        }
+      }
+      if (n < nodes.length) timers.push(window.setTimeout(tick, step));
+      else timers.push(window.setTimeout(() => {
+        caret.remove();
+        el.style.minHeight = '';
+      }, 900));
+    };
+    tick();
+  };
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        run(e.target as HTMLElement);
+      }
+    },
+    { threshold: 0.2 },
+  );
+  els.forEach((el) => io.observe(el));
+  return () => {
+    io.disconnect();
+    timers.forEach(clearTimeout);
+  };
+}
+
 /** Image that quietly falls back to a second source if the first is missing. */
-export const img = (src: string, alt: string, cls = '', fallback = ''): string =>
-  `<img class="${cls}" src="${asset(src)}" alt="${esc(alt)}" loading="lazy" decoding="async"${
-    fallback ? ` onerror="this.onerror=null;this.src='${asset(fallback)}'"` : ''
-  } />`;
+const IMAGES = new Set(__IMAGES__);
+export const exists = (src: string): boolean => !src.startsWith('img/') || IMAGES.has(src.slice(4));
+
+/** The best available file for an image path: the photo if present, else its fallback. */
+export const imgSrc = (src: string, fallback = ''): string => (exists(src) || !fallback ? src : fallback);
+
+/**
+ * Image with a WebP source where one was generated, the original as fallback,
+ * lazy by default. `eager` is for images visible on arrival.
+ */
+export const img = (src: string, alt: string, cls = '', fallback = '', eager = false): string => {
+  const file = imgSrc(src, fallback);
+  const webp = file.replace(/\.(jpe?g|png)$/i, '.webp');
+  const load = eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+  const tag = `<img class="${cls}" src="${asset(file)}" alt="${esc(alt)}" ${load} decoding="async" />`;
+  return webp !== file && exists(webp) ? `<picture class="pic"><source srcset="${asset(webp)}" type="image/webp" />${tag}</picture>` : tag;
+};

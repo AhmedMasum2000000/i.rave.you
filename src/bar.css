@@ -283,7 +283,7 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   font-size: 11px !important;
   letter-spacing: 0.08em !important;
 }
-.fbar-air-run { display: inline-flex; white-space: nowrap; animation: air 48s linear infinite; }
+.fbar-air-run { display: inline-flex; white-space: nowrap; animation: air 48s linear infinite; will-change: transform; }
 .fbar-air:hover .fbar-air-run { animation-play-state: paused; }
 .fbar-air-item { display: inline-flex; align-items: center; gap: 0.6em; padding-right: 2.4em; line-height: var(--fbar-air); }
 .fbar-air-item strong { font-weight: 800; color: #fff; }
@@ -437,4 +437,27 @@ body.flooding .peek { opacity: 0 !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .fbar-air-run, .fbar-tl-eq i, .fbar-onair i, .fbar.fbar-attn .fbar-tl::after { animation: none; }
+}
+
+/* ── The mix's name, always in view: ACND × অপূর্ব — Qbic Pulse Vol. 1 ── */
+.fbar-mix {
+  flex: none;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 0 18px;
+  background: #000;
+  color: #fff;
+  border-left: 0 !important;
+}
+.fbar-mix-a { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1.1; white-space: nowrap; }
+.fbar-mix-a i { font-style: normal; color: var(--red-hi, #d4202b); padding: 0 2px; }
+.fbar-mix-t { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--red-hi, #d4202b); white-space: nowrap; }
+.fbar-kick { display: none; }
+.tid-hero-v { font-size: 0.5em; vertical-align: 0.5em; color: var(--red-hi, #d4202b); letter-spacing: 0.04em; }
+@media (max-width: 1500px) { .fbar-mark { display: none; } }
+@media (max-width: 760px) {
+  .fbar-mix { display: none; }
+  .fbar-kick { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--red, #b3121c); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .fbar-title { font-size: 11px; }
 }

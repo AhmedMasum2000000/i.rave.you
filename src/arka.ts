@@ -3,6 +3,8 @@ import { installGuard } from './guard';
 import './arka.css';
 import './mobile.css';
 import './bar.css';
+import './polish.css';
+import './menu.css';
 import { sample } from './audio';
 import { ARTISTS, MIX, NEXT_RELEASE, fmt, type ArtistId } from './data';
 import { mountPlayer } from './player';

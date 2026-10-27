@@ -1,0 +1,164 @@
+/* ═══════════ Menu: a band drops in, rules draw, titles rise one by one ═══════════
+   Big titles in the dot face, small lists in mono, deep red for rules and hover. */
+
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: #08080b;
+  color: #f2f2f2;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease, visibility 0s linear 0.45s;
+}
+body.menu-open { overflow: hidden; }
+body.menu-open .menu { visibility: visible; opacity: 1; transition: opacity 0.2s ease; }
+
+/* The close button sits on a black pill so it reads over the band. */
+body.menu-open .menu-btn { background: #000; color: #fff; padding: 8px 14px; border-radius: 999px; }
+body.menu-open .menu-btn:hover { background: var(--red-hi, #d4202b); }
+
+/* The band: the page collapses into a running strip at the top. */
+.m-band {
+  overflow: hidden;
+  background: var(--red, #b3121c);
+  color: #fff;
+  border-bottom: 1px solid #000;
+  transform: translateY(-100%);
+  transition: transform 0.5s cubic-bezier(0.7, 0, 0.2, 1);
+}
+body.menu-open .m-band { transform: none; }
+.m-band-run {
+  display: inline-block;
+  padding: 10px 0 8px;
+  white-space: nowrap;
+  font-family: var(--brand-font);
+  font-weight: 900;
+  font-size: clamp(30px, 5.4vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  animation: band 30s linear infinite;
+  will-change: transform;
+}
+.m-band-run .bn { font-family: 'Hind Siliguri', sans-serif; font-weight: 700; }
+@keyframes band { to { transform: translateX(-50%); } }
+
+.m-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 48px;
+  align-items: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 28px var(--gutter) calc(32px + var(--safe-bottom, 0px));
+}
+.m-list { margin: 0; padding: 0; list-style: none; }
+
+/* Each row: a rule that draws in, a title that rises out of its mask. */
+.m-row { position: relative; }
+.m-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--red, #b3121c);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.18s ease-in;
+}
+body.menu-open .m-row::after {
+  transform: none;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) calc(0.18s + var(--i) * 0.07s);
+}
+.m-head { display: flex; align-items: center; gap: 18px; overflow: hidden; padding: 10px 0 8px; }
+.m-num { flex: none; width: 2.2em; font-size: 11px; color: #777; }
+.m-big {
+  display: inline-block;
+  font-family: var(--brand-font);
+  font-weight: 900;
+  font-size: clamp(34px, 6.2vw, 78px);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #f2f2f2;
+  transform: translateY(110%);
+  transition: transform 0.2s ease-in, color 0.15s;
+}
+.m-big .bn { font-family: 'Hind Siliguri', sans-serif; font-weight: 700; text-transform: none; }
+body.menu-open .m-big {
+  transform: none;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) calc(0.22s + var(--i) * 0.07s), color 0.15s;
+}
+.m-big:hover, .m-big:focus-visible, .m-row.m-open .m-big { color: var(--red-hi, #d4202b); }
+.m-plus {
+  align-self: flex-start;
+  margin: 6px 0 0 -8px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: #f2f2f2;
+  font: 700 18px/1 ui-monospace, Menlo, Consolas, monospace;
+  cursor: pointer;
+  transition: transform 0.25s, color 0.15s;
+}
+.m-plus:hover { color: var(--red-hi, #d4202b); }
+.m-row.m-open .m-plus { transform: rotate(45deg); color: var(--red-hi, #d4202b); }
+
+/* The small list under a title unfolds like the video's sub-menu. */
+.m-sub { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.m-row.m-open .m-sub { grid-template-rows: 1fr; }
+.m-sub ul { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s linear 0.3s; margin: 0; padding: 0 0 0 calc(2.2em * 11 / 11 + 18px); list-style: none; }
+.m-row.m-open .m-sub ul { padding-bottom: 14px; visibility: visible; transition: none; }
+.m-sub li { transform: translateY(-6px); opacity: 0; transition: opacity 0.2s, transform 0.25s; }
+.m-row.m-open .m-sub li { opacity: 1; transform: none; }
+.m-row.m-open .m-sub li:nth-child(2) { transition-delay: 0.04s; }
+.m-row.m-open .m-sub li:nth-child(3) { transition-delay: 0.08s; }
+.m-row.m-open .m-sub li:nth-child(4) { transition-delay: 0.12s; }
+.m-sub a {
+  display: inline-block;
+  padding: 3px 0;
+  font: 600 12px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--red-hi, #d4202b);
+}
+.m-sub a:hover { color: #fff; }
+
+/* The next release, small, at the side. */
+.m-release {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+  font: 500 12px/1.4 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+body.menu-open .m-release { opacity: 1; transform: none; transition: opacity 0.5s 0.55s, transform 0.6s 0.55s; }
+.m-k { color: var(--red-hi, #d4202b); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
+.m-release img { width: 120px; height: 120px; object-fit: cover; border: 1px solid #222; }
+.m-release b { font-family: var(--brand-font); font-weight: 900; font-size: 20px; }
+.m-r-sub { color: #aaa; }
+.m-release .cd { gap: 10px; }
+.m-release .cd b { font-size: 16px; }
+.m-r-link { justify-self: start; margin-top: 6px; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--red, #b3121c); padding-bottom: 2px; }
+.m-r-link:hover { color: var(--red-hi, #d4202b); }
+.m-credit { margin: 14px 0 0; color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.m-credit a { color: #999; }
+
+@media (max-width: 860px) {
+  .m-inner { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 18px; }
+  .m-big { font-size: clamp(32px, 11vw, 56px); }
+  .m-head { gap: 12px; padding: 8px 0 6px; }
+  .m-sub ul { padding-left: calc(2.2em + 12px); }
+  .m-sub a { padding: 8px 0; }
+  .m-plus { padding: 10px; margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-band, .m-big, .m-row::after, .m-release, .m-sub, .m-sub li { transition: none !important; }
+  .m-band-run { animation: none; }
+}
