@@ -39,6 +39,7 @@ const PITCH: Record<PitchId, Pitch> = {
     title: 'ACND',
     sub: 'Read it “Ascend”. This isn’t a press kit — it’s a 45-minute argument, and it’s already playing.',
     answers: [
+      { q: 'Remix credit', a: '“Nitol Paye Electric” remix — ACND (Ahmed Masum)', aside: 'Ahmed Masum and ACND are the same artist.' },
       { q: 'Type of performer', a: '● DJ', aside: 'Not a cover artist. Not beatboxing. Respects the hustle, though.' },
       { q: 'Stage name', a: 'ACND (Ascend)', aside: 'Four letters, one direction: up.' },
       { q: 'Genre', a: 'Techno / Melodic Techno / Acid Techno / Progressive', aside: 'Four genres walk into a club. Only one kick drum walks out.' },
@@ -74,7 +75,7 @@ const PITCH: Record<PitchId, Pitch> = {
       { q: 'Stage name', a: 'অপূর্ব (Apurba)', aside: 'Bengali for “extraordinary”. No pressure.' },
       { q: 'Genre', a: 'Psychedelic & melodic electronic · bass-driven club · cinematic', aside: 'Genre is a tool, not a cage. He brought the whole toolbox.' },
       { q: 'Experience', a: 'Producing since 2016 — Euphonic, Zalvix, Luminous Lullabies, অপূর্ব', aside: 'Four aliases. All of them showed up for this application.' },
-      { q: 'Press', a: '“Nitol Paye Electric” — অপূর্ব x Ahmed Masum, featured by Billboard Bangladesh', aside: 'Yes, that Billboard. The Bangladesh one. It counts.' },
+      { q: 'Releases', a: '“1by1”, “Monolithic Flow” and the London Love compilation', aside: 'Original releases from অপূর্ব’s catalogue.' },
       { q: 'Set duration & slot', a: 'Your call', aside: 'Tell him the slot; the sub-bass will fill the rest.' },
       { q: 'Equipment needed', a: 'DJ deck', aside: 'And a room that can take 40 Hz without filing a complaint.' },
     ],

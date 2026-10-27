@@ -176,9 +176,8 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       ],
     },
     notes: [
-      { label: 'A', text: '“Nitol Paye Electric” — অপূর্ব x Ahmed Masum, featured by Billboard Bangladesh.', url: 'https://youtu.be/om5QGreRaYg' },
-      { label: 'B', text: 'Released on the London Love compilation alongside international artists.', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' },
-      { label: 'C', text: 'Aliases: Euphonic, Zalvix, Luminous Lullabies, Necture Drop.' },
+      { label: 'A', text: 'Released on the London Love compilation alongside international artists.', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' },
+      { label: 'B', text: 'Aliases: Euphonic, Zalvix, Luminous Lullabies, Necture Drop.' },
     ],
     releases: [
       { title: '1by1', artists: 'অপূর্ব', year: 2026, tag: '2026', cover: 'img/1by1.jpg', url: 'https://open.spotify.com/track/1Y6fCdolybkvwI0dzHCc04' },
@@ -186,7 +185,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { title: 'H4PPY', artists: 'Luminous Lullabies, অপূর্ব', year: 2026, tag: '2026', cover: 'img/h4ppy.jpg', url: 'https://open.spotify.com/track/2NgY57feqYSDVqUQTbMZsR' },
       { title: 'You Make It.', artists: 'Zalvix', year: 2026, tag: '2026', cover: 'img/you-make-it.jpg', url: 'https://open.spotify.com/track/47zBG5M5woJ5C8MXIO26vc' },
       { title: 'Trance by 3', artists: 'অপূর্ব, Zalvix', year: 2025, tag: '2025', cover: 'img/trance-by-3.jpg', url: 'https://open.spotify.com/track/4OLEXwh1PwcMz3FgNjRZv7' },
-      { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: '2025', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
+      { title: 'Opening', artists: 'অপূর্ব, Hridnic, ACND (Ahmed Masum), Prothey', year: 2025, tag: '2025', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
       { title: 'Progress!ve', artists: 'অপূর্ব, Zalvix', year: 2025, tag: '2025', cover: 'img/progressive.jpg', url: 'https://open.spotify.com/track/1nsJ7poGS2qorT2zkz9Vep' },
       { title: 'VOID', artists: 'অপূর্ব, Luminous Lullabies', year: 2025, tag: '2025', cover: 'img/void.jpg', url: 'https://open.spotify.com/track/79OCi8HEMhdD105OJ2LKYi' },
       { title: 'PsyEcho', artists: 'অপূর্ব, Luminous Lullabies', year: 2025, tag: '2025', cover: 'img/psyecho.jpg', url: 'https://open.spotify.com/track/5sRq9z2kDTxlSKjOm5zNdE' },
@@ -195,7 +194,6 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     extras: {
       heading: 'Sets, remixes & other selves',
       items: [
-        { title: 'Nitol Paye Electric — অপূর্ব x Ahmed Masum | Billboard Bangladesh', url: 'https://youtu.be/om5QGreRaYg' },
         { title: 'Hypnotic (ZALVIX & FAMIN Unofficial Remix) — Varski x Abi Flynn', url: 'https://youtu.be/p_JortMUAI0' },
         { title: 'SunSet Chill House Mix 2026 — Luminous Lullabies Set 01', url: 'https://youtu.be/cCP5bHLnfHw' },
         { title: 'Festival Vibe Melodic Bass House Mix — Mixtape01 by ZALVIX', url: 'https://youtu.be/207WAnS77z0' },
@@ -216,13 +214,12 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       blocks: [
         { label: '01', text: 'Initiate^1 is where the two halves met: ACND and অপূর্ব, still unreleased, opening their HKCR set.' },
         { label: '02', text: 'Before অপূর্ব there was Euphonic^2, an open production lab on YouTube from 2018 to 2023.' },
-        { label: '03', text: 'Since then, a Billboard Bangladesh feature^3, a London Love compilation^4, and four aliases sharing one frequency.' },
+        { label: '03', text: 'Since then, a London Love compilation^3, and four aliases sharing one frequency.' },
       ],
     },
     footnotes: [
       { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
       { text: 'Euphonic, the first channel: future house, synthwave and remixes.', link: { label: 'YouTube', url: 'https://www.youtube.com/@euphonic404' } },
-      { text: '“Nitol Paye Electric”, অপূর্ব x Ahmed Masum, featured by Billboard Bangladesh.', link: { label: 'Watch', url: 'https://youtu.be/om5QGreRaYg' } },
       { text: 'London Love, a compilation with international artists.', link: { label: 'Spotify', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' } },
     ],
     media: [
@@ -257,15 +254,16 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     statement:
       'ACND is the light half — the one that ascends. Techno, melodic techno, acid and progressive, built to be felt in the chest before it is understood in the head.',
     bio: [
-      'ACND — read it “Ascend” — is the recording name of A H Al Masum, a producer, DJ and composer working out of Dhaka, Bangladesh.',
+      'ACND — read it “Ascend” — is the recording name of Ahmed Masum, a producer, DJ and composer working out of Dhaka, Bangladesh.',
       'Nothing here will tell you what the next record sounds like. That is the point. What holds the work together is not a category but a feeling: a room, a late hour, and a sound that will not leave.',
       'Next up: “Down In Bossa” with Ash Army, landing 30 October 2026 on Profi Music, a sublabel of Warner Music.',
     ],
     about: {
       summary: 'ACND — producer, DJ and composer from Dhaka, Bangladesh.',
       paragraphs: [
-        'ACND, pronounced “Ascend”, is the recording name of A H Al Masum, a producer, DJ and composer based in Dhaka, Bangladesh.',
+        'ACND, pronounced “Ascend”, is the recording name of Ahmed Masum, a producer, DJ and composer based in Dhaka, Bangladesh.',
         'His work moves through techno, melodic techno, acid and progressive sounds, with an emphasis on atmosphere, physical energy and the feeling of a dance floor.',
+        'His remix credits include “Nitol Paye Electric”, credited to ACND (Ahmed Masum).',
         'Alongside অপূর্ব, he hosts Qbic Pulse on Hong Kong Community Radio. Their shared set opens with “Initiate”, an unreleased collaboration between the two artists.',
         'His upcoming release, “Down In Bossa”, is an Afro House collaboration with Ash Army, arriving on 30 October 2026 via Profi Music.',
       ],
@@ -277,6 +275,10 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     releases: [
       { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Upcoming · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
     ],
+    extras: {
+      heading: 'Remix credits',
+      items: [{ title: 'Nitol Paye Electric — ACND (Ahmed Masum) Remix', url: 'https://youtu.be/om5QGreRaYg' }],
+    },
     listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {
       intro:
