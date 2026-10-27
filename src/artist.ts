@@ -215,7 +215,9 @@ function aboutPage(a: Artist): string {
         .join('')}
     </section>
 
-    <section class="b-ids">
+    ${
+      a.extras?.items.length
+        ? `<section class="b-ids">
       <span class="a-label mono">● ${esc(a.extras.heading)}</span>
       ${a.extras.items
         .map(
@@ -223,7 +225,9 @@ function aboutPage(a: Artist): string {
             `<a href="${esc(x.url)}" target="_blank" rel="noopener" data-reveal><span class="mono">${String(i + 1).padStart(2, '0')}</span><span>${esc(x.title)}</span><span class="mono">↗</span></a>`,
         )
         .join('')}
-    </section>
+    </section>`
+        : ''
+    }
     ${footer(a)}`;
 }
 
