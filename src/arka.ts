@@ -160,7 +160,8 @@ const META: Record<PitchId, Meta> = {
     glow: 'var(--amber)',
     number: '0003',
     mix: false,
-    exhibit: { kicker: 'EXHIBIT A · LISTEN', label: 'Ash Army on Spotify ↗', url: 'https://open.spotify.com/search/Ash%20Army' },
+    profile: 'https://www.profimusic.com/artist/ash-army/',
+    exhibit: { kicker: 'EXHIBIT A · ARTIST PROFILE · PROFI MUSIC', label: 'Ash Army on Profi Music ↗', url: 'https://www.profimusic.com/artist/ash-army/' },
   },
 };
 
@@ -241,7 +242,7 @@ document.getElementById('app')!.innerHTML = `
       <p data-words>${esc(p.close)}</p>
       <p class="p-sign">${esc(p.sign)}</p>
       <div class="p-ctas">
-        ${m.profile ? `<a class="btn" href="${m.profile}">Open the artist profile →</a>` : `<a class="btn" href="${m.exhibit.url}" target="_blank" rel="noopener">Listen to Ash Army ↗</a>`}
+        ${m.profile ? `<a class="btn" href="${m.profile}"${m.profile.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>Open the artist profile →</a>` : `<a class="btn" href="${m.exhibit.url}" target="_blank" rel="noopener">Listen to Ash Army ↗</a>`}
         <a class="btn btn-ghost" href="${asset('index.html')}">Enter I RAVE YOU</a>
       </div>
       <p class="p-fine mono">${m.mix ? `No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.` : 'No models were harmed in the making of this application. Hearts may be.'}</p>
