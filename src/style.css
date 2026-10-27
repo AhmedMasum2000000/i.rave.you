@@ -1224,3 +1224,18 @@ body[data-view='home'] .tid {
 .legal-links a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; }
 .a-foot .legal-links { grid-column: 1 / -1; }
 .vibe-fine a { display: inline-flex; align-items: center; min-height: 32px; color: #bbb; text-decoration: underline; }
+
+/* Legal information is a visible submenu near the top of the site menu. */
+.m-legal-item { width: 100%; }
+.m-legal { width: 100%; max-width: 620px; font-family: system-ui, sans-serif; }
+.m-legal summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 12px 14px; border: 1px solid #555; border-radius: 6px; font-size: 16px; font-weight: 650; cursor: pointer; list-style: none; }
+.m-legal summary::-webkit-details-marker { display: none; }
+.m-legal summary > span { transition: transform .15s; }
+.m-legal[open] summary > span { transform: rotate(180deg); }
+.m-legal-links { display: grid; gap: 8px; padding-top: 8px; }
+.m-legal-links a { display: grid; gap: 4px; min-height: 56px; padding: 12px 14px; background: #151519; border: 1px solid #34343b; border-radius: 6px; line-height: 1.4; }
+.m-legal-links strong { font-size: 15px; color: #f5f5f5; }
+.m-legal-links a > span { font-size: 12px; color: #aaa; }
+.m-legal-links .m-legal-primary { border-color: #779ddf; background: #152033; }
+.m-legal-links a:hover, .m-legal-links a:focus-visible { background: #24242c; }
+.legal-links { font-size: 14px; }

@@ -82,9 +82,19 @@ export function mountChrome(): void {
     <div class="m-inner">
       <ol class="m-list">
         <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a></span></li>
+        <li class="m-legal-item">
+          <details class="m-legal" open>
+            <summary>Legal &amp; site information <span aria-hidden="true">⌄</span></summary>
+            <nav class="m-legal-links" aria-label="Legal submenu">
+              <a class="m-legal-primary" href="${route('legal/terms/')}"><strong>Terms of use ↗</strong><span>Website rules and content rights</span></a>
+              <a href="${route('legal/privacy/')}"><strong>Privacy notice ↗</strong><span>Storage, audio choices and your data</span></a>
+              <a href="${route('legal/copyright/')}"><strong>Copyright &amp; takedown contact ↗</strong><span>Report a rights or credit concern</span></a>
+            </nav>
+          </details>
+        </li>
         ${artistLinks(ARTISTS.apurba)}
         ${artistLinks(ARTISTS.acnd)}
-        <li><nav class="legal-links" aria-label="Legal information"><a href="${route('legal/terms/')}">Terms</a><a href="${route('legal/privacy/')}">Privacy</a><a href="${route('legal/copyright/')}">Copyright contact</a></nav></li>
+
       </ol>
       <aside class="m-release">
         <span class="mono">● Next release · ${esc(NEXT_RELEASE.genre)}</span>
@@ -118,7 +128,7 @@ export function mountChrome(): void {
     if (!document.body.classList.contains('menu-open')) return;
     if (e.key === 'Escape') set(false);
     if (e.key !== 'Tab') return;
-    const controls = [btn, ...menu.querySelectorAll<HTMLElement>('a[href], button:not(:disabled)')];
+    const controls = [btn, ...Array.from(menu.querySelectorAll<HTMLElement>('summary, a[href], button:not(:disabled)')).filter((control) => control.getClientRects().length > 0)];
     const index = controls.indexOf(document.activeElement as HTMLElement);
     const next = (index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length;
     e.preventDefault();

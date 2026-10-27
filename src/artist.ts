@@ -41,7 +41,7 @@ function footer(a: Artist): string {
   return `
     <footer class="a-foot">
       <span>${esc(a.latin)} 2026</span>
-      <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
+      <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms of use</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
       <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}

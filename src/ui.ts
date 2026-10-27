@@ -23,7 +23,7 @@ const prompt = (): string => `
       <button type="button" class="vibe-yes vibe-alt" data-quiet>Browse quietly</button>
     </div>
     <p class="vibe-meter mono" aria-live="polite"><span class="vibe-bar"><i></i></span><span class="vibe-status">Warming up the decks…</span></p>
-    <p class="vibe-fine">Audio controls only. <a data-legal-link href="${asset('legal/privacy/')}">Privacy</a> · <a data-legal-link href="${asset('legal/terms/')}">Terms</a> · <a data-legal-link href="${asset('legal/copyright/')}">Rights contact</a></p>
+    <p class="vibe-fine">Audio controls only. <a data-legal-link href="${asset('legal/privacy/')}">Privacy</a> · <a data-legal-link href="${asset('legal/terms/')}">Terms of use</a> · <a data-legal-link href="${asset('legal/copyright/')}">Rights contact</a></p>
   </div>`;
 
 /** Fill the meter from what the player has already buffered while the visitor reads. */
