@@ -1,0 +1,139 @@
+/* Shared phone/tablet ergonomics. Keep the site's artwork and artist colours. */
+:root { --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
+button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+@media (max-width: 900px), (max-height: 500px) and (pointer: coarse) {
+  body { --gutter: 16px; }
+  body:not([data-view='home']) { padding-bottom: calc(148px + var(--safe-bottom)); }
+  body .a-nav { grid-template-columns: 1fr; gap: 8px; padding: calc(58px + var(--safe-top)) var(--gutter) 10px; background: #0b0b0b; border-bottom: 1px solid #262626; }
+  body .a-brand { top: calc(10px + var(--safe-top)); min-height: 44px; }
+  body .a-info { display: none; }
+  body .a-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; padding: 0; font-size: 13px; }
+  body .a-links a { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 8px; border: 1px solid #292929; border-radius: 6px; }
+  body .a-links a.on { background: #202020; border-color: var(--glow); }
+  body .a-links a.on::before { content: '●'; font-size: 8px; }
+  body .menu-btn { top: calc(10px + var(--safe-top)); min-height: 44px; padding: 8px 0 8px 10px; font-size: 15px; }
+  body .release-portfolio, body .b-bio, body .s-app { padding-top: calc(140px + var(--safe-top)); }
+  body .release-heading { margin-bottom: 26px; }
+  body .release-heading h1 { font-size: clamp(34px, 10vw, 52px); margin: 16px 0; }
+  body .release-heading p, body .release-meta p, body .release-note, body .b-para, body .a-ab p,
+  body .feature p:not(.mono), body .pitch p:not(.mono) { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 400; line-height: 1.65; }
+  body .release-heading p { font-size: 16px; }
+  body .release-grid { gap: 24px 16px; }
+  body .release-art > span { min-height: 44px; display: flex; align-items: center; padding: 10px 16px; }
+  body .release-meta { padding: 18px; }
+  body .release-meta h2 { font-size: 24px; }
+  body .release-meta p { margin-bottom: 0; font-size: 15px; }
+  body .b-text { gap: 22px; }
+  body .b-text .a-intro { font-size: clamp(26px, 7.3vw, 38px); line-height: 1.3; }
+  body .b-text .b-para { font-size: 17px; line-height: 1.75; }
+  body .a-hero { min-height: 620px; height: 85svh; }
+  body .a-essay, body .a-bio { padding-bottom: 48px; }
+  body .a-big { line-height: 1.3; }
+  body .a-intro { margin-top: 18px; text-indent: 0; }
+  body .a-block, body .a-block-1, body .a-block-2 { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; margin-top: 28px; }
+  body .a-foot { gap: 22px; }
+  body .a-foot a, body .b-dates > a, body .b-ids > a { min-height: 44px; align-content: center; }
+  body .b-ids > a { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; line-height: 1.5; }
+
+  /* One consistent audio dock; pre-save moves out of the way of the tracklist. */
+  body .np, body[data-view='home'] .np { left: var(--gutter); right: var(--gutter); bottom: calc(8px + var(--safe-bottom)); translate: none; width: auto; height: 56px; background: #101014; border: 1px solid #444; border-radius: 8px; backdrop-filter: none; animation: none; }
+  body .np-play { width: 48px; }
+  body .np-play svg, body .tid-transport svg { width: 18px; height: 18px; }
+  body .np-main, body[data-view='home'] .np-main { grid-template-columns: auto minmax(0, 1fr) auto auto; padding: 0 10px; gap: 8px; }
+  body[data-view='home'] .np-live { display: none; }
+  body .np-t, body[data-view='home'] .np-t { font-size: 12px; }
+  body .np-k { font-size: 9px; }
+  body .np-time { font-size: 11px; }
+  body .np-eq { gap: 1px; }
+  body .np-eq i { width: 2px; }
+  body .presave { left: var(--gutter); right: var(--gutter); bottom: calc(72px + var(--safe-bottom)); height: 44px; gap: 8px; }
+  body .presave-cta, body .presave-clock { min-height: 44px; }
+  body .presave .cd { gap: 8px; }
+  body .presave .cd b { font-size: 15px; }
+  body.tid-open .presave { opacity: 0; visibility: hidden; pointer-events: none; }
+  body.tid-open { overflow: hidden; }
+  body .tid, body[data-view='home'] .tid { left: var(--gutter); right: var(--gutter); bottom: calc(76px + var(--safe-bottom)); width: auto; translate: none; max-height: calc(100dvh - 106px - var(--safe-top) - var(--safe-bottom)); border-radius: 12px; background: #101014; backdrop-filter: none; overflow: hidden; }
+  body .tid-head { padding: 14px 12px 8px; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+  body .tid-title { min-width: 0; gap: 6px; }
+  body .tid-title b { font-size: 14px; line-height: 1.4; }
+  body .tid-title .mono { font-size: 10px; line-height: 1.5; }
+  body .tid-close { min-width: 60px; min-height: 44px; align-self: start; font-size: 11px; }
+  body .tid-transport { grid-column: 1 / -1; grid-row: 2; gap: 8px; }
+  body .tid-transport button { width: 44px; height: 44px; }
+  body .tid-clock { margin-left: auto; font-size: 11px; }
+  body .tid-seek { height: 44px; min-height: 44px; margin: 0 14px 8px; }
+  body .tid-list { columns: auto; display: block; overflow-y: auto; overflow-x: hidden; padding: 0 12px 14px; min-height: 0; overscroll-behavior: contain; touch-action: pan-y; }
+  body .tid-list li { min-height: 64px; }
+  body .tid-list li button { grid-template-columns: 42px minmax(0, 1fr); gap: 6px; padding: 12px 4px; font-size: 13px; line-height: 1.5; }
+  body .tid-list li a { width: 76px; min-height: 44px; padding: 8px 4px; font-size: 11px; }
+  body .tid-now { margin: 4px 0 0; font-size: 8px; }
+  body.menu-open .tid { visibility: hidden; opacity: 0; pointer-events: none; }
+
+  /* Reachable prompt and menu, including small phones and landscape. */
+  body .gate { padding: calc(20px + var(--safe-top)) var(--gutter) calc(20px + var(--safe-bottom)); align-content: start; gap: 12px; overscroll-behavior: contain; }
+  body .gate-record { width: min(160px, 24svh); margin: 8px 0 10px; flex: none; }
+  body .gate-kicker { margin: 0; }
+  body .gate-line { max-width: 32ch; margin: 0; font-size: 13px; line-height: 1.5; }
+  body .vibe { width: 100%; max-width: 440px; margin-top: 8px; padding: 18px 14px; gap: 12px; }
+  body .vibe-title { font-size: 22px; }
+  body .vibe-body { font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+  body .vibe-yes { min-height: 48px; }
+  body .vibe-meter { grid-template-columns: 42px minmax(0, 1fr); line-height: 1.5; }
+  body .gate-credit { margin: 0; }
+  body .gate-out { transform: none; filter: none; transition: opacity .2s; }
+  body .vibe-banner { bottom: calc(128px + var(--safe-bottom)); right: var(--gutter); max-height: calc(100dvh - 160px - var(--safe-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+  body .menu { clip-path: none; opacity: 0; transform: translateY(-8px); transition: opacity .2s, transform .2s, visibility .2s; }
+  body.menu-open .menu { opacity: 1; transform: none; }
+  body .m-inner { padding: calc(76px + var(--safe-top)) var(--gutter) calc(28px + var(--safe-bottom)); gap: 32px; grid-template-columns: minmax(0, 1fr); overscroll-behavior: contain; }
+  body .m-list { gap: 28px; }
+  body .m-list li { gap: 12px; transform: none; transition: opacity .2s; }
+  body .m-big { font-size: clamp(40px, 12vw, 64px); line-height: 1.1; }
+  body .m-sub { width: 100%; gap: 8px; flex-wrap: wrap; line-height: 1.5; }
+  body .m-sub a { display: inline-flex; min-height: 44px; align-items: center; padding: 6px 8px; }
+  body .m-release { max-width: 100%; }
+  body .m-release img { width: min(200px, 60vw); }
+
+  /* Keep the instrument's horizontal scroll inside its own grid. */
+  body .s-app { overflow-x: visible; }
+  body .seq-body { min-width: 0; }
+  body .seq-top { min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  body .seq-tracks button { min-height: 44px; padding: 12px; font-size: 13px; }
+  body .seq-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body .seq-controls button, body .seq-bpm { min-height: 44px; font-size: 11px; }
+  body .seq-bpm input { font-size: 16px; }
+  body .seq-hint { display: block; color: #aaa; font-size: 12px; line-height: 1.5; margin: 0 0 18px; }
+  body .seq-grid { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 12px; }
+  body .seq-head, body .seq-row { min-width: 890px; grid-template-columns: 84px repeat(16, 44px); gap: 6px; }
+  body .cell { height: 44px; }
+  body .seq-name, body .seq-label { position: sticky; left: 0; z-index: 2; background: #0b0b0b; padding: 8px; }
+  body .seq-share { min-width: 0; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
+  body .home-top { padding-top: calc(20px + var(--safe-top)); padding-right: 100px; }
+  body .f-top { padding-top: calc(22px + var(--safe-top)); }
+  body .f-h1-a { font-size: clamp(36px, 11vw, 72px); }
+  body .p-top { padding-top: calc(64px + var(--safe-top)); }
+  body .p-hero { min-height: 75svh; }
+  body .p-title { text-shadow: 0 0 18px var(--glow); font-size: clamp(64px, 20vw, 130px); }
+  body .p-stamp { animation: none; transform: none; max-width: 100%; position: static; justify-self: end; margin: 8px 0; font-size: 11px; }
+}
+.seq-hint { display: none; }
+@media (max-width: 360px) { body .vibe-actions { grid-template-columns: 1fr; } body .presave .cd { gap: 4px; } body .presave .cd b { font-size: 13px; } }
+@media (max-width: 760px), (pointer: coarse) {
+  body[data-view='artist']::after, body[data-view='feature']::after { animation: none; opacity: .035; }
+  body .a-sheen, body .spark, body .p-logo { animation: none; }
+  body .np-attn { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  body .menu, body .gate { transition: none; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body .home { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+  body .home .side { padding: 60px 24px 124px; justify-content: center; gap: 8px; }
+  body .side-logo { width: 72px; }
+  body .side-name { font-size: 22px; }
+  body .tid-title > .mono:last-child { display: none; }
+  body .tid-title b { font-size: 12px; }
+  body .tid-head { padding-top: 8px; gap: 4px; }
+}

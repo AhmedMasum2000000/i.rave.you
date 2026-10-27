@@ -76,6 +76,8 @@ export function mountChrome(): void {
   menu.setAttribute('role', 'dialog');
   menu.setAttribute('aria-modal', 'true');
   menu.setAttribute('aria-label', 'Site menu');
+  menu.setAttribute('aria-hidden', 'true');
+  menu.inert = true;
   menu.innerHTML = `
     <div class="m-inner">
       <ol class="m-list">
@@ -96,16 +98,31 @@ export function mountChrome(): void {
     </div>`;
 
   const set = (open: boolean): void => {
+    if (open) document.querySelector<HTMLButtonElement>('.tid-close')?.click();
     document.body.classList.toggle('menu-open', open);
+    menu.inert = !open;
+    menu.setAttribute('aria-hidden', String(!open));
+    const app = document.getElementById('app');
+    if (app) app.inert = open;
     btn.setAttribute('aria-expanded', String(open));
     btn.querySelector('.menu-word')!.textContent = open ? 'Close' : 'Menu';
     if (open) menu.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
+    else if (menu.contains(document.activeElement)) btn.focus({ preventScroll: true });
   };
   btn.addEventListener('click', () => set(!document.body.classList.contains('menu-open')));
   menu.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('[data-close]')) set(false);
   });
-  window.addEventListener('keydown', (e) => e.key === 'Escape' && set(false));
+  window.addEventListener('keydown', (e) => {
+    if (!document.body.classList.contains('menu-open')) return;
+    if (e.key === 'Escape') set(false);
+    if (e.key !== 'Tab') return;
+    const controls = [btn, ...menu.querySelectorAll<HTMLElement>('a[href], button:not(:disabled)')];
+    const index = controls.indexOf(document.activeElement as HTMLElement);
+    const next = (index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length;
+    e.preventDefault();
+    controls[next].focus();
+  });
   window.addEventListener('hashchange', () => set(false));
 
   // ── pre-save dock ──

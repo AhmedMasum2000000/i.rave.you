@@ -1,6 +1,7 @@
 import './style.css';
 import { installGuard } from './guard';
 import './artist.css';
+import './mobile.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, type ArtistId } from './data';
@@ -40,6 +41,7 @@ window.addEventListener('hashchange', route);
 function renderHome(): void {
   document.body.dataset.view = 'home';
   delete document.body.dataset.artist;
+  delete document.body.dataset.lean;
   document.title = 'I RAVE YOU — অপূর্ব ◐ ACND';
   const A = ARTISTS.apurba;
   const C = ARTISTS.acnd;
@@ -73,7 +75,8 @@ function renderHome(): void {
 
   app.querySelectorAll<HTMLAnchorElement>('.side').forEach((el) => {
     const side = el.dataset.side === 'apurba' ? -1 : 1;
-    el.addEventListener('pointerenter', () => {
+    el.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'touch') return;
       fx.lean(-side);
       document.body.dataset.lean = el.dataset.side;
     });

@@ -1,6 +1,7 @@
 import './style.css';
 import './artist.css';
 import './feature.css';
+import './mobile.css';
 import { mountChrome } from './chrome';
 import { installGuard } from './guard';
 import { mountPlayer } from './player';

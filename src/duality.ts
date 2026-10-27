@@ -48,6 +48,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   const blueGlow = sprite(BLUE, 64);
   const orangeGlow = sprite(ORANGE, 64);
 
+  const compact = matchMedia('(pointer: coarse), (max-width: 760px)').matches;
+  let lastFrame = 0;
   let W = 0;
   let H = 0;
   let dpr = 1;
@@ -62,16 +64,17 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   const ps: P[] = [];
 
   const resize = (): void => {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.5);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
-    const n = Math.round(Math.min(520, (W * H) / 2600));
+    const n = Math.round(Math.min(compact ? 100 : 520, (W * H) / (compact ? 4200 : 2600)));
     ps.length = 0;
     for (let i = 0; i < n; i++) ps.push(spawn(true));
+    if (reduced && raf) requestAnimationFrame(frame);
   };
 
   const spawn = (anywhere: boolean): P => ({
@@ -89,7 +92,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
    * left/right (the curve runs top to bottom); phones stack the two sides,
    * so the curve turns and runs across the screen instead.
    */
-  const wide = (): boolean => W >= 760;
+  const wide = (): boolean => W >= 760 || W > H * 1.35;
   const curve = (u: number, span: number, base: number, t: number, amp: number): number => {
     const n = (u - span / 2) / (span / 2); // -1..1
     const s = Math.sin(n * Math.PI) * Math.min(W, H) * 0.09 * (1 + amp * 0.6);
@@ -116,10 +119,15 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
 
   const frame = (now: number): void => {
     if (!alive) return;
-    const t = now / 1000;
+    if (document.hidden || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
+      raf = requestAnimationFrame(frame);
+      return;
+    }
+    lastFrame = now;
+    const t = reduced ? 0 : now / 1000;
     const lv = sample();
     split += (splitTarget - split) * 0.06;
-    rot += 0.0025 + lv.low * 0.01;
+    if (!reduced) rot += 0.0025 + lv.low * 0.01;
 
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.globalCompositeOperation = 'source-over';
@@ -177,7 +185,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       p.vy *= 0.94;
       p.x += p.vx * speed;
       p.y += p.vy * speed;
-      p.life--;
+      if (!reduced) p.life--;
       if (p.life < 0 || p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) Object.assign(p, spawn(true));
       if (!p.glow) g.fillRect(p.x, p.y, p.size, p.size);
     }
@@ -206,7 +214,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     ring(g, cx, cy, R * 1.5, -rot * 0.6, 120, 3, 1);
 
     const spec = spectrum();
-    const bars = 128;
+    const bars = compact ? 64 : 128;
     for (let i = 0; i < bars; i++) {
       const v = spec.length ? spec[Math.floor((i / bars) * spec.length * 0.6)] / 255 : 0.1 + 0.05 * Math.sin(t * 3 + i);
       const ang = (i / bars) * Math.PI * 2 + rot * 0.5;
@@ -235,7 +243,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       }
     }
 
-    raf = requestAnimationFrame(frame);
+    if (!reduced) raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
 
@@ -244,6 +252,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       splitTarget = 0.5 + side * 0.08;
     },
     flood(side, x, y) {
+      if (reduced) return Promise.resolve();
       return new Promise((done) => {
         floodState = { color: side === 'apurba' ? '#000' : '#f4f3ef', x, y, r: 10, done };
       });

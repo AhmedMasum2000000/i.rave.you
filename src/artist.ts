@@ -160,7 +160,7 @@ function listenPage(a: Artist): string {
 }
 
 function sequencerPage(): string {
-  return `<section class="s-app"><div class="seq-body"></div></section>`;
+  return `<section class="s-app"><p class="seq-hint">Tap a step to edit. Swipe the grid sideways for all 16 steps.</p><div class="seq-body"></div></section>`;
 }
 
 function aboutPage(a: Artist): string {
@@ -228,7 +228,14 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
 
   const hero = app.querySelector<HTMLElement>('.a-hero');
   let raf = 0;
-  const loop = (): void => {
+  let lastFrame = 0;
+  const frameGap = matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 1000 / 60;
+  const loop = (stamp: number): void => {
+    if (document.hidden || window.scrollY > innerHeight || stamp - lastFrame < frameGap) {
+      raf = requestAnimationFrame(loop);
+      return;
+    }
+    lastFrame = stamp;
     const lv = sample();
     if (hero) {
       hero.style.setProperty('--beat', lv.beat.toFixed(3));
@@ -236,7 +243,7 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
     }
     raf = requestAnimationFrame(loop);
   };
-  raf = requestAnimationFrame(loop);
+  if (hero && !reducedMotion()) raf = requestAnimationFrame(loop);
   cleanup.push(() => cancelAnimationFrame(raf));
 
   if (hero && !reducedMotion()) {

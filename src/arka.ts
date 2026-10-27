@@ -1,10 +1,11 @@
 import './style.css';
 import { installGuard } from './guard';
 import './arka.css';
+import './mobile.css';
 import { sample } from './audio';
 import { ARTISTS, MIX, NEXT_RELEASE, fmt, type ArtistId } from './data';
 import { mountPlayer } from './player';
-import { asset, esc, mountGate, revealOnScroll } from './ui';
+import { asset, esc, mountGate, reducedMotion, revealOnScroll } from './ui';
 
 /**
  * Unlisted pitch pages for Arka Fashion Week '26: COLLECTIVE LIVE.
@@ -254,7 +255,7 @@ const loop = (): void => {
   title.style.setProperty('--beat', sample().beat.toFixed(3));
   requestAnimationFrame(loop);
 };
-requestAnimationFrame(loop);
+if (!reducedMotion() && !matchMedia('(pointer: coarse)').matches) requestAnimationFrame(loop);
 
 mountPlayer();
 

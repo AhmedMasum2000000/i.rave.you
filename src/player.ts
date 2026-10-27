@@ -102,6 +102,7 @@ export function mountPlayer(): void {
     panel.inert = !on;
     if (!on && panel.contains(document.activeElement)) main.focus();
     if (on) {
+      panel.querySelector<HTMLButtonElement>('.tid-close')?.focus({ preventScroll: true });
       seen = true;
       np.classList.remove('np-attn');
       try {
@@ -176,11 +177,21 @@ export function mountPlayer(): void {
     if (e.key === 'ArrowLeft') seek(time() - 10);
   });
 
-  const loop = (): void => {
+  let lastFrame = 0;
+  let lastSecond = -1;
+  const loop = (stamp: number): void => {
+    if (document.hidden || stamp - lastFrame < 1000 / 30) {
+      requestAnimationFrame(loop);
+      return;
+    }
+    lastFrame = stamp;
     const lv = sample();
     const now = time();
     const frac = now / duration();
-    tm.textContent = fmt(now);
+    if (Math.floor(now) !== lastSecond) {
+      lastSecond = Math.floor(now);
+      tm.textContent = fmt(now);
+    }
     bar.style.transform = `scaleX(${frac})`;
     if (document.body.classList.contains('tid-open')) {
       tT.textContent = fmt(now);
