@@ -1,4 +1,4 @@
-import { start } from './audio';
+import { bufferedAhead, prepare, start } from './audio';
 
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -12,12 +12,45 @@ export const reducedMotion = (): boolean => matchMedia('(prefers-reduced-motion:
  * The entry gate. The record is half black, half white; clicking it is the
  * one interaction the browser needs before the mix may play out loud.
  */
+/** The cookie-banner joke: two buttons, both yes. */
+const prompt = (): string => `
+  <div class="vibe" role="group" aria-labelledby="vibe-title">
+    <p class="vibe-kicker mono">Cookie policy</p>
+    <p class="vibe-title" id="vibe-title">We don’t give cookies.</p>
+    <p class="vibe-body">But we do give some <b>sexy frequencies</b>. Forty-five minutes of them, fresh from Hong Kong Community Radio.</p>
+    <div class="vibe-actions">
+      <button type="button" class="vibe-yes" data-enter>Yes, I love ’em</button>
+      <button type="button" class="vibe-yes vibe-alt" data-enter>Yes, I want ’em</button>
+    </div>
+    <p class="vibe-meter mono" aria-live="polite"><span class="vibe-bar"><i></i></span><span class="vibe-status">Warming up the decks…</span></p>
+    <p class="vibe-fine mono">There is no “no”. That’s the point.</p>
+  </div>`;
+
+/** Fill the meter from what the player has already buffered while the visitor reads. */
+function meter(root: HTMLElement): () => void {
+  prepare();
+  const bar = root.querySelector<HTMLElement>('.vibe-bar i')!;
+  const status = root.querySelector<HTMLElement>('.vibe-status')!;
+  const id = window.setInterval(() => {
+    const p = Math.min(1, bufferedAhead() / 30);
+    bar.style.transform = `scaleX(${Math.max(0.04, p)})`;
+    status.textContent = p >= 1 ? 'Decks are warm. Pick a yes.' : `Warming up the decks… ${Math.round(p * 100)}%`;
+    root.classList.toggle('vibe-ready', p >= 1);
+  }, 200);
+  return () => clearInterval(id);
+}
+
+/**
+ * The entry gate. The record and both "yes" buttons are the one click the
+ * browser needs before the set may play out loud; the set has been buffering
+ * since the page loaded, so playback starts at once.
+ */
 export function mountGate(opts: { kicker: string; line: string; cta: string }): Promise<void> {
   return new Promise((resolve) => {
     const gate = document.createElement('div');
     gate.className = 'gate';
     gate.innerHTML = `
-      <button class="gate-record" aria-label="${esc(opts.cta)}">
+      <button class="gate-record" data-enter aria-label="${esc(opts.cta)}">
         <span class="gate-sleeve">
           <span class="gate-sleeve-word">I RAVE YOU</span>
           <span class="gate-sleeve-sub">অপূর্ব ◐ ACND</span>
@@ -26,17 +59,40 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       </button>
       <p class="gate-kicker">${esc(opts.kicker)}</p>
       <p class="gate-line">${esc(opts.line)}</p>
-      <p class="gate-cta">${esc(opts.cta)}</p>`;
+      ${prompt()}
+      <p class="gate-credit">Site by ACND</p>`;
     document.body.append(gate);
+    const stop = meter(gate);
+    let done = false;
     const enter = (): void => {
+      if (done) return;
+      done = true;
+      stop();
       start();
       gate.classList.add('gate-out');
       setTimeout(() => gate.remove(), 1100);
       resolve();
     };
-    gate.querySelector('button')!.addEventListener('click', enter, { once: true });
+    gate.querySelectorAll('[data-enter]').forEach((b) => b.addEventListener('click', enter));
     gate.addEventListener('keydown', (e) => e.key === 'Enter' && enter());
   });
+}
+
+/** Non-blocking version for content pages: a banner that starts the set. */
+export function mountVibeBanner(): void {
+  const banner = document.createElement('div');
+  banner.className = 'vibe-banner';
+  banner.innerHTML = prompt();
+  document.body.append(banner);
+  const stop = meter(banner);
+  banner.querySelectorAll('[data-enter]').forEach((b) =>
+    b.addEventListener('click', () => {
+      stop();
+      start();
+      banner.classList.add('vibe-out');
+      setTimeout(() => banner.remove(), 600);
+    }),
+  );
 }
 
 /** Reveal anything with [data-reveal] as it scrolls in; words light up one by one. */

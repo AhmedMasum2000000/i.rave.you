@@ -31,9 +31,16 @@ export const audioCtx = (): AudioContext | null => ctx;
 export const output = (): AudioNode | null => focusGain;
 export const isStarted = (): boolean => started;
 
-export function start(): void {
-  if (started) return;
-  started = true;
+let prepared = false;
+
+/**
+ * Attach and start buffering the set without playing it. Needs no user
+ * gesture, so pages call it on load: by the time the visitor clicks, the
+ * opening fragments are already fetched, decrypted and buffered.
+ */
+export function prepare(): void {
+  if (prepared) return;
+  prepared = true;
   // The set streams from encrypted fragments; there is no audio file to save.
   el = document.createElement('audio');
   el.loop = true;
@@ -51,8 +58,30 @@ export function start(): void {
   }
   attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
 
+  el.addEventListener('timeupdate', onTime);
+  el.addEventListener('play', emitState);
+  el.addEventListener('pause', emitState);
+}
+
+/** Seconds of audio ready in front of the playhead (0 until prepared). */
+export function bufferedAhead(): number {
+  if (!el) return 0;
+  const t = el.currentTime;
+  for (let i = 0; i < el.buffered.length; i++) {
+    if (el.buffered.start(i) <= t + 0.25 && el.buffered.end(i) > t) return el.buffered.end(i) - t;
+  }
+  return 0;
+}
+
+/** Start playback. Must run inside a click: browsers only allow sound after one. */
+export function start(): void {
+  if (started) return;
+  started = true;
+  prepare();
+  const media = el!;
+
   ctx = new AudioContext();
-  const src = ctx.createMediaElementSource(el);
+  const src = ctx.createMediaElementSource(media);
   master = ctx.createGain();
   master.gain.value = 0;
   analyser = ctx.createAnalyser();
@@ -66,15 +95,12 @@ export function start(): void {
   focusGain.connect(ctx.destination);
   master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5);
 
-  void el.play().catch(() => {
+  void media.play().catch(() => {
     // Should not happen after a click, but try again on the next interaction.
-    const retry = (): void => void el?.play();
+    const retry = (): void => void media.play();
     window.addEventListener('pointerdown', retry, { once: true });
   });
 
-  el.addEventListener('timeupdate', onTime);
-  el.addEventListener('play', emitState);
-  el.addEventListener('pause', emitState);
   window.addEventListener('pagehide', savePos);
   document.addEventListener('visibilitychange', onFocusChange);
   window.addEventListener('blur', onFocusChange);

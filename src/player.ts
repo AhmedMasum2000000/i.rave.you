@@ -26,6 +26,7 @@ export function mountPlayer(): void {
   np.innerHTML = `
     <button class="np-play" type="button" aria-label="Pause">${icon.pause}</button>
     <button class="np-main" type="button" aria-controls="track-id" aria-expanded="false">
+      <span class="np-live mono" aria-hidden="true"><i></i>Live</span>
       <span class="np-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <span class="np-text"><span class="np-k"></span><span class="np-t"></span></span>
       <span class="np-time">00:00</span>
@@ -62,7 +63,7 @@ export function mountPlayer(): void {
         <li data-i="${i}">
           <button type="button" data-seek="${t.at}" aria-label="Play ${esc(t.title)} from ${fmt(t.at)}">
             <span class="mono">${fmt(t.at)}</span>
-            <span><b>${esc(t.title)}</b> - ${esc(t.artist)}</span>
+            <span><b>${esc(t.title)}</b> - ${esc(t.artist)}<em class="tid-now mono">Now playing</em></span>
           </button>
           <a href="${esc(t.url)}" target="_blank" rel="noopener" aria-label="Open ${esc(t.title)}">↗</a>
         </li>`,
@@ -87,9 +88,35 @@ export function mountPlayer(): void {
   let current: { t: MixTrack; i: number } | null = null;
   let lastHome: boolean | null = null;
 
+  // The chip pulses for attention until the visitor has opened Track ID once.
+  const SEEN = 'iry:tid-seen';
+  let seen = false;
+  try {
+    seen = localStorage.getItem(SEEN) === '1';
+  } catch {
+    /* storage unavailable */
+  }
+  np.classList.toggle('np-attn', !seen);
+
+  /** Keep the playing row in view inside the panel's own scroll area. */
+  const reveal = (): void => {
+    if (!document.body.classList.contains('tid-open') || !current) return;
+    rows[current.i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  };
+
   const open = (on: boolean): void => {
     document.body.classList.toggle('tid-open', on);
     main.setAttribute('aria-expanded', String(on));
+    if (on) {
+      seen = true;
+      np.classList.remove('np-attn');
+      try {
+        localStorage.setItem(SEEN, '1');
+      } catch {
+        /* ignore */
+      }
+      window.setTimeout(reveal, 350);
+    }
   };
 
   /** The chip names the track ID on home only; elsewhere it names the show. */
@@ -110,6 +137,7 @@ export function mountPlayer(): void {
     current = { t, i };
     rows.forEach((r, n) => r.classList.toggle('playing', n === i));
     label();
+    reveal();
     title.classList.remove('np-swap');
     void title.offsetWidth;
     title.classList.add('np-swap');

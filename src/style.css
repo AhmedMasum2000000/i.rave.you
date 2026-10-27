@@ -864,3 +864,304 @@ html.curtain .guard-curtain {
     color: #000;
   }
 }
+
+/* ─────────────── TRACK ID, highlighted on the home page ─────────────── */
+
+.np-live {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #000;
+  background: #fff;
+}
+.np-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff2d2d;
+  animation: live 1.2s ease-in-out infinite;
+}
+@keyframes live {
+  50% {
+    opacity: 0.25;
+  }
+}
+.np.paused .np-live i {
+  animation: none;
+  background: #888;
+}
+
+body[data-view='home'] .np {
+  left: 50%;
+  translate: -50% 0;
+  width: min(500px, calc(100vw - 2 * var(--gutter)));
+  height: 56px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(rgba(8, 8, 10, 0.86), rgba(8, 8, 10, 0.86)) padding-box,
+    linear-gradient(90deg, var(--blue), var(--orange)) border-box;
+  box-shadow: -14px 0 40px -18px var(--blue), 14px 0 40px -18px var(--orange);
+}
+body[data-view='home'] .np-main {
+  grid-template-columns: auto auto 1fr auto auto;
+}
+body[data-view='home'] .np-live {
+  display: inline-flex;
+}
+body[data-view='home'] .np-k {
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 1;
+  background: linear-gradient(90deg, #8fb3ff, #ffb08a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+body[data-view='home'] .np-t {
+  font-size: 14px;
+}
+body[data-view='home'] .np-caret {
+  font-size: 12px;
+  opacity: 1;
+}
+body[data-view='home'] .np-bar span {
+  background: linear-gradient(90deg, var(--blue), var(--orange));
+}
+/* Until Track ID has been opened once, the chip breathes for attention. */
+body[data-view='home'] .np.np-attn {
+  animation: attn 2.4s ease-in-out infinite;
+}
+@keyframes attn {
+  50% {
+    box-shadow: -18px 0 60px -10px var(--blue), 18px 0 60px -10px var(--orange);
+  }
+}
+body[data-view='home'] .tid {
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
+  width: min(1180px, calc(100vw - 2 * var(--gutter)));
+  bottom: 86px;
+}
+
+/* The playing row: unmistakable. */
+.tid-now {
+  display: none;
+  margin-left: 10px;
+  padding: 2px 6px;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #000;
+  background: linear-gradient(90deg, #8fb3ff, #ffb08a);
+  vertical-align: 1px;
+}
+.tid-list li.playing {
+  background: linear-gradient(90deg, rgba(47, 123, 255, 0.28), rgba(255, 106, 26, 0.12));
+  box-shadow: inset 3px 0 0 var(--blue), 0 0 24px -10px var(--blue);
+}
+.tid-list li.playing b {
+  color: #fff;
+}
+.tid-list li.playing .tid-now {
+  display: inline-block;
+}
+
+@media (max-width: 1400px) and (min-width: 761px) {
+  body[data-view='home'] .np {
+    left: var(--gutter);
+    translate: none;
+    width: min(460px, 48vw);
+  }
+  body[data-view='home'] .tid {
+    left: var(--gutter);
+    translate: none;
+  }
+}
+@media (max-width: 760px) {
+  body[data-view='home'] .np {
+    left: var(--gutter);
+    translate: none;
+    width: calc(100vw - 2 * var(--gutter));
+  }
+  body[data-view='home'] .tid {
+    left: var(--gutter);
+    translate: none;
+    width: calc(100vw - 2 * var(--gutter));
+    bottom: 128px;
+  }
+  body[data-view='home'] .np-live {
+    padding: 2px 5px;
+  }
+}
+
+/* ─────────────── "WE DON'T GIVE COOKIES" PROMPT ─────────────── */
+
+.gate {
+  overflow-y: auto;
+  align-content: center;
+}
+.vibe {
+  display: grid;
+  gap: 10px;
+  width: min(440px, calc(100vw - 2 * var(--gutter)));
+  margin-top: 18px;
+  padding: 18px 18px 14px;
+  text-align: left;
+  color: #f2f2f2;
+  background:
+    linear-gradient(#0b0b0d, #0b0b0d) padding-box,
+    linear-gradient(90deg, var(--blue), var(--orange)) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.8);
+}
+.vibe-kicker {
+  margin: 0;
+  color: #8a8a8a;
+}
+.vibe-kicker::before {
+  content: '🍪 ';
+  filter: grayscale(1);
+}
+.vibe-title {
+  margin: 0;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
+}
+.vibe-body {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #cfcfcf;
+}
+.vibe-body b {
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 0 14px rgba(255, 106, 26, 0.7);
+}
+.vibe-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+.vibe-yes {
+  padding: 12px 10px;
+  border: 0;
+  background: var(--paper);
+  color: #000;
+  font: inherit;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.25s, box-shadow 0.25s, transform 0.15s;
+}
+.vibe-yes:hover {
+  background: var(--orange);
+  box-shadow: 0 0 26px -4px var(--orange);
+}
+.vibe-alt {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #555;
+}
+.vibe-alt:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: 0 0 26px -4px var(--blue);
+}
+.vibe-yes:active {
+  transform: scale(0.97);
+}
+.vibe-meter {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: #8a8a8a;
+  font-size: 10px;
+}
+.vibe-bar {
+  height: 3px;
+  background: #222;
+  overflow: hidden;
+}
+.vibe-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--orange));
+  transform-origin: left;
+  transform: scaleX(0.04);
+  transition: transform 0.3s;
+}
+.vibe-ready .vibe-status {
+  color: #fff;
+}
+.vibe-fine {
+  margin: 0;
+  color: #5f5f5f;
+  font-size: 9px;
+}
+/* Content pages: the same card, as a non-blocking banner. */
+.vibe-banner {
+  position: fixed;
+  left: var(--gutter);
+  bottom: 76px;
+  z-index: 58;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.vibe-banner .vibe {
+  margin: 0;
+}
+.vibe-banner.vibe-out {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+.gate-credit,
+.credit {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6a6a6a;
+}
+.gate-credit {
+  margin: 14px 0 0;
+}
+.credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.credit a:hover {
+  color: #fff;
+}
+.home-credit {
+  position: absolute;
+  left: var(--gutter);
+  top: 46px;
+  z-index: 3;
+  color: #fff;
+  mix-blend-mode: difference;
+  opacity: 0.55;
+}
+@media (max-width: 760px) {
+  .vibe-banner {
+    right: var(--gutter);
+    bottom: 128px;
+  }
+  .vibe-title {
+    font-size: 19px;
+  }
+}
