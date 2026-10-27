@@ -80,7 +80,6 @@ export const MIX = {
   hosts: 'ACND & অপূর্ব',
   station: 'Hong Kong Community Radio',
   stationUrl: 'https://hkcr.live/',
-  file: 'audio/i-rave-you-mix.m4a',
   bpm: 125,
 };
 

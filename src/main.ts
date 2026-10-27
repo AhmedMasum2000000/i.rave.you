@@ -1,4 +1,5 @@
 import './style.css';
+import { installGuard } from './guard';
 import './artist.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
@@ -6,6 +7,8 @@ import { ARTISTS, type ArtistId } from './data';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { esc, mountGate, reducedMotion } from './ui';
+
+installGuard();
 
 const app = document.getElementById('app')!;
 let cleanup: (() => void)[] = [];

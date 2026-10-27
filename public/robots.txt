@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://ahmedmasum2000000.github.io/i.rave.you/sitemap.xml

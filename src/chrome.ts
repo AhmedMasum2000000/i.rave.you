@@ -1,6 +1,9 @@
 import { ARTISTS, NEXT_RELEASE, type Artist } from './data';
 import { asset, esc } from './ui';
 
+/** Route links resolve from the site root, so the menu works on nested pages too. */
+const route = (hash: string): string => `${document.documentElement.dataset.root ?? ''}${hash}`;
+
 /**
  * Site-wide chrome: a "MENU" button that opens a full-screen index, and a
  * pre-save dock with a live countdown to "Down In Bossa" — boxed digits beside
@@ -51,11 +54,11 @@ function tick(): void {
 
 const artistLinks = (a: Artist): string => `
   <li class="m-artist m-${a.id}">
-    <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="#/${a.id}" data-close>${esc(a.name)}</a>
+    <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="${route(`#/${a.id}`)}" data-close>${esc(a.name)}</a>
     <span class="m-sub mono">
-      <a href="#/${a.id}/listen" data-close>Listen</a>
-      <a href="#/${a.id}/sequencer" data-close>Sequencer</a>
-      <a href="#/${a.id}/about" data-close>About</a>
+      <a href="${route(`#/${a.id}/listen`)}" data-close>Listen</a>
+      <a href="${route(`#/${a.id}/sequencer`)}" data-close>Sequencer</a>
+      <a href="${route(`#/${a.id}/about`)}" data-close>About</a>
     </span>
   </li>`;
 
@@ -76,7 +79,7 @@ export function mountChrome(): void {
   menu.innerHTML = `
     <div class="m-inner">
       <ol class="m-list">
-        <li><a class="m-big" href="#/" data-close>I Rave You</a><span class="m-sub mono">Home · ◐</span></li>
+        <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a></span></li>
         ${artistLinks(ARTISTS.apurba)}
         ${artistLinks(ARTISTS.acnd)}
       </ol>

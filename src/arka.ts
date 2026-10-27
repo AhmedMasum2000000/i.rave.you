@@ -1,4 +1,5 @@
 import './style.css';
+import { installGuard } from './guard';
 import './arka.css';
 import { sample } from './audio';
 import { ARTISTS, MIX, NEXT_RELEASE, fmt, type ArtistId } from './data';
@@ -167,6 +168,8 @@ const META: Record<PitchId, Meta> = {
   },
 };
 
+installGuard();
+
 const id = ((document.body.dataset.pitch as PitchId) in PITCH ? document.body.dataset.pitch : 'acnd') as PitchId;
 const p = PITCH[id];
 const m = META[id];
@@ -236,6 +239,7 @@ document.getElementById('app')!.innerHTML = `
       <div class="p-ctas">
         ${m.profile ? `<a class="btn" href="${m.profile}"${m.profile.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>Open the artist profile →</a>` : `<a class="btn" href="${m.exhibit.url}" target="_blank" rel="noopener">Listen to Ash Army ↗</a>`}
         <a class="btn btn-ghost" href="${asset('index.html')}">Enter I RAVE YOU</a>
+        ${id === 'ash' ? '' : `<a class="btn btn-ghost" href="${asset('frequency-unity/')}">Read the feature: Beyond the Capital</a>`}
       </div>
       <p class="p-fine mono">${m.mix ? `No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.` : 'No models were harmed in the making of this application. Hearts may be.'}</p>
     </section>

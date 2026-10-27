@@ -1,0 +1,342 @@
+/* ═════════════ Feature: Beyond the Capital ═════════════ */
+
+body[data-view='feature'] {
+  --bg: #060608;
+  --fg: #ececec;
+  --dim: #8d8d8d;
+  --glow: var(--blue);
+  background: var(--bg);
+  color: var(--fg);
+}
+body[data-view='feature']::after {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.9s steps(4) infinite;
+}
+
+.f-top {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  padding: 16px var(--gutter) 28px;
+  background: linear-gradient(var(--bg) 55%, transparent);
+}
+.f-brand {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.feature {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 120px var(--gutter) 160px;
+}
+
+/* ── hero ── */
+.f-hero {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 22px;
+  padding-bottom: 12vh;
+}
+.f-kicker {
+  color: var(--dim);
+}
+.f-kicker::before {
+  content: '● ';
+  color: var(--orange);
+}
+.f-hero h1 {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.f-h1-a {
+  font-weight: 900;
+  font-size: clamp(48px, 9vw, 128px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #fff 0%, #cfd9ff 35%, #fff 50%, #ffd7c2 65%, #fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(47, 123, 255, 0.35)) drop-shadow(0 0 18px rgba(255, 106, 26, 0.25));
+}
+.f-h1-b {
+  font-weight: 800;
+  font-size: clamp(22px, 3vw, 40px);
+}
+.f-h1-b i {
+  font-style: normal;
+  color: var(--dim);
+  margin: 0 0.2em;
+}
+.f-deck {
+  margin: 0;
+  max-width: 34ch;
+  font-weight: 700;
+  font-size: clamp(18px, 2vw, 26px);
+  line-height: 1.3;
+  color: #cfcfcf;
+}
+.f-marks {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 4vw, 48px);
+  margin: 2vh 0;
+}
+.f-marks img {
+  width: clamp(110px, 18vw, 220px);
+  height: auto;
+  filter: invert(1) hue-rotate(180deg) drop-shadow(0 0 18px var(--blue));
+}
+.f-marks img:last-child {
+  filter: invert(1) hue-rotate(180deg) drop-shadow(0 0 18px var(--orange));
+}
+.f-x {
+  font-weight: 900;
+  font-size: clamp(24px, 3vw, 40px);
+  color: var(--dim);
+}
+.f-byline {
+  color: var(--dim);
+}
+
+/* ── sections ── */
+.f-sec {
+  position: relative;
+  display: grid;
+  gap: 22px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 9vh 0 0;
+}
+.f-num {
+  color: var(--blue);
+}
+.f-sec:nth-of-type(even) .f-num {
+  color: var(--orange);
+}
+.f-sec h2 {
+  margin: 0;
+  font-weight: 900;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.f-sec p {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(16px, 1.35vw, 19px);
+  line-height: 1.65;
+  color: #cdcdcd;
+}
+.f-sec strong {
+  color: #fff;
+  font-weight: 800;
+}
+.f-lede {
+  font-weight: 800 !important;
+  font-size: clamp(20px, 2vw, 27px) !important;
+  line-height: 1.35 !important;
+  color: #fff !important;
+}
+
+/* ── spec card ── */
+.f-spec {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 1px;
+  background: #222;
+  border: 1px solid #222;
+}
+.f-spec div {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 18px;
+  padding: 14px 16px;
+  background: #0d0d10;
+}
+.f-spec dt {
+  color: var(--dim);
+}
+.f-spec dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.f-cta {
+  justify-self: start;
+  display: inline-flex;
+  padding: 14px 20px;
+  background: var(--paper);
+  color: #000;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.f-cta:hover {
+  background: var(--orange);
+  box-shadow: 0 0 30px -4px var(--orange);
+}
+.f-cta-ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #444;
+}
+.f-cta-ghost:hover {
+  background: var(--blue);
+  box-shadow: 0 0 30px -4px var(--blue);
+  color: #fff;
+}
+
+/* ── the two artists ── */
+.f-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 6px;
+}
+.f-artist {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 22px;
+  border: 1px solid #222;
+  background: #0b0b0e;
+}
+.f-artist h3 {
+  margin: 0;
+  font-weight: 900;
+  font-size: 26px;
+}
+.f-artist p {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}
+.f-artist a {
+  justify-self: start;
+  font-weight: 800;
+  font-size: 13px;
+}
+.f-apurba {
+  box-shadow: inset 0 3px 0 var(--blue);
+}
+.f-apurba a:hover {
+  color: var(--blue);
+}
+.f-acnd {
+  box-shadow: inset 0 3px 0 var(--orange);
+}
+.f-acnd a:hover {
+  color: var(--orange);
+}
+.f-quote {
+  margin: 4vh 0 0;
+  padding: 0;
+  text-align: center;
+}
+.f-quote p {
+  font-weight: 900 !important;
+  font-size: clamp(26px, 4vw, 48px) !important;
+  line-height: 1.1 !important;
+  color: #fff !important;
+  text-shadow: 0 0 30px rgba(47, 123, 255, 0.5);
+}
+.f-quote cite {
+  display: block;
+  margin-top: 12px;
+  font-style: normal;
+  color: var(--dim);
+}
+
+/* ── listen band ── */
+.f-band {
+  display: grid;
+  gap: 14px;
+  margin-top: 4vh;
+  padding: 26px;
+  border: 1px solid #2a2a2a;
+  background: linear-gradient(120deg, rgba(47, 123, 255, 0.12), rgba(255, 106, 26, 0.1));
+}
+.f-band > .mono {
+  color: var(--dim);
+}
+.f-band-big {
+  font-weight: 800 !important;
+  font-size: clamp(18px, 2vw, 24px) !important;
+  line-height: 1.3 !important;
+  color: #fff !important;
+}
+.f-band-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── FAQ ── */
+.f-faq details {
+  border-top: 1px solid #222;
+  padding: 14px 0;
+}
+.f-faq details:last-of-type {
+  border-bottom: 1px solid #222;
+}
+.f-faq summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 17px;
+  list-style: none;
+}
+.f-faq summary::-webkit-details-marker {
+  display: none;
+}
+.f-faq summary::after {
+  content: '+';
+  float: right;
+  color: var(--dim);
+}
+.f-faq details[open] summary::after {
+  content: '–';
+}
+.f-faq details p {
+  margin-top: 10px;
+  font-size: 15px !important;
+}
+.f-faq a {
+  text-decoration: underline;
+}
+
+.f-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  padding: 28px var(--gutter) 100px;
+  border-top: 1px solid #1c1c1c;
+  color: var(--dim);
+}
+.f-foot a:hover {
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .f-duo {
+    grid-template-columns: 1fr;
+  }
+  .f-spec div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .feature {
+    padding-bottom: 200px;
+  }
+}
