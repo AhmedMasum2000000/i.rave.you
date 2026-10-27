@@ -78,7 +78,7 @@
 @keyframes stamp {
   from {
     opacity: 0;
-    transform: rotate(30deg) scale(2.4);
+    transform: rotate(16deg) scale(0.9);
   }
 }
 

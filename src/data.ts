@@ -88,7 +88,7 @@ export interface MixTrack {
   at: number;
   artist: string;
   title: string;
-  url: string;
+  url?: string;
   linkLabel: string;
 }
 
@@ -99,8 +99,8 @@ const t = (mmss: string): number => {
 
 /** Only verified recording links belong here; never substitute a search result. */
 
-const raw: [string, string, string, string][] = [
-  ['00:00', 'ACND x অপূর্ব', 'Initiate (unreleased ID)', 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt'],
+const raw: [string, string, string, string?][] = [
+  ['00:00', 'ACND x অপূর্ব', 'Initiate (unreleased ID)'],
   ['03:37', 'Remusic', 'Ancestral Calling', 'https://music.apple.com/us/album/ancestral-calling/1859226382?i=1859226383'],
   ['06:35', 'Acrobat, Thomas Gandey, Vakabular', 'Acid (Vakabular Remix)', 'https://soundcloud.com/soundfocuslabel/acid-vakabular-remix'],
   ['09:41', 'Kevin de Vries, SLVR, Stella von Lingen', 'Life', 'https://music.apple.com/us/album/life/1817532708?i=1817532715'],
@@ -122,7 +122,7 @@ export const TRACKLIST: MixTrack[] = raw.map(([at, artist, title, url]) => ({
   artist,
   title,
   url,
-  linkLabel: url.includes('music.apple.com') ? 'Apple Music' : 'SoundCloud',
+  linkLabel: !url ? 'Unreleased' : url.includes('music.apple.com') ? 'Apple Music' : 'SoundCloud',
 }));
 
 export const fmt = (sec: number): string => {
@@ -218,7 +218,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       ],
     },
     footnotes: [
-      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
+      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.' },
       { text: 'Euphonic, the first channel: future house, synthwave and remixes.', link: { label: 'YouTube', url: 'https://www.youtube.com/@euphonic404' } },
       { text: 'London Love, a compilation with international artists.', link: { label: 'Spotify', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' } },
     ],
@@ -259,7 +259,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       'Next up: “Down In Bossa” with Ash Army, landing 30 October 2026 on Profi Music.',
     ],
     about: {
-      summary: 'ACND — producer, DJ and composer from Dhaka, Bangladesh.',
+      summary: 'Ahmed Masum, known as ACND, is a producer, DJ and composer based in Dhaka, Bangladesh.',
       paragraphs: [
         'ACND, pronounced “Ascend”, is the recording name of Ahmed Masum, a producer, DJ and composer based in Dhaka, Bangladesh.',
         'His work moves through techno, melodic techno, acid and progressive sounds, with an emphasis on atmosphere, physical energy and the feeling of a dance floor.',
@@ -270,7 +270,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     },
     notes: [
       { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music. Pre-save now.', url: NEXT_RELEASE.presave },
-      { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
+      { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.' },
     ],
     releases: [
       { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Upcoming · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
@@ -290,7 +290,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       ],
     },
     footnotes: [
-      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
+      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.' },
       { text: 'Down In Bossa, Ash Army & ACND. Afro House, out 30.10.2026 on Profi Music.', link: { label: 'Pre-save', url: NEXT_RELEASE.presave } },
     ],
     media: [

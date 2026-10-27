@@ -7,7 +7,7 @@ Checked 27 October 2026 against Apple’s public iTunes Search catalog and Sound
 
 Version checks:
 
-- Initiate: the supplied SoundCloud short link resolves to ACND_Music’s “Initiate -Unreleased ID”, not the complete Qbic Pulse set. Retain the short link because the destination includes the creator’s private-share token.
+- Initiate: its external listening link was removed at the owner’s request on 28 October 2026. Keep the unreleased credit and opening timestamp; do not restore a SoundCloud destination.
 - Acid: SoundFocus’s release has the exact “Vakabular Remix” title and Acrobat / Thomas Gandey publisher credits (ISRC GBKQU2607588). Apple’s search returned an extended remix, so that different version was not selected.
 - WTF: direct recording on Mark Hoffen’s verified SoundCloud profile, credited to Mark Hoffen and Bittermind.
 - I Need Every Little Piece of You: Andy Syn’s SoundCloud recording explicitly identifies Original Mix and publisher credits “Andy Syn, Heinrich & Heine” (ISRC UKHKF1250267); the instrumental version was excluded.

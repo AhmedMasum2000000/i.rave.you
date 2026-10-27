@@ -6,7 +6,7 @@ const origin = "https://iraveyou.com";
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 20);
+assert.equal(urls.length, 21);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -151,4 +151,80 @@ assert.match(identity, /alternate search spelling/);
 assert.match(acnd, /Ahmed Al Masum/);
 console.log(
   "PASS ten articles: schema, answer summaries, anchors, 30 related links, connected reading cluster and name variant",
+);
+
+// All public and private HTML shares the same locally served brand typography.
+const press = readFileSync(resolve(root, "acnd/press/index.html"), "utf8");
+assert.match(press, /Ahmed Masum \(ACND\): press kit/);
+assert.match(press, /press\/acnd-artist-facts.txt/);
+assert.match(
+  readFileSync(resolve(root, "press/acnd-artist-facts.txt"), "utf8"),
+  /ARTIST REFERENCE/,
+);
+assert.match(acnd, /<h1>Ahmed Masum \(ACND\)<\/h1>/);
+const acndGraph = JSON.parse(
+  acnd.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
+);
+const person = acndGraph["@graph"].find(
+  (entity) => entity["@id"] === origin + "/acnd/#artist",
+);
+assert.equal(person.name, "Ahmed Masum");
+assert.ok(person.alternateName.includes("ACND"));
+assert.ok(person.sameAs.includes("https://www.facebook.com/ahmed.masum.peace"));
+for (const url of [
+  ...urls,
+  ...["acnd-7q4x2k", "apurba-9m1v8t", "ash-army-3k8w5n"].map(
+    (slug) => `${origin}/afw26/${slug}/`,
+  ),
+]) {
+  const html = readFileSync(
+    resolve(root, "." + new URL(url).pathname, "index.html"),
+    "utf8",
+  );
+  assert.match(
+    html,
+    /rel="stylesheet" href="(?:\.\/|\.\.\/)*fonts\/brand.css"/,
+    `brand font sheet missing from ${url}`,
+  );
+}
+const brandSheet = readFileSync(resolve(root, "fonts/brand.css"), "utf8");
+for (const match of brandSheet.matchAll(/url\(['"]?(.*?)['"]?\)/g))
+  assert.ok(
+    existsSync(resolve(root, "fonts", match[1])),
+    `missing font ${match[1]}`,
+  );
+console.log(
+  "PASS canonical full-name identity, linked Facebook profile, press kit, downloadable facts and brand typography on every page",
+);
+const releasePage = readFileSync(
+  resolve(root, "music/down-in-bossa/index.html"),
+  "utf8",
+);
+assert.match(releasePage, /<h1>Down In Bossa<\/h1>/);
+assert.match(releasePage, /Ibiza-inspired house playlist/);
+assert.match(
+  releasePage,
+  /genre supplied for “Down In Bossa” is <strong>Afro House/,
+);
+assert.match(releasePage, /not a report of Ibiza airplay/);
+const recordingGraph = JSON.parse(
+  releasePage.match(
+    /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+  )[1],
+);
+assert.equal(
+  recordingGraph["@graph"].find(
+    (entity) => entity["@type"] === "MusicRecording",
+  ).genre,
+  "Afro House",
+);
+console.log(
+  "PASS expanded Down In Bossa page: single canonical release, Ibiza playlist context, preserved factual genre and credits",
+);
+const firstTrack = list.match(/<li>([\s\S]*?)<\/li>/)[1];
+assert.doesNotMatch(firstTrack, /<a\b/);
+assert.match(firstTrack, /Unreleased/);
+assert.equal([...list.matchAll(/<a\b/g)].length, 14);
+console.log(
+  "PASS unreleased opening track retains credit and timestamp without an external link; other 14 recording links remain",
 );

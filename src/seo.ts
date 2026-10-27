@@ -5,7 +5,7 @@ const ORIGIN = "https://iraveyou.com";
 export function syncSearchMetadata(artist?: ArtistId): void {
   const a = artist ? ARTISTS[artist] : undefined;
   const title = a
-    ? `${a.id === "acnd" ? "ACND (Ahmed Masum)" : "অপূর্ব (Opurbo / Apurba)"} — I Rave You`
+    ? `${a.id === "acnd" ? "Ahmed Masum (ACND)" : "অপূর্ব (Opurbo / Apurba)"} — I Rave You`
     : "I Rave You — ACND & অপূর্ব | Electronic Music Bangladesh";
   const description =
     a?.about?.summary ??

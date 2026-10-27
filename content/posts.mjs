@@ -1,6 +1,6 @@
 /** First-party editorial: artist facts come from the supplied portfolio, not invented press. */
 export const PUBLICATION_DATE = "2026-10-28";
-export function createPosts({ internal: link, external: ext, next, tracks }) {
+export function createPosts({ internal: link, external: ext, next }) {
   const acnd = (label = "ACND’s artist profile") => link("acnd/", label);
   const mix = (label = "complete Qbic Pulse tracklist") =>
     link("mixes/qbic-pulse/", label);
@@ -31,6 +31,7 @@ export function createPosts({ internal: link, external: ext, next, tracks }) {
         <p>This portfolio uses <strong>Ahmed Masum</strong> as the personal name and <strong>ACND</strong> as the artist name. If you arrived through a search for “Ahmed Al Masum”, the artist presented here is Ahmed Masum / ACND. That phrase is included as an alternate search spelling, rather than a claim about a different legal name or a separate collaborator.</p>
         <p>Because names and short artist aliases can overlap, a search result alone is not enough to identify a musician. Check the profile’s linked recordings, location and official artist destinations together.</p>
         <dl class="fact-list"><div><dt>Artist name</dt><dd>ACND</dd></div><div><dt>Personal name used here</dt><dd>Ahmed Masum</dd></div><div><dt>Pronunciation</dt><dd>Ascend</dd></div><div><dt>Based in</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Creative roles</dt><dd>Producer, DJ and composer</dd></div></dl></section>
+        <section><h2>Searching for Masum, the musician?</h2><p>“Masum” on its own can refer to many different people. To identify the musician presented on this site, use the full name Ahmed Masum alongside the artist name ACND. Match the biography and linked music profiles rather than assuming that every result containing Masum refers to this artist.</p><p>For a concise reference you can cite, use the ${acnd()}. Publications and radio listings can also use the ${link("acnd/press/", "ACND press kit")} for biographies and credits.</p></section>
         <section><h2>Which credits connect these names?</h2>
         <p>The “Nitol Paye Electric” remix is credited here to ACND (Ahmed Masum). It is not an অপূর্ব remix credit. For the video destination and a clear explanation of the credit, read the ${post("nitol-paye-electric-acnd-remix-credit", "Nitol Paye Electric remix guide")}.</p>
         <p>“Down In Bossa” is a separate collaboration credited to Ash Army &amp; ACND, scheduled for 30 October 2026 via Profi Music. The label’s page is the reference for release availability. ACND also shares the Qbic Pulse DJ set with অপূর্ব, the electronic project of Khalid Bin Alam. These are distinct collaborations, rather than additional names for ACND.</p></section>
@@ -152,7 +153,7 @@ export function createPosts({ internal: link, external: ext, next, tracks }) {
         <p>The route below divides the published sequence into three convenient listening stages. These are editorial navigation points, not chapters announced by the DJs or evidence of which host selected a track. Use the ${mix()} for every exact takeover time and original-recording destination.</p></section>
         <section><h2>Stage one: the opening, 00:00–15:43</h2>
         <p>The set begins with “Initiate”, credited to ACND × অপূর্ব and marked as an unreleased ID. Remusic’s “Ancestral Calling” takes over at 03:37, followed by the Vakabular remix of “Acid” at 06:35. “Life” arrives at 09:41, and “Lose My Body” at 12:28.</p>
-        <p>Rather than skipping immediately, hear how one selection hands the floor to the next. If the opening is the track you came to identify, the ${post("initiate-unreleased-id-guide", "Initiate guide")} explains what the unreleased label means and where its linked listening destination is listed.</p></section>
+        <p>Rather than skipping immediately, hear how one selection hands the floor to the next. If the opening is the track you came to identify, the ${post("initiate-unreleased-id-guide", "Initiate guide")} explains what the unreleased label means and which details are published here.</p></section>
         <section><h2>Stage two: the middle sequence, 15:43–30:48</h2>
         <p>HERMEN’s “Subra” is marked at 15:43. The next takeover points are “Mars” at 18:59 and “WTF” at 21:37. Andy Syn, Heinrich &amp; Heine’s “I Need Every Little Piece of You” follows at 25:30, with the Original Mix specified in the tracklist.</p>
         <p>That version detail is worth preserving when you move to a streaming service. An original mix, remix and extended version may share a title while being different recordings. The tracklist links aim to identify the version actually listed, rather than send you to a broad search result.</p></section>
@@ -230,12 +231,12 @@ export function createPosts({ internal: link, external: ext, next, tracks }) {
       slug: "initiate-unreleased-id-guide",
       title: "Initiate by ACND × অপূর্ব: what the unreleased ID label means",
       description:
-        "Initiate opens the Qbic Pulse set at 00:00. Find the supplied listening link and understand its ACND × অপূর্ব credit and unreleased ID status.",
+        "Initiate opens the Qbic Pulse set at 00:00. Understand its ACND × অপূর্ব credit, position in the set and unreleased ID status.",
       category: "Track guide",
       image: "img/og-frequency-unity.jpg",
       imageAlt: "ACND and অপূর্ব logos for their shared music project",
       answer:
-        "“Initiate” is listed as an unreleased collaboration by ACND × অপূর্ব and opens their Qbic Pulse set at 00:00. The portfolio provides a SoundCloud destination but does not announce a release date.",
+        "“Initiate” is listed as an unreleased collaboration by ACND × অপূর্ব and opens their Qbic Pulse set at 00:00. No separate external listening link or release date is published here.",
       related: [
         "qbic-pulse-listening-route",
         "how-to-read-dj-mix-tracklist",
@@ -243,7 +244,7 @@ export function createPosts({ internal: link, external: ext, next, tracks }) {
       ],
       body: `
         <section><h2>What is known about this selection?</h2>
-        <p>The first entry in the ${mix()} is “Initiate (unreleased ID)”, credited to ACND × অপূর্ব. Its marker is 00:00, making it the published opening selection of the shared set. The listening destination supplied with that entry is ${ext(tracks[0].url, "Initiate on SoundCloud")}.</p>
+        <p>The first entry in the ${mix()} is “Initiate (unreleased ID)”, credited to ACND × অপূর্ব. Its marker is 00:00, making it the published opening selection of the shared set. No external listening link is provided for this unreleased track.</p>
         <p>Those details identify the work presented by this portfolio. They do not establish a commercial release date, an album announcement or availability on every music service. Searching the title alone can return unrelated recordings, so keep both artist names with the title.</p></section>
         <section><h2>Who are the collaborators?</h2>
         <p>ACND is Ahmed Masum, a producer and DJ based in Dhaka. অপূর্ব, also written Opurbo or Apurba in Latin script, is the electronic project of Khalid Bin Alam from Cumilla. The collaboration connects two separate artists; Ahmed Masum is not a third collaborator in addition to ACND.</p>
@@ -251,8 +252,8 @@ export function createPosts({ internal: link, external: ext, next, tracks }) {
         <section><h2>Why a named track can still be an ID</h2>
         <p>In DJ-set language, “ID” can mark music whose complete identifying or release information is not public. A working title and artist credit may be known while a label, release date or final distribution plan is not. “Unreleased” describes that release status; it does not mean the audio cannot have been heard in a set.</p>
         <p>For “Initiate”, use the specific title and credit supplied here rather than inventing missing metadata. If information changes, an artist or label announcement should establish the update. A listener upload or a matching title on another service is not enough to confirm it.</p></section>
-        <section><h2>Hear it in context or follow the recording link</h2>
-        <p>To hear the published sequence, ${link("#/", "open the site’s mix player")} and begin at the start. To follow the identified recording destination, use the SoundCloud link above. The ${post("qbic-pulse-listening-route", "Qbic Pulse listening route")} places the opening alongside the selections that follow it.</p>
+        <section><h2>Hear it in context</h2>
+        <p>To hear the published sequence, ${link("#/", "open the site’s mix player")} and begin at the start. There is no separate external recording link on this site. The ${post("qbic-pulse-listening-route", "Qbic Pulse listening route")} places the opening alongside the selections that follow it.</p>
         <p>The ${post("how-to-read-dj-mix-tracklist", "timestamp and version guide")} explains why a marker belongs to the continuous set rather than the source track’s runtime. This matters when matching a section of the mix to a separately linked recording.</p></section>
         <section><h2>Listening access does not grant reuse rights</h2>
         <p>An unreleased label does not make a recording public domain. A listening link does not grant permission to download, re-upload, sample or sell the work. For any intended reuse, seek the required permission from the relevant rights holders.</p></section>`,

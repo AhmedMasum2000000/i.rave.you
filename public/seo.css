@@ -1,11 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font);
   background: #0b0b0b;
   color: #f4f4f4;
   font-synthesis: none;
@@ -340,4 +335,47 @@ figcaption {
 .article-figure img[src$="logo-acnd.png"] {
   background: #e9e9e9;
   padding: 24px;
+}
+.press-assets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.press-assets figure {
+  margin: 0;
+  min-width: 0;
+}
+.press-assets img {
+  width: 100%;
+  height: 300px;
+  object-fit: contain;
+  display: block;
+  background: #151515;
+}
+.press-assets .press-logo {
+  background: #e9e9e9;
+  padding: 24px;
+}
+.press-assets a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.press-bio {
+  padding: 20px;
+  border-left: 3px solid #93beff;
+  background: #151515;
+}
+@media (max-width: 600px) {
+  .press-assets {
+    grid-template-columns: 1fr;
+  }
+}
+.tracks .track-recording {
+  padding: 16px 0;
+}
+.tracks .track-recording span {
+  display: block;
+  font-size: 14px;
+  color: #b4b4b4;
 }

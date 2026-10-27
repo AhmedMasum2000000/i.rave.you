@@ -1,4 +1,4 @@
-:root { color-scheme: dark; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #0b0b0b; color: #ededed; }
+:root { color-scheme: dark; font-family: var(--font); background: #0b0b0b; color: #ededed; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: env(safe-area-inset-top) max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); }
 header, main, footer { max-width: 800px; margin: 0 auto; }
