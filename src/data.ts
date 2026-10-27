@@ -53,7 +53,8 @@ export interface Artist {
   bio: string[];
   notes: { label: string; text: string; url?: string }[];
   releases: Release[];
-  extras: { heading: string; items: Unreleased[] };
+  /** Optional list under the releases on the about page. */
+  extras?: { heading: string; items: Unreleased[] };
   links: Link[];
   /** Hero corner link, like the reference's "Spotify". */
   listen: Link;
@@ -254,18 +255,6 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { title: 'Nitol Paye Electric', artists: 'অপূর্ব x Ahmed Masum', year: 2025, tag: 'Collab', cover: 'img/nitol-paye-electric.jpg', url: 'https://youtu.be/om5QGreRaYg' },
       { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: 'Collab', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
     ],
-    extras: {
-      heading: 'IDs, unreleased & open collabs',
-      items: [
-        { title: 'Initiate — ACND x অপূর্ব', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
-        { title: 'Soul of Me (unmixed)', url: 'https://soundcloud.com/acndlovestoes/soul-of-me-unmixed-without/s-IpxKyXhST5z' },
-        { title: 'Keyamot er Alamot', url: 'https://soundcloud.com/acndlovestoes/keyamot-er-alamot-1/s-ZeTwSkDslwt' },
-        { title: 'Arekta Tech House', url: 'https://soundcloud.com/acndlovestoes/arekta-tech-house/s-CFr2OWOXkir' },
-        { title: 'Namagiri', url: 'https://soundcloud.com/acndlovestoes/namagiri/s-x1j6dfcmF2D' },
-        { title: 'Lal Komola Golapi', url: 'https://soundcloud.com/acndlovestoes/lal-komola-golapi/s-TdSGRFZ9oQC' },
-        { title: 'Back 2U Babygurl (Eshat)', url: 'https://soundcloud.com/acndlovestoes/back-2u-babygurl-eshat/s-XgXVRyEs4BD' },
-      ],
-    },
     listen: { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
     essay: {
       intro:
