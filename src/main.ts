@@ -1,4 +1,5 @@
 import './style.css';
+import { syncSearchMetadata } from './seo';
 import { installGuard } from './guard';
 import './artist.css';
 import './mobile.css';
@@ -32,6 +33,7 @@ const route = (): void => {
     const page = (PAGES.includes(sub as Page) ? sub : 'home') as Page;
     cleanup.push(renderArtist(app, ARTISTS[id], page));
   } else renderHome();
+  syncSearchMetadata(id === 'acnd' || id === 'apurba' ? id : undefined);
 };
 
 window.addEventListener('hashchange', route);

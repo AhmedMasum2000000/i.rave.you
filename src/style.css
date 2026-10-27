@@ -1239,3 +1239,16 @@ body[data-view='home'] .tid {
 .m-legal-links .m-legal-primary { border-color: #779ddf; background: #152033; }
 .m-legal-links a:hover, .m-legal-links a:focus-visible { background: #24242c; }
 .legal-links { font-size: 14px; }
+
+/* Crawlable discovery content is visible below the interactive home. */
+body[data-view='home'] { overflow-y: auto; }
+.home { position: relative; inset: auto; min-height: 100svh; }
+.discovery-home { background: #0b0b0b; color: #f2f2f2; padding: 56px clamp(20px, 6vw, 100px) 140px; font: 400 17px/1.7 system-ui, sans-serif; }
+body:not([data-view='home']) .discovery-home { display: none; }
+.discovery-home h1 { font-size: clamp(26px, 4vw, 44px); line-height: 1.2; max-width: 25ch; }
+.discovery-home h2 { font-size: 22px; line-height: 1.4; }
+.discovery-home p { max-width: 70ch; color: #c5c5c5; }
+.discovery-home a { color: #acd0ff; text-decoration: underline; text-underline-offset: 4px; }
+.discovery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin: 32px 0; }
+.discovery-home a:focus-visible { outline: 3px solid #acd0ff; outline-offset: 4px; }
+@media(max-width:600px) { .discovery-grid { grid-template-columns: 1fr; gap: 12px; } }

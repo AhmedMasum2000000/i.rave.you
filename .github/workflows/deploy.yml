@@ -24,6 +24,7 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - run: node scripts/check-seo.mjs
       - uses: actions/configure-pages@v5
         with:
           enablement: true
