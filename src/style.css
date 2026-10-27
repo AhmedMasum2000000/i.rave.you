@@ -1147,14 +1147,15 @@ body[data-view='home'] .tid {
 .credit a:hover {
   color: #fff;
 }
+.home-id {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .home-credit {
-  position: absolute;
-  left: var(--gutter);
-  top: 46px;
-  z-index: 3;
-  color: #fff;
-  mix-blend-mode: difference;
+  color: inherit;
   opacity: 0.55;
+  pointer-events: auto;
 }
 @media (max-width: 760px) {
   .vibe-banner {

@@ -47,9 +47,11 @@ function renderHome(): void {
     <main class="home">
       <canvas class="home-canvas" aria-hidden="true"></canvas>
       <header class="home-top">
-        <span class="brand">I Rave You</span>
+        <span class="home-id">
+          <span class="brand">I Rave You</span>
+          <a class="credit home-credit" href="#/acnd">Site by ACND</a>
+        </span>
       </header>
-      <a class="credit home-credit" href="#/acnd">Site by ACND</a>
 
       <a class="side side-dark" href="#/apurba" data-side="apurba" aria-label="Enter অপূর্ব">
         ${logo(A, 'side-logo')}
