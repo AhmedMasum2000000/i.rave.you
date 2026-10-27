@@ -84,6 +84,7 @@ export function mountChrome(): void {
         <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a></span></li>
         ${artistLinks(ARTISTS.apurba)}
         ${artistLinks(ARTISTS.acnd)}
+        <li><nav class="legal-links" aria-label="Legal information"><a href="${route('legal/terms/')}">Terms</a><a href="${route('legal/privacy/')}">Privacy</a><a href="${route('legal/copyright/')}">Copyright contact</a></nav></li>
       </ol>
       <aside class="m-release">
         <span class="mono">● Next release · ${esc(NEXT_RELEASE.genre)}</span>

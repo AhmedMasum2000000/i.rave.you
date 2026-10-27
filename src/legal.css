@@ -1,0 +1,23 @@
+:root { color-scheme: dark; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #0b0b0b; color: #ededed; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: env(safe-area-inset-top) max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); }
+header, main, footer { max-width: 800px; margin: 0 auto; }
+header { padding: 24px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #333; }
+a { color: #a9c8ff; text-underline-offset: 4px; overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible { outline: 2px solid #ffae2b; outline-offset: 4px; }
+.brand { color: #fff; font-weight: 800; font-size: 22px; text-decoration: none; }
+main { padding: 40px 0; }
+h1 { font-size: clamp(32px, 7vw, 54px); line-height: 1.15; margin: 12px 0 20px; }
+h2 { font-size: 22px; line-height: 1.4; margin: 0 0 12px; }
+p, li { font-size: 16px; line-height: 1.8; color: #cecece; }
+.eyebrow { color: #999; font-size: 13px; }
+.intro { font-size: 19px; }
+section { margin-top: 36px; }
+li { margin: 10px 0; }
+code { overflow-wrap: anywhere; color: #eee; }
+button { min-height: 48px; padding: 12px 18px; background: #ededed; color: #111; border: 0; border-radius: 6px; font: inherit; cursor: pointer; }
+footer { border-top: 1px solid #333; padding: 20px 0 36px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+header a, footer a { display: inline-flex; min-height: 44px; align-items: center; }
+footer a[aria-current] { color: white; }
+footer p, #storage-status { font-size: 14px; }

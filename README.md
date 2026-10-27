@@ -29,7 +29,7 @@ All content lives in [`src/data.ts`](src/data.ts): tracklist and timestamps, rel
 | ACND photo | `public/img/acnd.jpg` | Falls back to `acnd-portrait.webp` until present. |
 | অপূর্ব photo | `public/img/apurba.jpg` | Doorway and first photo tile on his pages. Falls back to `apurba-sun.jpg` until present. |
 | Set | `public/audio/x/` | Source fragments are authenticated and joined by `scripts/mix-audio.mjs` during Vite development/build. The browser plays the generated continuous `audio/qbic-pulse.mp4` with native buffering and byte-range seeking. |
-| Font | `public/fonts/OffBit-Dot.woff2`, `OffBit-DotBold.woff2` | Optional, licensed copy of OffBit. Without it the site uses Doto (SIL OFL). |
+| Fonts | `public/fonts/` | Self-hosted Doto and Hind Siliguri; SIL OFL licenses are included. No Google Fonts requests. |
 
 ## Unlisted pages
 
@@ -63,6 +63,10 @@ then put the same key, split and XOR-mixed, in `src/stream-key.ts`.
 
 ## Audio startup
 
-The cookie-style prompt preloads the continuous mix and attempts playback immediately. Browsers that block audible autoplay need one real click/tap or key interaction; either Yes button retries the media element and its AudioContext. The player reports actual playback rather than assuming a rejected play request succeeded. Manual pause is respected.
+The audio-choice prompt preloads the continuous mix and attempts playback immediately. Browsers that block audible autoplay need one real click/tap or key interaction; the sound button retries the media element and its AudioContext. The player reports actual playback rather than assuming a rejected play request succeeded. Manual pause is respected.
 
 The build authenticates every original AES-GCM fragment using Node.js and emits one continuous AAC/MP4 asset without re-encoding. No browser Web Crypto or MSE is required, so playback also works on HTTP while SSL is being resolved. `npm run dev` serves the same generated asset with byte ranges. Track markers share a single media timeline and do not load separate tracks; normal buffering can still occur on slow connections. No additional build dependencies or external tools are needed.
+
+## Legal notices and contact
+
+Terms, Privacy and Copyright contact pages are at `legal/terms/`, `legal/privacy/` and `legal/copyright/`. The public contact is khalidbinalam250@gmail.com. These notices do not replace copyright clearance or provide statutory safe-harbour protection. The site owner is confirming permissions for the existing mix. Fonts are self-hosted from Fontsource packages pinned at 5.3.0, with original SIL OFL licenses retained in `public/fonts/`.

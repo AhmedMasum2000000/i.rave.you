@@ -137,7 +137,7 @@ export const NEXT_RELEASE = {
   artist: 'Ash Army & ACND',
   genre: 'Afro House',
   label: 'Profi Music',
-  labelNote: 'a Warner Music sublabel',
+  labelNote: 'Record label',
   /** Release day per profimusic.com, counted to midnight in Dhaka. */
   date: '2026-10-30T00:00:00+06:00',
   presave: 'https://profimusic.lnk.to/DownInBossa',
@@ -250,13 +250,13 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     heroAlt: 'ACND standing on a rain-slicked Dhaka street at night, lit by neon.',
     role: 'Producer · DJ · Composer',
     origin: 'Dhaka, Bangladesh',
-    info: ['“Down In Bossa”', 'Ash Army & ACND · Afro House', 'Profi Music · Warner sublabel', '30.10.2026 00:00', 'Prod. by ACND®', 'Dhaka, Bangladesh'],
+    info: ['“Down In Bossa”', 'Ash Army & ACND · Afro House', 'Profi Music', '30.10.2026 00:00', 'Prod. by ACND', 'Dhaka, Bangladesh'],
     statement:
       'ACND is the light half — the one that ascends. Techno, melodic techno, acid and progressive, built to be felt in the chest before it is understood in the head.',
     bio: [
       'ACND — read it “Ascend” — is the recording name of Ahmed Masum, a producer, DJ and composer working out of Dhaka, Bangladesh.',
       'Nothing here will tell you what the next record sounds like. That is the point. What holds the work together is not a category but a feeling: a room, a late hour, and a sound that will not leave.',
-      'Next up: “Down In Bossa” with Ash Army, landing 30 October 2026 on Profi Music, a sublabel of Warner Music.',
+      'Next up: “Down In Bossa” with Ash Army, landing 30 October 2026 on Profi Music.',
     ],
     about: {
       summary: 'ACND — producer, DJ and composer from Dhaka, Bangladesh.',
@@ -269,7 +269,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       ],
     },
     notes: [
-      { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music (Warner Music sublabel). Pre-save now.', url: NEXT_RELEASE.presave },
+      { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music. Pre-save now.', url: NEXT_RELEASE.presave },
       { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
     ],
     releases: [

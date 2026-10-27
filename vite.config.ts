@@ -13,6 +13,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        terms: resolve(__dirname, 'legal/terms/index.html'),
+        privacy: resolve(__dirname, 'legal/privacy/index.html'),
+        copyright: resolve(__dirname, 'legal/copyright/index.html'),
         acndPitch: resolve(__dirname, `${SECRET_PATHS.acnd}/index.html`),
         apurbaPitch: resolve(__dirname, `${SECRET_PATHS.apurba}/index.html`),
         ashPitch: resolve(__dirname, `${SECRET_PATHS.ash}/index.html`),

@@ -27,7 +27,7 @@ function nav(a: Artist, page: Page): string {
     `<a href="${href(a, p)}" class="${page === p ? 'on' : ''}">${label}</a>`;
   return `
     <nav class="a-nav">
-      <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${esc(a.latin)}<sup>®</sup></span></a>
+      <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${esc(a.latin)}</span></a>
       <div class="a-links">${link('listen', 'Releases')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
       <div class="a-info">${a.info.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
     </nav>`;
@@ -41,6 +41,7 @@ function footer(a: Artist): string {
   return `
     <footer class="a-foot">
       <span>${esc(a.latin)} 2026</span>
+      <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
       <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}

@@ -99,7 +99,10 @@ export function start(): void {
 
   // A browser may reject the initial autoplay. Recover both the media element
   // and suspended AudioContext on a real gesture; never claim it is playing early.
-  const retry = (): void => { if (!userPaused && !isPlaying()) play(); };
+  const retry = (event: Event): void => {
+    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link]')) return;
+    if (!userPaused && !isPlaying()) play();
+  };
   const removeRetry = (): void => {
     if (!isPlaying()) return;
     window.removeEventListener('pointerdown', retry);

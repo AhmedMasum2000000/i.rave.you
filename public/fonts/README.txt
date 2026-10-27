@@ -1,0 +1,1 @@
+Doto variable and Hind Siliguri 500/700 WOFF2 fonts from @fontsource-variable/doto@5.3.0 and @fontsource/hind-siliguri@5.3.0. Original font copyright notices and SIL Open Font License texts are included in Doto-LICENSE.txt and Hind-Siliguri-LICENSE.txt. Fonts are served locally; no Google Fonts request is needed.

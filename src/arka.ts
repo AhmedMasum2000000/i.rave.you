@@ -53,7 +53,7 @@ const PITCH: Record<PitchId, Pitch> = {
     numbers: [
       { n: '45:44', label: 'of the Qbic Pulse set he co-hosted on Hong Kong Community Radio, playing behind this sentence' },
       { n: 'HKCR', label: 'Hong Kong Community Radio: the station this set was made for' },
-      { n: '30.10', label: '“Down In Bossa” with Ash Army lands on Profi Music, a Warner Music sublabel' },
+      { n: '30.10', label: '“Down In Bossa” with Ash Army lands on Profi Music' },
       { n: '3/3', label: 'festival dates available. Pick one. Or don’t, and keep all three.' },
     ],
     risks: [
@@ -244,6 +244,7 @@ document.getElementById('app')!.innerHTML = `
         ${id === 'ash' ? '' : `<a class="btn btn-ghost" href="${asset('frequency-unity/')}">Read the feature: Beyond the Capital</a>`}
       </div>
       <p class="p-fine mono">${m.mix ? `No models were harmed in the making of this ${fmt(2744)} mix. ${MIX.bpm} BPM. Love included.` : 'No models were harmed in the making of this application. Hearts may be.'}</p>
+      <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
       <p class="credit">Site by ACND</p>
     </section>
   </div>`;

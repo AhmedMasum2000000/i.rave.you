@@ -1,4 +1,4 @@
-import { bufferedAhead, isPlaying, prepare, start } from './audio';
+import { bufferedAhead, isPlaying, pause, prepare, start } from './audio';
 
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -12,18 +12,18 @@ export const reducedMotion = (): boolean => matchMedia('(prefers-reduced-motion:
  * The entry gate. The record is half black, half white; clicking it is the
  * one interaction the browser needs before the mix may play out loud.
  */
-/** The cookie-banner joke: two buttons, both yes. */
+/** Audio controls, separate from legal notices and privacy choices. */
 const prompt = (): string => `
   <div class="vibe" role="group" aria-labelledby="vibe-title">
-    <p class="vibe-kicker mono">Cookie policy</p>
-    <p class="vibe-title" id="vibe-title">We don’t give cookies.</p>
+    <p class="vibe-kicker mono">Sound on your terms</p>
+    <p class="vibe-title" id="vibe-title">One mix. Your volume.</p>
     <p class="vibe-body">But we do give some <b>sexy frequencies</b>. Forty-five minutes of them, fresh from Hong Kong Community Radio.</p>
     <div class="vibe-actions">
-      <button type="button" class="vibe-yes" data-enter>Yes, I love ’em</button>
-      <button type="button" class="vibe-yes vibe-alt" data-enter>Yes, I want ’em</button>
+      <button type="button" class="vibe-yes" data-enter>Enter with sound</button>
+      <button type="button" class="vibe-yes vibe-alt" data-quiet>Browse quietly</button>
     </div>
     <p class="vibe-meter mono" aria-live="polite"><span class="vibe-bar"><i></i></span><span class="vibe-status">Warming up the decks…</span></p>
-    <p class="vibe-fine mono">There is no “no”. That’s the point.</p>
+    <p class="vibe-fine">Audio controls only. <a data-legal-link href="${asset('legal/privacy/')}">Privacy</a> · <a data-legal-link href="${asset('legal/terms/')}">Terms</a> · <a data-legal-link href="${asset('legal/copyright/')}">Rights contact</a></p>
   </div>`;
 
 /** Fill the meter from what the player has already buffered while the visitor reads. */
@@ -35,14 +35,14 @@ function meter(root: HTMLElement): () => void {
   const id = window.setInterval(() => {
     const p = Math.min(1, bufferedAhead() / 30);
     bar.style.transform = `scaleX(${Math.max(0.04, p)})`;
-    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Tap either Yes to start the mix.' : 'Buffering the mix… Tap Yes to start.';
+    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Choose sound or browse quietly.' : 'Buffering the mix… Sound is optional.';
     root.classList.toggle('vibe-ready', p >= 1);
   }, 200);
   return () => clearInterval(id);
 }
 
 /**
- * The entry gate. The record and both "yes" buttons are the one click the
+ * The entry gate. The record and sound button are the one click the
  * browser needs before the set may play out loud; the set has been buffering
  * since the page loaded, so playback starts at once.
  */
@@ -65,17 +65,18 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
     document.body.append(gate);
     const stop = meter(gate);
     let done = false;
-    const enter = (): void => {
+    const enter = (quiet = false): void => {
       if (done) return;
       done = true;
       stop();
-      start();
+      if (quiet) pause();
+      else start();
       gate.classList.add('gate-out');
       setTimeout(() => gate.remove(), 1100);
       resolve();
     };
-    gate.querySelectorAll('[data-enter]').forEach((b) => b.addEventListener('click', enter));
-    gate.addEventListener('keydown', (e) => e.key === 'Enter' && enter());
+    gate.querySelectorAll('[data-enter]').forEach((b) => b.addEventListener('click', () => enter()));
+    gate.querySelectorAll('[data-quiet]').forEach((b) => b.addEventListener('click', () => enter(true)));
   });
 }
 
@@ -86,10 +87,11 @@ export function mountVibeBanner(): void {
   banner.innerHTML = prompt();
   document.body.append(banner);
   const stop = meter(banner);
-  banner.querySelectorAll('[data-enter]').forEach((b) =>
+  banner.querySelectorAll('[data-enter], [data-quiet]').forEach((b) =>
     b.addEventListener('click', () => {
       stop();
-      start();
+      if (b.hasAttribute('data-quiet')) pause();
+      else start();
       banner.classList.add('vibe-out');
       setTimeout(() => banner.remove(), 600);
     }),

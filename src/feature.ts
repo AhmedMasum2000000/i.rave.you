@@ -10,7 +10,7 @@ import { mountVibeBanner, revealOnScroll } from './ui';
 /**
  * The "Beyond the Capital" feature. The article itself is static HTML in
  * frequency-unity/index.html so crawlers read every word; this only adds the
- * site chrome, plus a non-blocking cookie-joke banner that starts the set.
+ * site chrome, plus a non-blocking audio-choice banner that starts the set.
  */
 
 installGuard();
