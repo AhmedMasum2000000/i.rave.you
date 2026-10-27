@@ -144,30 +144,54 @@ body[data-view='artist']::after {
 body[data-artist='apurba'] .a-door-img {
   filter: none;
 }
-/* Steps up to the door, drawn as shrinking slabs. */
-.a-stairs {
+/* The doorway stands on a dark polished floor: a horizon, its own reflection
+   fading into the ground, and a pool of light the low end swells. */
+.a-floor {
+  position: absolute;
+  inset: calc(22vh + 46vh) 0 0;
+  opacity: calc(1 - var(--sy) * 1.6);
+  pointer-events: none;
+}
+.a-floor::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--glow) 45%, #444) 30%, color-mix(in srgb, var(--glow) 70%, #888) 50%, color-mix(in srgb, var(--glow) 45%, #444) 70%, transparent);
+  opacity: 0.6;
+}
+.a-floor::after {
+  content: '';
   position: absolute;
   left: 50%;
-  top: calc(22vh + 46vh);
+  top: 0;
+  width: min(90vw, 1100px);
+  height: 28vh;
   translate: -50% 0;
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-  opacity: calc(1 - var(--sy) * 1.6);
+  background: radial-gradient(ellipse 50% 40% at 50% 0, color-mix(in srgb, var(--glow) 30%, transparent), transparent 70%);
+  opacity: calc(0.45 + var(--lv-low, 0) * 0.55);
 }
-.a-stairs i {
-  display: block;
-  height: 2.2vh;
-  background: linear-gradient(#2a2a2a, #121212);
-  border-top: 1px solid #3a3a3a;
+.a-reflect {
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  width: clamp(130px, 13vw, 210px);
+  height: 30vh;
+  translate: -50% 0;
+  overflow: hidden;
+  transform: scaleY(-1);
+  -webkit-mask: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent 60%);
+  mask: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent 60%);
+  filter: blur(1.5px);
 }
-.a-stairs i:nth-child(1) { width: 15vw; }
-.a-stairs i:nth-child(2) { width: 20vw; }
-.a-stairs i:nth-child(3) { width: 26vw; }
-.a-stairs i:nth-child(4) { width: 33vw; }
-.a-stairs i:nth-child(5) { width: 41vw; }
-.a-stairs i:nth-child(6) { width: 50vw; }
-.a-stairs i:nth-child(7) { width: 60vw; }
+.a-reflect .a-door-img {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 46vh;
+}
 .a-mark {
   position: absolute;
   left: 50%;

@@ -28,8 +28,13 @@ const prompt = (): string => `
 
 /** Fill the meter from what the player has already buffered while the visitor reads. */
 function meter(root: HTMLElement): () => void {
-  prepare();
-  start();
+  // Let the page's own images and fonts load first, then warm up the mix.
+  const warm = (): void => {
+    prepare();
+    start();
+  };
+  if (document.readyState === 'complete') warm();
+  else window.addEventListener('load', warm, { once: true });
   const bar = root.querySelector<HTMLElement>('.vibe-bar i')!;
   const status = root.querySelector<HTMLElement>('.vibe-status')!;
   const id = window.setInterval(() => {
@@ -46,7 +51,27 @@ function meter(root: HTMLElement): () => void {
  * browser needs before the set may play out loud; the set has been buffering
  * since the page loaded, so playback starts at once.
  */
+const ENTRY_KEY = 'iry:entry';
+
+function rememberedEntry(): 'sound' | 'quiet' | null {
+  try {
+    const v = localStorage.getItem(ENTRY_KEY);
+    return v === 'sound' || v === 'quiet' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export function mountGate(opts: { kicker: string; line: string; cta: string }): Promise<void> {
+  // Returning visitors are not asked again: sound resumes (on their first tap
+  // if the browser blocks autoplay) and quiet stays quiet.
+  const known = rememberedEntry();
+  if (known === 'sound') {
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', () => start(), { once: true });
+    return Promise.resolve();
+  }
+  if (known === 'quiet') return Promise.resolve();
   return new Promise((resolve) => {
     const gate = document.createElement('div');
     gate.className = 'gate';
@@ -69,6 +94,11 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       if (done) return;
       done = true;
       stop();
+      try {
+        localStorage.setItem(ENTRY_KEY, quiet ? 'quiet' : 'sound');
+      } catch {
+        /* private mode: the gate simply shows again next time */
+      }
       if (quiet) pause();
       else start();
       gate.classList.add('gate-out');

@@ -27,7 +27,7 @@ function nav(a: Artist, page: Page): string {
   const link = (p: Page, label: string): string =>
     `<a href="${href(a, p)}" class="${page === p ? 'on' : ''}">${label}</a>`;
   return `
-    <nav class="a-nav">
+    <nav class="a-nav" data-pulse>
       <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${esc(a.latin)}</span></a>
       <div class="a-links">${link('listen', 'Releases')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
       <div class="a-info">${a.info.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
@@ -78,28 +78,20 @@ const footnotes = (a: Artist): string => `
 /* ─────────────────────────────── PAGES ──────────────────────────────── */
 
 function homePage(a: Artist): string {
-  const sparks = [
-    [8, 30],
-    [93, 22],
-    [16, 78],
-    [86, 70],
-    [50, 4],
-  ]
-    .map(([x, y], i) => `<i class="spark" style="left:${x}%;top:${y}%;--d:${i * 0.7}s"></i>`)
-    .join('');
   return `
-    <section class="a-hero">
+    <section class="a-hero" data-pulse>
       <span class="a-hero-l mono">Mix</span>
       <span class="a-hero-r mono">01</span>
-      <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">${esc(a.listen.label)}</a>
+      <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">Listen on ${esc(a.listen.label)} ↗</a>
       <div class="a-scene">
         <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero)}</div>
-        <div class="a-stairs" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
+        <div class="a-floor" aria-hidden="true">
+          <div class="a-reflect">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', '', 'a-door-img', a.hero)}</div>
+        </div>
       </div>
       <h1 class="a-mark" aria-label="${esc(a.name)}">
         ${logo(a, 'a-mark-logo')}
         <span class="a-sheen" style="--logo:url('${asset(a.logo)}')" aria-hidden="true"></span>
-        ${sparks}
       </h1>
     </section>
 

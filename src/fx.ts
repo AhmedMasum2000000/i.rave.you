@@ -1,108 +1,94 @@
-import { isPlaying, sample } from './audio';
+import { isPlaying, sample, spectrum } from './audio';
 import { reducedMotion } from './ui';
 
 /**
- * Site-wide life: the mix drives a few CSS variables on the chrome that is on
- * every page (player chip, pre-save dock, menu button and anything marked
- * `data-pulse`), a soft cursor aura follows the pointer on desktop, and the
- * main calls to action lean towards the cursor.
+ * The mix drives the page. One requestAnimationFrame loop reads the analyser
+ * and writes a handful of CSS variables, 0..1, onto the chrome present on every
+ * page (player chip, pre-save dock, track list) and anything marked
+ * `data-pulse`:
  *
- * Everything runs off one requestAnimationFrame loop that sleeps while the tab
- * is hidden, writes only transforms and custom properties (no layout), and
- * switches itself off for reduced motion.
+ *   --lv-low   low-end energy, smoothed: drives the weight of the Doto type and
+ *              how brightly the doorway is lit
+ *   --lv-beat  a decaying kick pulse: short accents only
+ *   --lv-high  air and hats: fine detail
+ *
+ * A hairline at the top of every page shows the overall level. Paused, all of
+ * it settles to rest. The loop sleeps while the tab is hidden and is off
+ * entirely for reduced motion.
  */
-
-const fine = (): boolean => matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-const MAGNETS = '.presave-cta, .np-play, .menu-btn, .side-cta, .vibe-yes, .a-hero-listen, .m-presave';
 
 export function mountFx(): void {
   if (reducedMotion()) return;
-  const desktop = fine();
-  const root = document.documentElement;
-  root.classList.add('fx');
+  document.documentElement.classList.add('fx');
 
   let targets: HTMLElement[] = [];
   const collect = (): void => {
-    targets = [...document.querySelectorAll<HTMLElement>('.np, .presave, .menu-btn, [data-pulse]')];
+    targets = [...document.querySelectorAll<HTMLElement>('.np, .presave, .tid, .np-now, [data-pulse]')];
   };
   collect();
   window.addEventListener('routechange', () => requestAnimationFrame(collect));
   window.setInterval(collect, 1500);
 
-  // ── cursor aura (desktop only) ──
-  let aura: HTMLElement | null = null;
-  let mx = -100;
-  let my = -100;
-  let ax = -100;
-  let ay = -100;
-  let hot = 0;
-  let hotTarget = 0;
-  if (desktop) {
-    aura = document.createElement('div');
-    aura.className = 'aura';
-    aura.setAttribute('aria-hidden', 'true');
-    document.body.append(aura);
-    window.addEventListener(
-      'pointermove',
-      (e) => {
-        mx = e.clientX;
-        my = e.clientY;
-        const el = e.target instanceof Element ? e.target.closest('a, button, summary, [role="slider"], .cell') : null;
-        hotTarget = el ? 1 : 0;
-      },
-      { passive: true },
-    );
-    document.addEventListener('pointerleave', () => {
-      mx = my = -100;
-    });
-    window.addEventListener('pointerdown', () => aura?.classList.add('aura-down'));
-    window.addEventListener('pointerup', () => aura?.classList.remove('aura-down'));
+  const vu = document.createElement('div');
+  vu.className = 'vu';
+  vu.setAttribute('aria-hidden', 'true');
+  document.body.append(vu);
 
-    // ── magnetic calls to action ──
-    document.addEventListener(
-      'pointermove',
-      (e) => {
-        const el = e.target instanceof Element ? e.target.closest<HTMLElement>(MAGNETS) : null;
-        document.querySelectorAll<HTMLElement>('[data-magnet-on]').forEach((m) => {
-          if (m !== el) {
-            m.style.translate = '';
-            delete m.dataset.magnetOn;
-          }
-        });
-        if (!el) return;
-        const r = el.getBoundingClientRect();
-        const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
-        const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
-        el.dataset.magnetOn = '';
-        el.style.translate = `${(dx * 6).toFixed(1)}px ${(dy * 5).toFixed(1)}px`;
-      },
-      { passive: true },
-    );
-  }
-
+  let low = 0;
+  let level = 0;
+  // Automatic gain: map the kick envelope onto the track's own recent range,
+  // so a quiet breakdown and a full drop both move the page.
+  let floor = 0.35;
+  let ceil = 0.65;
   let last = 0;
-  const gap = desktop ? 1000 / 60 : 1000 / 30;
+  // 30 fps is plenty for light and type, and leaves the main thread to the page.
+  const gap = 1000 / 30;
+  let written = '';
   const loop = (now: number): void => {
     requestAnimationFrame(loop);
     if (document.hidden || now - last < gap) return;
     last = now;
     const lv = sample();
     const on = isPlaying();
-    const beat = on ? lv.beat : lv.beat * 0.4;
-    const low = Math.min(1, lv.low * 1.6);
+    // Ease towards silence when paused instead of freezing mid-gesture.
+    const raw = lv.kick;
+    floor += (raw - floor) * (raw < floor ? 0.3 : 0.012);
+    ceil += (raw - ceil) * (raw > ceil ? 0.3 : 0.012);
+    const norm = Math.max(0, Math.min(1, (raw - floor) / Math.max(0.1, ceil - floor)));
+    low += ((on ? norm : 0) - low) * 0.35;
+    level += ((on ? Math.min(1, lv.all * 2.2) : 0) - level) * 0.3;
+    const beat = on ? lv.beat : 0;
+    const high = on ? Math.min(1, lv.high * 3) : 0;
+    // Two decimals is below what the eye can see; skip frames that change nothing.
+    const key = `${low.toFixed(2)}|${beat.toFixed(2)}|${high.toFixed(2)}|${level.toFixed(2)}`;
+    if (key === written) return;
+    written = key;
     for (const el of targets) {
-      el.style.setProperty('--lv-beat', beat.toFixed(3));
-      el.style.setProperty('--lv-low', low.toFixed(3));
+      el.style.setProperty('--lv-low', low.toFixed(2));
+      el.style.setProperty('--lv-beat', beat.toFixed(2));
+      el.style.setProperty('--lv-high', high.toFixed(2));
     }
-    if (aura) {
-      ax += (mx - ax) * 0.2;
-      ay += (my - ay) * 0.2;
-      hot += (hotTarget - hot) * 0.18;
-      aura.style.transform = `translate3d(${ax.toFixed(1)}px, ${ay.toFixed(1)}px, 0) scale(${(1 + hot * 1.4 + beat * 0.25).toFixed(3)})`;
-    }
+    vu.style.transform = `scaleX(${level.toFixed(2)})`;
   };
   requestAnimationFrame(loop);
+}
+
+/** Five log-spaced bands from the live spectrum, 0..1, for small meters. */
+export function bands(n = 5): number[] {
+  const spec = spectrum();
+  const out: number[] = [];
+  if (!spec.length || !isPlaying()) return Array.from({ length: n }, () => 0);
+  // 30 Hz .. ~12 kHz on a 2048-point FFT (~23 Hz per bin).
+  const lo = 1;
+  const hi = Math.min(spec.length - 1, 520);
+  for (let i = 0; i < n; i++) {
+    const a = Math.floor(lo * (hi / lo) ** (i / n));
+    const b = Math.max(a + 1, Math.floor(lo * (hi / lo) ** ((i + 1) / n)));
+    let sum = 0;
+    for (let k = a; k < b; k++) sum += spec[k];
+    out.push(sum / ((b - a) * 255));
+  }
+  return out;
 }
 
 /**

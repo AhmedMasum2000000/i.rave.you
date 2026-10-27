@@ -42,10 +42,11 @@ let prepared = false;
 export function prepare(): void {
   if (prepared) return;
   prepared = true;
-  // Preload the continuous mix before the visitor dismisses the prompt.
+  // Fetch only the header until the visitor wants sound: a 45-minute mix must
+  // not compete with the page's own images and scripts on a phone connection.
   el = document.createElement('audio');
   el.loop = true;
-  el.preload = 'auto';
+  el.preload = 'metadata';
   el.hidden = true;
   el.setAttribute('controlslist', 'nodownload noplaybackrate');
   el.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -83,6 +84,7 @@ export function start(): void {
   started = true;
   prepare();
   const media = el!;
+  media.preload = 'auto';
 
   // 'playback' asks for larger render buffers: steadier output on phones while
   // the visuals are busy, at a latency nobody notices on a DJ mix.
@@ -92,7 +94,11 @@ export function start(): void {
   master.gain.value = 1;
   analyser = ctx.createAnalyser();
   analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.78;
+  analyser.smoothingTimeConstant = 0.6;
+  // A mastered club mix lives near full scale: widen the window so the bytes
+  // keep their shape instead of pinning at 255 (the defaults are -100..-30 dB).
+  analyser.minDecibels = -80;
+  analyser.maxDecibels = -6;
   freq = new Uint8Array(analyser.frequencyBinCount);
   focusGain = ctx.createGain();
   src.connect(analyser);
@@ -343,7 +349,7 @@ export function duck(on: boolean): void {
 }
 
 /** Smoothed 0..1 levels for visuals: low end, mids, highs, overall, kick pulse. */
-export const levels = { low: 0, mid: 0, high: 0, all: 0, beat: 0 };
+export const levels = { low: 0, mid: 0, high: 0, all: 0, beat: 0, kick: 0 };
 let kickAvg = 0;
 let lastKick = 0;
 let lastSample = -1;
@@ -384,6 +390,8 @@ export function sample(): typeof levels {
   levels.mid += (mid - levels.mid) * k(0.25);
   levels.high += (high - levels.high) * k(0.25);
   levels.all = (levels.low + levels.mid + levels.high) / 3;
+  // Fast attack, slower release: an envelope that follows each kick.
+  levels.kick += (kick - levels.kick) * k(kick > levels.kick ? 0.6 : 0.18);
   // A kick is energy well above its own recent average, at most ~4 per second.
   kickAvg += (kick - kickAvg) * k(0.04);
   levels.beat *= 0.88 ** dt;

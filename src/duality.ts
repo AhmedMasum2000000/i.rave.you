@@ -241,7 +241,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     const R = (wide() ? Math.min(W, H) * 0.13 : W * 0.1) * (1 + lv.beat * 0.06);
 
     // ── kick shockwaves, inverted per side ──
-    if (!reduced && lv.beat > 0.6 && now - lastWave > 320 && waves.length < 6) {
+    if (!reduced && lv.beat > 0.75 && now - lastWave > 460 && waves.length < 3) {
       lastWave = now;
       waves.push({ r: R * 1.05, a: 0.55 * lv.beat });
     }
@@ -250,7 +250,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     for (let i = waves.length - 1; i >= 0; i--) {
       const w = waves[i];
       w.r += 2.5 + w.r * 0.022;
-      w.a *= 0.955;
+      w.a *= 0.93;
       if (w.a < 0.02 || w.r > Math.max(W, H)) {
         waves.splice(i, 1);
         continue;
