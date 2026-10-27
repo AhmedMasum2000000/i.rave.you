@@ -11,6 +11,11 @@ import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { esc, mountGate, reducedMotion } from './ui';
+import { ROOT, interceptLinks, parse, routeHref, upgradeLegacyHash } from './router';
+
+// Assets resolve from the site root whatever route the visitor landed on.
+document.documentElement.dataset.root = ROOT;
+upgradeLegacyHash();
 
 installGuard();
 
@@ -24,22 +29,27 @@ const teardown = (): void => {
 
 /* ─────────────────────────────── ROUTER ─────────────────────────────── */
 
-const PAGES: Page[] = ['home', 'listen', 'sequencer', 'about'];
-
-/** `#/acnd`, `#/acnd/listen`, `#/apurba/about`… anything else is the duality home. */
+/** `/acnd/`, `/acnd/listen/`, `/apurba/about/`… anything else is the duality home. */
 const route = (): void => {
-  const [id, sub] = location.hash.replace(/^#\/?/, '').split('/') as [ArtistId | '', string | undefined];
+  const { artist, page } = parse();
   teardown();
   window.scrollTo({ top: 0, behavior: 'instant' });
-  if (id === 'acnd' || id === 'apurba') {
-    const page = (PAGES.includes(sub as Page) ? sub : 'home') as Page;
-    cleanup.push(renderArtist(app, ARTISTS[id], page));
-  } else renderHome();
-  syncSearchMetadata(id === 'acnd' || id === 'apurba' ? id : undefined);
+  if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
+  else renderHome();
+  syncSearchMetadata(artist as ArtistId | undefined);
+  window.dispatchEvent(new Event('routechange'));
 };
 
+/** Move to another view without reloading, so the mix plays on uninterrupted. */
+export function navigate(path: string): void {
+  if (path === location.pathname) return;
+  history.pushState(null, '', path);
+  transition(route);
+}
+
 // Later navigations dissolve between pages; the first render is immediate.
-window.addEventListener('hashchange', () => transition(route));
+window.addEventListener('popstate', () => transition(route));
+interceptLinks(navigate);
 
 /* ──────────────────────────────── HOME ──────────────────────────────── */
 
@@ -56,17 +66,17 @@ function renderHome(): void {
       <header class="home-top">
         <span class="home-id">
           <span class="brand">I Rave You</span>
-          <a class="credit home-credit" href="#/acnd">Site by ACND</a>
+          <a class="credit home-credit" href="${routeHref('acnd')}">Site by ACND</a>
         </span>
       </header>
 
-      <a class="side side-dark" href="#/apurba" data-side="apurba" aria-label="Enter অপূর্ব">
+      <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba" aria-label="Enter অপূর্ব">
         ${logo(A, 'side-logo')}
         <span class="side-name bn">${esc(A.name)}</span>
         <span class="side-cta mono">Enter →</span>
       </a>
 
-      <a class="side side-light" href="#/acnd" data-side="acnd" aria-label="Enter ACND">
+      <a class="side side-light" href="${routeHref('acnd')}" data-side="acnd" aria-label="Enter ACND">
         ${logo(C, 'side-logo')}
         <span class="side-name">${esc(C.name)}</span>
         <span class="side-cta mono">← Enter</span>
@@ -94,7 +104,7 @@ function renderHome(): void {
       document.body.classList.add('flooding');
       void fx.flood(el.dataset.side as ArtistId, e.clientX || innerWidth / 2, e.clientY || innerHeight / 2).then(() => {
         document.body.classList.remove('flooding');
-        location.hash = `#/${el.dataset.side}`;
+        navigate(routeHref(el.dataset.side as ArtistId));
       });
     });
   });

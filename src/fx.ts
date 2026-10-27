@@ -27,7 +27,7 @@ export function mountFx(): void {
     targets = [...document.querySelectorAll<HTMLElement>('.np, .presave, .menu-btn, [data-pulse]')];
   };
   collect();
-  window.addEventListener('hashchange', () => requestAnimationFrame(collect));
+  window.addEventListener('routechange', () => requestAnimationFrame(collect));
   window.setInterval(collect, 1500);
 
   // ── cursor aura (desktop only) ──

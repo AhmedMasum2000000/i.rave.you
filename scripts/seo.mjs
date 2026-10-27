@@ -1,3 +1,5 @@
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createPosts, PUBLICATION_DATE } from "../content/posts.mjs";
 /** Static discovery pages share the portfolio's facts and verified music URLs. */
 export const ORIGIN = "https://iraveyou.com";
@@ -165,10 +167,11 @@ export function discoveryPages(artists, next, tracks) {
           `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`,
       )
       .join("");
-    page.html = shell(
-      page,
-      `<p class="eyebrow">${esc(a.origin)} · Artist profile</p><h1>${esc(page.label)}</h1><p class="intro">${esc(a.about.summary)}</p><a class="button" href="../#/${a.id}">Enter the interactive portfolio →</a><section><h2>Biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>${a.id === "acnd" ? "Upcoming release" : "Releases & listening links"}</h2><ul class="recordings">${releases}</ul>${a.id === "acnd" ? '<p><a href="../music/down-in-bossa/">Down In Bossa — release details →</a></p>' : ""}</section>${a.id === "acnd" ? `<section><h2>Ahmed Masum / ACND: artist facts</h2><dl class="fact-list"><div><dt>Artist name</dt><dd>ACND, pronounced “Ascend”</dd></div><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Based in</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Work</dt><dd>Electronic music production, DJing and composition</dd></div></dl><p><a href="press/">Press kit, biographies &amp; credits →</a></p></section><section><h2>Artist guides &amp; listening notes</h2><p>Explore <a href="../journal/ahmed-masum-acnd-name-guide/">the Ahmed Masum / ACND name guide</a>, <a href="../journal/where-to-listen-acnd/">where to listen</a> and <a href="../journal/acnd-techno-melodic-acid-progressive/">his musical directions</a>.</p></section><section><h2>Nitol Paye Electric remix credit</h2><p>The “Nitol Paye Electric” remix is by ACND (Ahmed Masum).</p><a href="https://youtu.be/om5QGreRaYg" target="_blank" rel="noopener">Watch on YouTube ↗</a></section>` : ""}<section><h2>Listen & connect</h2><nav class="platforms" aria-label="${esc(a.name)} music profiles">${links}</nav></section><section><h2>Qbic Pulse with ${a.id === "acnd" ? "অপূর্ব" : "ACND"}</h2><p>Explore their shared DJ mix for Hong Kong Community Radio, with a timestamped tracklist and links to the original recordings.</p><a href="../mixes/qbic-pulse/">Read the Qbic Pulse tracklist →</a></section>`,
+    page.artist = a;
+    page.body = (
+      `<p class="eyebrow">${esc(a.origin)} · Artist profile</p><h1>${esc(page.label)}</h1><p class="intro">${esc(a.about.summary)}</p><section><h2>Biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>${a.id === "acnd" ? "Upcoming release" : "Releases & listening links"}</h2><ul class="recordings">${releases}</ul>${a.id === "acnd" ? '<p><a href="../music/down-in-bossa/">Down In Bossa — release details →</a></p>' : ""}</section>${a.id === "acnd" ? `<section><h2>Ahmed Masum / ACND: artist facts</h2><dl class="fact-list"><div><dt>Artist name</dt><dd>ACND, pronounced “Ascend”</dd></div><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Based in</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Work</dt><dd>Electronic music production, DJing and composition</dd></div></dl><p><a href="press/">Press kit, biographies &amp; credits →</a></p></section><section><h2>Artist guides &amp; listening notes</h2><p>Explore <a href="../journal/ahmed-masum-acnd-name-guide/">the Ahmed Masum / ACND name guide</a>, <a href="../journal/where-to-listen-acnd/">where to listen</a> and <a href="../journal/acnd-techno-melodic-acid-progressive/">his musical directions</a>.</p></section><section><h2>Nitol Paye Electric remix credit</h2><p>The “Nitol Paye Electric” remix is by ACND (Ahmed Masum).</p><a href="https://youtu.be/om5QGreRaYg" target="_blank" rel="noopener">Watch on YouTube ↗</a></section>` : ""}<section><h2>Listen & connect</h2><nav class="platforms" aria-label="${esc(a.name)} music profiles">${links}</nav></section><section><h2>Qbic Pulse with ${a.id === "acnd" ? "অপূর্ব" : "ACND"}</h2><p>Explore their shared DJ mix for Hong Kong Community Radio, with a timestamped tracklist and links to the original recordings.</p><a href="../mixes/qbic-pulse/">Read the Qbic Pulse tracklist →</a></section>`,
     );
+    page.html = shell(page, page.body);
     pages.push(page);
   }
   const release = {
@@ -226,7 +229,7 @@ export function discoveryPages(artists, next, tracks) {
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
   mix.html = shell(
     mix,
-    `<p class="eyebrow">ACND &amp; অপূর্ব · Hong Kong Community Radio</p><h1>Qbic Pulse: DJ mix &amp; tracklist</h1><p class="intro">A shared set by ACND and অপূর্ব, opening with their unreleased collaboration “Initiate”.</p><a class="button" href="../../#/">Open the mix player →</a><section><h2>Tracklist with original recording links</h2><p>Timestamps mark where each track takes over in the mix. Available links open the identified recording on Apple Music or SoundCloud. The opening unreleased track has no external link.</p><ol class="tracks">${tracks.map((t) => `<li><span class="timestamp">${stamp(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · Unreleased · No external link</span></div>`}</li>`).join("")}</ol></section><section><h2>Explore the set</h2><p><a href="../../journal/qbic-pulse-listening-route/">A route through Qbic Pulse</a> · <a href="../../journal/how-to-read-dj-mix-tracklist/">How to read takeover timestamps</a> · <a href="../../journal/initiate-unreleased-id-guide/">About the opening track, Initiate</a></p></section><section><h2>About the hosts</h2><p><a href="../../acnd/">ACND (Ahmed Masum)</a> is a producer and DJ based in Dhaka. <a href="../../apurba/">অপূর্ব (Opurbo / Apurba)</a> is the electronic music project of Khalid Bin Alam from Cumilla.</p><a href="https://hkcr.live/" target="_blank" rel="noopener">Hong Kong Community Radio ↗</a></section><section><h2>Listening links & music rights</h2><p>Playing this site’s mix does not count as a stream on the linked music platforms. Recording links and credits do not grant rights to copy, redistribute or otherwise use the music. For rights concerns, see our <a href="../../legal/copyright/">copyright contact page</a>.</p></section>`,
+    `<p class="eyebrow">ACND &amp; অপূর্ব · Hong Kong Community Radio</p><h1>Qbic Pulse: DJ mix &amp; tracklist</h1><p class="intro">A shared set by ACND and অপূর্ব, opening with their unreleased collaboration “Initiate”.</p><a class="button" href="../../">Open the mix player →</a><section><h2>Tracklist with original recording links</h2><p>Timestamps mark where each track takes over in the mix. Available links open the identified recording on Apple Music or SoundCloud. The opening unreleased track has no external link.</p><ol class="tracks">${tracks.map((t) => `<li><span class="timestamp">${stamp(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · Unreleased · No external link</span></div>`}</li>`).join("")}</ol></section><section><h2>Explore the set</h2><p><a href="../../journal/qbic-pulse-listening-route/">A route through Qbic Pulse</a> · <a href="../../journal/how-to-read-dj-mix-tracklist/">How to read takeover timestamps</a> · <a href="../../journal/initiate-unreleased-id-guide/">About the opening track, Initiate</a></p></section><section><h2>About the hosts</h2><p><a href="../../acnd/">ACND (Ahmed Masum)</a> is a producer and DJ based in Dhaka. <a href="../../apurba/">অপূর্ব (Opurbo / Apurba)</a> is the electronic music project of Khalid Bin Alam from Cumilla.</p><a href="https://hkcr.live/" target="_blank" rel="noopener">Hong Kong Community Radio ↗</a></section><section><h2>Listening links & music rights</h2><p>Playing this site’s mix does not count as a stream on the linked music platforms. Recording links and credits do not grant rights to copy, redistribute or otherwise use the music. For rights concerns, see our <a href="../../legal/copyright/">copyright contact page</a>.</p></section>`,
   );
   pages.push(mix);
   return pages;
@@ -385,6 +388,22 @@ export function journalPages(artists, next, tracks) {
   );
   return [hub, ...pages];
 }
+/**
+ * An interactive route page: the built app shell (its scripts and styles,
+ * re-pointed for the page's depth) with page-specific metadata and optional
+ * crawlable content after the app root.
+ */
+function writeRoute(dir, index, path, headHtml, content) {
+  const up = "../".repeat(path.split("/").filter(Boolean).length);
+  const rebase = (tag) => tag.replace(/(href|src)="(?!https?:|\/|data:|#)(?:\.\/)?/g, `$1="${up}`);
+  const tags = [
+    ...index.matchAll(/<script type="module"[^>]*><\/script>|<link rel="(?:modulepreload|stylesheet|icon)"[^>]*>/g),
+  ].map((m) => rebase(m[0]));
+  const html = `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000">${headHtml}${tags.join("")}</head><body data-view="home"><div id="app"></div>${content ? `<section class="discovery-home discovery-profile">${content}</section>` : ""}</body></html>`;
+  mkdirSync(resolve(dir, path), { recursive: true });
+  writeFileSync(resolve(dir, path, "index.html"), html);
+}
+
 export function seoPlugin({ artists, next, tracks }) {
   const pages = [
     ...discoveryPages(artists, next, tracks),
@@ -400,7 +419,8 @@ export function seoPlugin({ artists, next, tracks }) {
           (p) =>
             pathname === `/${p.path}` || pathname === `/${p.path}index.html`,
         );
-        if (!page) return nextMiddleware();
+        // Artist routes are the interactive app; Vite serves its index.html.
+        if (!page || page.artist) return nextMiddleware();
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.end(page.html);
       });
@@ -432,8 +452,29 @@ export function seoPlugin({ artists, next, tracks }) {
           );
       },
     },
+    // Every interactive route ships as a real file, so refreshes and shared
+    // links work on a plain static host: the artist home carries its full
+    // crawlable profile, and the sub-pages point search engines back to it.
+    writeBundle(options) {
+      const dir = options.dir;
+      const index = readFileSync(resolve(dir, "index.html"), "utf8");
+      for (const page of pages.filter((p) => p.artist)) {
+        writeRoute(dir, index, page.path, head(page), page.body);
+        for (const [sub, label] of [["listen", "Releases"], ["sequencer", "Sequencer"], ["about", "About"]]) {
+          const url = `${ORIGIN}/${page.path}`;
+          const title = `${label} · ${page.label} — I Rave You`;
+          writeRoute(
+            dir,
+            index,
+            `${page.path}${sub}/`,
+            `<title>${esc(title)}</title><meta name="description" content="${esc(page.description)}"><link rel="canonical" href="${url}"><meta property="og:type" content="website"><meta property="og:site_name" content="I Rave You"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(page.description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ORIGIN}/${page.image ?? "img/og-frequency-unity.jpg"}"><meta name="twitter:card" content="summary_large_image">`,
+            "",
+          );
+        }
+      }
+    },
     generateBundle() {
-      for (const page of pages)
+      for (const page of pages.filter((p) => !p.artist))
         this.emitFile({
           type: "asset",
           fileName: `${page.path}index.html`,

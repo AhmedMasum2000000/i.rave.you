@@ -3,6 +3,7 @@ import { ARTISTS, MIX, OTHER, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
 import { asset, esc, img, reducedMotion, revealOnScroll } from './ui';
+import { link, routeHref } from './router';
 
 /**
  * Artist pages, laid out after ascension.pegassi.be: a grained black canvas,
@@ -20,7 +21,7 @@ export const logo = (a: Artist, cls: string): string =>
 /** `^n` in copy becomes a superscript footnote marker. */
 const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
 
-const href = (a: Artist, page: Page): string => (page === 'home' ? `#/${a.id}` : `#/${a.id}/${page}`);
+const href = (a: Artist, page: Page): string => routeHref(a.id, page);
 
 function nav(a: Artist, page: Page): string {
   const link = (p: Page, label: string): string =>
@@ -42,12 +43,12 @@ function footer(a: Artist): string {
     <footer class="a-foot">
       <span>${esc(a.latin)} 2026</span>
       <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms of use</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
-      <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
+      <div><a href="${link()}">I Rave You</a><a href="${link('frequency-unity/')}">Feature: Beyond the Capital</a><a href="${routeHref(other.id)}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}
-      <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="#/acnd">ACND</a></span></span>
+      <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="${routeHref('acnd')}">ACND</a></span></span>
     </footer>
-    <a class="a-sleeve" href="#/" aria-label="Back to I Rave You">
+    <a class="a-sleeve" href="${link()}" aria-label="Back to I Rave You">
       <span class="a-sleeve-art"><span>I RAVE YOU</span><span class="bn">অপূর্ব ◐ ACND</span></span>
     </a>`;
 }

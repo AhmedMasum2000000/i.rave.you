@@ -5,8 +5,10 @@ Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and
 - **Home** — a live yin-yang: the screen splits along an S-curve that breathes with the mix, particles
   and HUD rings invert as they cross it, and clicking a side floods the screen into that artist's world.
 - **Artist pages** — four routes per artist, after the ascension.pegassi.be structure on a grained black
-  canvas: home (`#/acnd`: chrome mark over a lit doorway, annotated essay, tracklist, media, bio, footnotes),
-  listen (`#/acnd/listen`), sequencer (`#/acnd/sequencer`) and about (`#/acnd/about`). Same for `#/apurba/…`.
+  canvas: home (`/acnd/`: chrome mark over a lit doorway, annotated essay, tracklist, media, bio, footnotes),
+  listen (`/acnd/listen/`), sequencer (`/acnd/sequencer/`) and about (`/acnd/about/`). Same for `/apurba/…`.
+  URLs are clean (History API, `src/router.ts`); the build writes a real `index.html` for every route, so refreshes
+  and shared links work on any static host. Old `#/…` links redirect to the clean URL.
 - **Menu & pre-save** — a site-wide MENU overlay and a live “Down In Bossa” countdown with a PRE-SAVE button.
 - **The set** — Qbic Pulse, hosted by ACND & অপূর্ব for Hong Kong Community Radio (HKCR) — starts from
   the entry record and keeps playing across pages, fading out (paused in place) whenever the tab loses focus.
