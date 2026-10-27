@@ -1,0 +1,10 @@
+# The mix's file name carries its content hash, so it can be cached for a
+# year: repeat visits play the set from disk instead of the network.
+<IfModule mod_mime.c>
+  AddType audio/mp4 .m4a
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.m4a$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
