@@ -13,6 +13,12 @@ Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and
   A player chip on every page has play/pause and opens the **Track ID** panel: every track
   with its timestamp, click to jump, previous/next and a seekable bar. Track IDs and direct original-recording links are available from every page’s player.
 
+- **Sound & motion** — the mix plays through a click-free chain: pause, resume and every seek fade over a few
+  milliseconds, the AudioContext asks for playback-sized buffers, and lock screens, headphones and media keys get
+  track metadata and controls (Media Session). `src/fx.ts` feeds the kick and low end into CSS variables on the
+  player, dock and home marks, adds page transitions, a desktop cursor aura and magnetic calls to action; the home
+  canvas sheds particles and resolution on its own if frames run long. All motion respects reduced-motion.
+
 ```
 npm install
 npm run dev

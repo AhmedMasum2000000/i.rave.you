@@ -3,11 +3,13 @@ import { syncSearchMetadata } from './seo';
 import { installGuard } from './guard';
 import './artist.css';
 import './mobile.css';
+import './fx.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, type ArtistId } from './data';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
+import { mountFx, transition } from './fx';
 import { esc, mountGate, reducedMotion } from './ui';
 
 installGuard();
@@ -28,7 +30,7 @@ const PAGES: Page[] = ['home', 'listen', 'sequencer', 'about'];
 const route = (): void => {
   const [id, sub] = location.hash.replace(/^#\/?/, '').split('/') as [ArtistId | '', string | undefined];
   teardown();
-  window.scrollTo(0, 0);
+  window.scrollTo({ top: 0, behavior: 'instant' });
   if (id === 'acnd' || id === 'apurba') {
     const page = (PAGES.includes(sub as Page) ? sub : 'home') as Page;
     cleanup.push(renderArtist(app, ARTISTS[id], page));
@@ -36,7 +38,8 @@ const route = (): void => {
   syncSearchMetadata(id === 'acnd' || id === 'apurba' ? id : undefined);
 };
 
-window.addEventListener('hashchange', route);
+// Later navigations dissolve between pages; the first render is immediate.
+window.addEventListener('hashchange', () => transition(route));
 
 /* ──────────────────────────────── HOME ──────────────────────────────── */
 
@@ -48,7 +51,7 @@ function renderHome(): void {
   const A = ARTISTS.apurba;
   const C = ARTISTS.acnd;
   app.innerHTML = `
-    <main class="home">
+    <main class="home" data-pulse>
       <canvas class="home-canvas" aria-hidden="true"></canvas>
       <header class="home-top">
         <span class="home-id">
@@ -103,6 +106,7 @@ function renderHome(): void {
 route();
 mountChrome();
 mountPlayer();
+mountFx();
 void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
   line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',
