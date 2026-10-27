@@ -9,11 +9,15 @@ Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and
   listen (`/acnd/listen/`), sequencer (`/acnd/sequencer/`) and about (`/acnd/about/`). Same for `/apurba/…`.
   URLs are clean (History API, `src/router.ts`); the build writes a real `index.html` for every route, so refreshes
   and shared links work on any static host. Old `#/…` links redirect to the clean URL.
-- **Menu & pre-save** — a site-wide MENU overlay and a live “Down In Bossa” countdown with a PRE-SAVE button.
+- **Menu** — a site-wide MENU overlay with the next release and its live countdown.
 - **The set** — Qbic Pulse, hosted by ACND & অপূর্ব for Hong Kong Community Radio (HKCR) — starts from
-  the entry record and keeps playing across pages, fading out (paused in place) whenever the tab loses focus.
-  A player chip on every page has play/pause and opens the **Track ID** panel: every track
-  with its timestamp, click to jump, previous/next and a seekable bar. Track IDs and direct original-recording links are available from every page’s player.
+  the entry record and keeps playing across every page, including journal, mix, legal and feature pages opened from
+  the site (they load inside the shell, so the audio never reloads), and when the tab is in the background.
+  A white player bar on every page (`src/player.ts`, `src/bar.css`): a seek line across the whole set with an eye
+  for a knob, then the mix artwork, play, the playing track, the I RAVE YOU wordmark (home), the artist's Spotify,
+  SHARE and a PRE-SAVE pill with the “Down In Bossa” countdown. The artwork or title opens the tracklist window:
+  every track with its timestamp, click to jump, previous/next and original-recording links.
+  Only a first visit to the home page asks about sound; the choice is remembered, and no other page prompts.
 
 - **Sound & motion** — the mix plays through a click-free chain: pause, resume and every seek fade over a few
   milliseconds, the AudioContext asks for playback-sized buffers, and lock screens, headphones and media keys get

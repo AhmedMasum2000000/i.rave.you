@@ -62,16 +62,20 @@ function rememberedEntry(): 'sound' | 'quiet' | null {
   }
 }
 
+/**
+ * A visitor who once chose sound gets the mix back on any page they open
+ * (on their first tap if the browser blocks autoplay); nobody else is asked.
+ */
+export function resumeRemembered(): boolean {
+  if (rememberedEntry() !== 'sound') return false;
+  if (document.readyState === 'complete') start();
+  else window.addEventListener('load', () => start(), { once: true });
+  return true;
+}
+
 export function mountGate(opts: { kicker: string; line: string; cta: string }): Promise<void> {
-  // Returning visitors are not asked again: sound resumes (on their first tap
-  // if the browser blocks autoplay) and quiet stays quiet.
-  const known = rememberedEntry();
-  if (known === 'sound') {
-    if (document.readyState === 'complete') start();
-    else window.addEventListener('load', () => start(), { once: true });
-    return Promise.resolve();
-  }
-  if (known === 'quiet') return Promise.resolve();
+  // Returning visitors are not asked again: sound resumes and quiet stays quiet.
+  if (resumeRemembered() || rememberedEntry() === 'quiet') return Promise.resolve();
   return new Promise((resolve) => {
     const gate = document.createElement('div');
     gate.className = 'gate';
@@ -108,24 +112,6 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
     gate.querySelectorAll('[data-enter]').forEach((b) => b.addEventListener('click', () => enter()));
     gate.querySelectorAll('[data-quiet]').forEach((b) => b.addEventListener('click', () => enter(true)));
   });
-}
-
-/** Non-blocking version for content pages: a banner that starts the set. */
-export function mountVibeBanner(): void {
-  const banner = document.createElement('div');
-  banner.className = 'vibe-banner';
-  banner.innerHTML = prompt();
-  document.body.append(banner);
-  const stop = meter(banner);
-  banner.querySelectorAll('[data-enter], [data-quiet]').forEach((b) =>
-    b.addEventListener('click', () => {
-      stop();
-      if (b.hasAttribute('data-quiet')) pause();
-      else start();
-      banner.classList.add('vibe-out');
-      setTimeout(() => banner.remove(), 600);
-    }),
-  );
 }
 
 /** Reveal media and cards on scroll; keep reading text static and immediately visible. */

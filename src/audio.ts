@@ -15,10 +15,10 @@ const POS_KEY = 'iry:mix-pos';
 let el: HTMLAudioElement | null = null;
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
-/** Separate from `master` so ducking and tab-focus fades never fight. */
+/** Separate from `master` so ducking and transport fades never fight. */
 let focusGain: GainNode | null = null;
 let pauseTimer = 0;
-/** True when the visitor paused; tab-focus changes must not override that. */
+/** True when the visitor paused; nothing but the visitor resumes it. */
 let userPaused = false;
 const stateListeners = new Set<(playing: boolean) => void>();
 let analyser: AnalyserNode | null = null;
@@ -28,7 +28,7 @@ let lastIndex = -1;
 const trackListeners = new Set<(t: MixTrack, i: number) => void>();
 
 export const audioCtx = (): AudioContext | null => ctx;
-/** Where other sound (the sequencer) should connect, so it fades with the tab too. */
+/** Where other sound (the sequencer) should connect, so it shares the transport fades. */
 export const output = (): AudioNode | null => focusGain;
 export const isStarted = (): boolean => started;
 
@@ -126,36 +126,8 @@ export function start(): void {
   play();
 
   window.addEventListener('pagehide', savePos);
-  document.addEventListener('visibilitychange', onFocusChange);
-  window.addEventListener('blur', onFocusChange);
-  window.addEventListener('focus', onFocusChange);
   setInterval(savePos, 4000);
   mountMediaSession();
-}
-
-/**
- * Leaving the tab (or the window) fades the mix out and pauses it in place;
- * coming back resumes from the same spot and fades it in again.
- */
-function onFocusChange(): void {
-  if (!ctx || !focusGain || !el) return;
-  const away = document.hidden || !document.hasFocus();
-  const g = focusGain.gain;
-  g.cancelScheduledValues(ctx.currentTime);
-  g.setValueAtTime(g.value, ctx.currentTime);
-  clearTimeout(pauseTimer);
-  if (userPaused) return;
-  if (away) {
-    g.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
-    pauseTimer = window.setTimeout(() => {
-      el?.pause();
-      savePos();
-    }, 850);
-  } else {
-    void ctx.resume();
-    if (el.paused) void el.play().catch(() => undefined);
-    g.linearRampToValueAtTime(1, ctx.currentTime + 1.2);
-  }
 }
 
 function savePos(): void {
@@ -254,7 +226,7 @@ export function seek(sec: number): void {
     const restore = (): void => {
       if (restored || !ctx || !focusGain) return;
       restored = true;
-      if (userPaused || document.hidden) return;
+      if (userPaused) return;
       focusGain.gain.cancelScheduledValues(ctx.currentTime);
       focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.04);
     };

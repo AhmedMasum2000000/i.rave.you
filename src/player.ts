@@ -1,30 +1,66 @@
 import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle } from './audio';
-import { MIX, TRACKLIST, fmt, type MixTrack } from './data';
-import { esc } from './ui';
-import { bands } from './fx';
+import { ARTISTS, MIX, NEXT_RELEASE, TRACKLIST, fmt, type MixTrack } from './data';
+import { asset, esc } from './ui';
 
-/** Persistent mix controls and tracklist, available on every page. */
+/**
+ * The player bar: one full-width bar fixed to the bottom of every page, in
+ * two rows. Above, a hairline seek track across the whole set with the time
+ * on either side and an eye for a knob. Below, the mix artwork, play and the
+ * playing track, the I RAVE YOU wordmark (home), the artist's Spotify, and
+ * two pills: share, and pre-save the next release with its countdown.
+ *
+ * The artwork or the track title opens the tracklist window above the bar.
+ */
 
 const icon = {
-  play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>',
-  pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 7.5v9l7-4.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8.6 7.5h2.4v9H8.6zM13 7.5h2.4v9H13z"/></svg>',
   prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h2v11H3zM13 2.5v11L5.5 8z"/></svg>',
   next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5h2v11h-2zM3 2.5v11L10.5 8z"/></svg>',
+  /** An eye with a half-dark, half-light pupil: the site's duality as a knob. */
+  eye: '<svg viewBox="0 0 44 24" aria-hidden="true"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="#fff" stroke="#000" stroke-width="1.4"/><g class="fbar-pupil"><circle cx="22" cy="12" r="6.2" fill="#000"/><path d="M22 6.6a5.4 5.4 0 0 1 0 10.8z" fill="#fff"/></g></svg>',
+  spotify:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M6.2 9.3c3.9-1.2 8.3-.9 11.6 1M6.8 12.5c3.2-.9 6.7-.6 9.4.9M7.4 15.5c2.5-.6 5.1-.4 7.2.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
 };
 
+const two = (n: number): string => String(n).padStart(2, '0');
+
 export function mountPlayer(): void {
-  const np = document.createElement('div');
-  np.className = 'np';
-  np.innerHTML = `
-    <button class="np-play" type="button" aria-label="Pause">${icon.pause}</button>
-    <button class="np-main" type="button" aria-controls="track-id" aria-expanded="false">
-      <span class="np-live mono" aria-hidden="true"><i></i>Live</span>
-      <span class="np-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-      <span class="np-text"><span class="np-k"></span><span class="np-t"></span></span>
-      <span class="np-time">00:00</span>
-      <span class="np-caret" aria-hidden="true">▲</span>
-    </button>
-    <span class="np-bar" aria-hidden="true"><span></span></span>`;
+  const root = document.documentElement.dataset.root ?? '';
+  const bar = document.createElement('div');
+  bar.className = 'fbar';
+  bar.setAttribute('role', 'region');
+  bar.setAttribute('aria-label', 'Mix player');
+  bar.innerHTML = `
+    <div class="fbar-seek">
+      <span class="fbar-time" data-t>00:00</span>
+      <div class="fbar-track" role="slider" tabindex="0" aria-label="Seek in the mix" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="fbar-line"></span>
+        <span class="fbar-knob">${icon.eye}</span>
+      </div>
+      <span class="fbar-time" data-d>45:43</span>
+    </div>
+    <div class="fbar-row">
+      <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
+        <img src="${asset('img/mix-art.jpg')}" alt="" width="48" height="48" />
+      </button>
+      <div class="fbar-now">
+        <button type="button" class="fbar-play" aria-label="Play">${icon.play}</button>
+        <button type="button" class="fbar-text" aria-controls="track-id" aria-expanded="false">
+          <span class="fbar-title"></span>
+          <span class="fbar-artist"></span>
+        </button>
+      </div>
+      <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>
+      <a class="fbar-spotify" href="${esc(ARTISTS.acnd.listen.url)}" target="_blank" rel="noopener">${icon.spotify}<span>Spotify</span></a>
+      <div class="fbar-actions">
+        <button type="button" class="fbar-pill fbar-share">Share</button>
+        <a class="fbar-pill fbar-cta" href="${esc(NEXT_RELEASE.presave)}" target="_blank" rel="noopener" title="${esc(NEXT_RELEASE.title)} — ${esc(NEXT_RELEASE.artist)}">
+          <span data-presave-label>Pre-save</span>
+          <span class="fbar-cd" aria-hidden="true"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m</span>
+        </a>
+      </div>
+    </div>`;
 
   const panel = document.createElement('section');
   panel.id = 'track-id';
@@ -32,49 +68,77 @@ export function mountPlayer(): void {
   panel.setAttribute('aria-label', 'Mix tracklist');
   panel.inert = true;
   panel.innerHTML = `
-    <header class="tid-head">
+    <header class="tid-bar">
+      <span>Tracklist</span>
+      <button type="button" data-act="close" aria-label="Close tracklist">–</button>
+    </header>
+    <div class="tid-head">
       <div class="tid-title">
-        <span class="mono">● Mix tracklist</span>
         <b>${esc(MIX.show)} on ${esc(MIX.station)}</b>
-        <span class="mono">Hosted by ${esc(MIX.hosts)} · made for <a href="${MIX.stationUrl}" target="_blank" rel="noopener">HKCR ↗</a></span>
+        <span>Hosted by ${esc(MIX.hosts)} · made for <a href="${MIX.stationUrl}" target="_blank" rel="noopener">HKCR ↗</a></span>
       </div>
       <div class="tid-transport">
         <button type="button" data-act="prev" aria-label="Previous track">${icon.prev}</button>
-        <button type="button" data-act="play" aria-label="Pause">${icon.pause}</button>
         <button type="button" data-act="next" aria-label="Next track">${icon.next}</button>
-        <span class="tid-clock mono"><b data-t>00:00</b> / <span data-d>45:43</span></span>
       </div>
-      <button type="button" class="tid-close mono" data-act="close" aria-label="Close track list">Close ✕</button>
-    </header>
-    <div class="tid-seek" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <span class="tid-fill"></span>
-      ${TRACKLIST.map((t) => `<i style="left:${(t.at / 2743.6) * 100}%"></i>`).join('')}
     </div>
     <ol class="tid-list">
       ${TRACKLIST.map(
         (t, i) => `
         <li data-i="${i}">
           <button type="button" data-seek="${t.at}" aria-label="Play ${esc(t.title)} from ${fmt(t.at)}">
-            <span class="mono">${fmt(t.at)}</span>
-            <span><b>${esc(t.title)}</b> - ${esc(t.artist)}<em class="tid-now mono">Now playing</em></span>
+            <span class="tid-at">${fmt(t.at)}</span>
+            <span><b>${esc(t.title)}</b> — ${esc(t.artist)}<em class="tid-now">Now playing</em></span>
           </button>
           ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(t.title)} by ${esc(t.artist)} on ${esc(t.linkLabel)}">${esc(t.linkLabel)} ↗</a>` : `<span class="tid-unavailable">Unreleased</span>`}
         </li>`,
       ).join('')}
     </ol>`;
 
-  // A quiet card names each new track as the mix moves on.
+  // A small window names each new track as the mix moves on.
   const now = document.createElement('div');
   now.className = 'np-now';
   now.setAttribute('role', 'status');
   now.setAttribute('aria-live', 'polite');
-  now.innerHTML = `<span class="np-now-k mono"></span><b class="np-now-t"></b><span class="np-now-a"></span>`;
+  now.innerHTML = `<span class="np-now-k"></span><b class="np-now-t"></b><span class="np-now-a"></span>`;
 
-  document.body.append(panel, np, now);
+  document.body.append(panel, now, bar);
+
+  const playBtn = bar.querySelector<HTMLButtonElement>('.fbar-play')!;
+  const openers = [...bar.querySelectorAll<HTMLButtonElement>('.fbar-art, .fbar-text')];
+  const title = bar.querySelector<HTMLElement>('.fbar-title')!;
+  const artist = bar.querySelector<HTMLElement>('.fbar-artist')!;
+  const tT = bar.querySelector<HTMLElement>('[data-t]')!;
+  const tD = bar.querySelector<HTMLElement>('[data-d]')!;
+  const track = bar.querySelector<HTMLElement>('.fbar-track')!;
+  const knob = bar.querySelector<HTMLElement>('.fbar-knob')!;
+  const spotify = bar.querySelector<HTMLAnchorElement>('.fbar-spotify')!;
+  const share = bar.querySelector<HTMLButtonElement>('.fbar-share')!;
+  const rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
+
+  let current: { t: MixTrack; i: number } = { t: TRACKLIST[0], i: 0 };
+  rows[0]?.classList.add('playing');
+
+  const reveal = (): void => {
+    if (!document.body.classList.contains('tid-open')) return;
+    rows[current.i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  };
+
+  const open = (on: boolean): void => {
+    document.body.classList.toggle('tid-open', on);
+    openers.forEach((b) => b.setAttribute('aria-expanded', String(on)));
+    panel.inert = !on;
+    if (!on && panel.contains(document.activeElement)) openers[1].focus();
+    if (on) {
+      panel.querySelector<HTMLButtonElement>('[data-act="close"]')?.focus({ preventScroll: true });
+      window.setTimeout(reveal, 300);
+    }
+  };
+
   let nowTimer = 0;
   let firstTrack = true;
   const announce = (t: MixTrack, i: number): void => {
-    now.querySelector('.np-now-k')!.textContent = `Now playing · ${String(i + 1).padStart(2, '0')}/${TRACKLIST.length}`;
+    now.querySelector('.np-now-k')!.textContent = `Now playing · ${two(i + 1)}/${TRACKLIST.length}`;
     now.querySelector('.np-now-t')!.textContent = t.title;
     now.querySelector('.np-now-a')!.textContent = t.artist;
     now.classList.remove('show');
@@ -84,92 +148,54 @@ export function mountPlayer(): void {
     nowTimer = window.setTimeout(() => now.classList.remove('show'), 5200);
   };
 
-  const playBtns = [np.querySelector<HTMLButtonElement>('.np-play')!, panel.querySelector<HTMLButtonElement>('[data-act="play"]')!];
-  const main = np.querySelector<HTMLButtonElement>('.np-main')!;
-  const k = np.querySelector<HTMLElement>('.np-k')!;
-  const title = np.querySelector<HTMLElement>('.np-t')!;
-  const tm = np.querySelector<HTMLElement>('.np-time')!;
-  const bar = np.querySelector<HTMLElement>('.np-bar span')!;
-  const eq = [...np.querySelectorAll<HTMLElement>('.np-eq i')];
-  const seekBar = panel.querySelector<HTMLElement>('.tid-seek')!;
-  const fill = panel.querySelector<HTMLElement>('.tid-fill')!;
-  const tT = panel.querySelector<HTMLElement>('[data-t]')!;
-  const tD = panel.querySelector<HTMLElement>('[data-d]')!;
-  const rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
-
-  let current: { t: MixTrack; i: number } = { t: TRACKLIST[0], i: 0 };
-  rows[0]?.classList.add('playing');
-
-  // The chip pulses for attention until the visitor has opened Track ID once.
-  const SEEN = 'iry:tid-seen';
-  let seen = false;
-  try {
-    seen = localStorage.getItem(SEEN) === '1';
-  } catch {
-    /* storage unavailable */
-  }
-  np.classList.toggle('np-attn', !seen);
-
-  /** Keep the playing row in view inside the panel's own scroll area. */
-  const reveal = (): void => {
-    if (!document.body.classList.contains('tid-open') || !current) return;
-    rows[current.i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-  };
-
-  const open = (on: boolean): void => {
-    document.body.classList.toggle('tid-open', on);
-    main.setAttribute('aria-expanded', String(on));
-    panel.inert = !on;
-    if (!on && panel.contains(document.activeElement)) main.focus();
-    if (on) {
-      panel.querySelector<HTMLButtonElement>('.tid-close')?.focus({ preventScroll: true });
-      seen = true;
-      np.classList.remove('np-attn');
-      try {
-        localStorage.setItem(SEEN, '1');
-      } catch {
-        /* ignore */
-      }
-      window.setTimeout(reveal, 350);
-    }
-  };
-
-  /** The same track ID and panel access follow the listener across routes. */
-  const label = (): void => {
-    if (current) {
-      k.textContent = `TRACK ID · ${String(current.i + 1).padStart(2, '0')}/${TRACKLIST.length}`;
-      title.textContent = `${current.t.title} - ${current.t.artist}`;
-    } else {
-      k.textContent = `${MIX.show} · HKCR`;
-      title.textContent = `Hosted by ${MIX.hosts}`;
-    }
-    main.setAttribute('aria-label', `Open mix tracklist: ${title.textContent}`);
-  };
-
   onTrack((t, i) => {
     if (!firstTrack && isPlaying() && !document.body.classList.contains('tid-open')) announce(t, i);
     firstTrack = false;
     current = { t, i };
     rows.forEach((r, n) => r.classList.toggle('playing', n === i));
-    label();
+    title.textContent = t.title;
+    artist.textContent = t.artist;
+    openers[1].setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
     reveal();
-    title.classList.remove('np-swap');
-    void title.offsetWidth;
-    title.classList.add('np-swap');
   });
+  title.textContent = current.t.title;
+  artist.textContent = current.t.artist;
 
   onState((playing) => {
-    for (const b of playBtns) {
-      b.innerHTML = playing ? icon.pause : icon.play;
-      b.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-    }
-    np.classList.toggle('paused', !playing);
+    playBtn.innerHTML = playing ? icon.pause : icon.play;
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    bar.classList.toggle('paused', !playing);
   });
 
-  label();
+  // The Spotify cell follows the artist whose pages are open.
+  const syncArtist = (): void => {
+    const id = document.body.dataset.artist;
+    const a = id === 'acnd' || id === 'apurba' ? ARTISTS[id] : undefined;
+    bar.classList.toggle('fbar-noartist', !a);
+    if (a) {
+      spotify.href = a.listen.url;
+      spotify.setAttribute('aria-label', `${a.latin} on Spotify`);
+    }
+  };
+  syncArtist();
+  window.addEventListener('routechange', syncArtist);
 
-  playBtns.forEach((b) => b.addEventListener('click', toggle));
-  main.addEventListener('click', () => open(!document.body.classList.contains('tid-open')));
+  share.addEventListener('click', async () => {
+    const data = { title: document.title, url: location.href };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else {
+        await navigator.clipboard.writeText(data.url);
+        share.textContent = 'Link copied';
+        window.setTimeout(() => (share.textContent = 'Share'), 1800);
+      }
+    } catch {
+      /* the visitor dismissed the share sheet */
+    }
+  });
+
+  playBtn.addEventListener('click', toggle);
+  openers.forEach((b) => b.addEventListener('click', () => open(!document.body.classList.contains('tid-open'))));
   panel.addEventListener('click', (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act], [data-seek]');
     if (!el) return;
@@ -181,20 +207,23 @@ export function mountPlayer(): void {
     else if (el.dataset.act === 'close') open(false);
   });
   window.addEventListener('keydown', (e) => e.key === 'Escape' && open(false));
+  window.addEventListener('routechange', () => open(false));
 
-  // Click or drag anywhere on the bar to scrub; arrows nudge by 10 s.
+  // Drag anywhere on the line to scrub; arrows nudge by 10 s.
+  let dragging = false;
   const scrub = (e: PointerEvent): void => {
-    const r = seekBar.getBoundingClientRect();
-    seek(((e.clientX - r.left) / r.width) * duration());
+    const r = track.getBoundingClientRect();
+    seek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration());
   };
-  seekBar.addEventListener('pointerdown', (e) => {
-    seekBar.setPointerCapture(e.pointerId);
+  track.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    track.setPointerCapture(e.pointerId);
     scrub(e);
-    const move = (ev: PointerEvent): void => scrub(ev);
-    seekBar.addEventListener('pointermove', move);
-    seekBar.addEventListener('pointerup', () => seekBar.removeEventListener('pointermove', move), { once: true });
   });
-  seekBar.addEventListener('keydown', (e) => {
+  track.addEventListener('pointermove', (e) => dragging && scrub(e));
+  track.addEventListener('pointerup', () => (dragging = false));
+  track.addEventListener('pointercancel', () => (dragging = false));
+  track.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') seek(time() + 10);
     if (e.key === 'ArrowLeft') seek(time() - 10);
   });
@@ -202,32 +231,19 @@ export function mountPlayer(): void {
   let lastFrame = 0;
   let lastSecond = -1;
   const loop = (stamp: number): void => {
-    if (document.hidden || stamp - lastFrame < 1000 / 30) {
-      requestAnimationFrame(loop);
-      return;
-    }
-    lastFrame = stamp;
-    const now = time();
-    const frac = now / duration();
-    if (Math.floor(now) !== lastSecond) {
-      lastSecond = Math.floor(now);
-      tm.textContent = fmt(now);
-    }
-    bar.style.transform = `scaleX(${frac})`;
-    if (document.body.classList.contains('tid-open')) {
-      tT.textContent = fmt(now);
-      tD.textContent = fmt(duration());
-      fill.style.transform = `scaleX(${frac})`;
-      seekBar.setAttribute('aria-valuenow', String(Math.round(frac * 100)));
-    }
-    // A real five-band meter: sub, low, mid, presence, air.
-    const v = bands(eq.length);
-    // Mastered music sits high in every band; show the movement above that floor.
-    eq.forEach((el, n) => {
-      const x = Math.max(0, Math.min(1, (v[n] * (1 + n * 0.15) - 0.4) / 0.5));
-      el.style.transform = `scaleY(${(0.12 + x * 0.88).toFixed(3)})`;
-    });
     requestAnimationFrame(loop);
+    if (document.hidden || stamp - lastFrame < 1000 / 30) return;
+    lastFrame = stamp;
+    const t = time();
+    const frac = Math.min(1, t / duration());
+    knob.style.setProperty('--p', frac.toFixed(4));
+    if (Math.floor(t) !== lastSecond) {
+      lastSecond = Math.floor(t);
+      tT.textContent = fmt(t);
+      tD.textContent = fmt(duration());
+      track.setAttribute('aria-valuenow', String(Math.round(frac * 100)));
+      track.setAttribute('aria-valuetext', `${fmt(t)} of ${fmt(duration())}`);
+    }
   };
   requestAnimationFrame(loop);
 }

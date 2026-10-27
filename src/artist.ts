@@ -47,10 +47,7 @@ function footer(a: Artist): string {
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}
       <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="${routeHref('acnd')}">ACND</a></span></span>
-    </footer>
-    <a class="a-sleeve" href="${link()}" aria-label="Back to I Rave You">
-      <span class="a-sleeve-art"><span>I RAVE YOU</span><span class="bn">অপূর্ব ◐ ACND</span></span>
-    </a>`;
+    </footer>`;
 }
 
 const media = (a: Artist, i: number, cls: string): string => {

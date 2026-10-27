@@ -389,95 +389,6 @@ body.flooding .home-release {
 
 /* ──────────────────────────── PLAYER CHIP ──────────────────────────── */
 
-.np {
-  position: fixed;
-  left: var(--gutter);
-  bottom: 16px;
-  z-index: 56;
-  display: flex;
-  align-items: stretch;
-  width: min(360px, calc(100vw - 2 * var(--gutter)));
-  height: 46px;
-  color: #fff;
-  background: rgba(10, 10, 10, 0.72);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: 12px;
-  overflow: hidden;
-}
-.np button {
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.np-play {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  flex: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.14) !important;
-}
-.np-play svg,
-.tid-transport svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-.np-play:hover {
-  color: var(--glow);
-}
-.np-main {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 10px;
-  padding: 0 12px;
-  text-align: left;
-}
-.np-main:disabled {
-  cursor: default;
-}
-.np-eq {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 16px;
-}
-.np-eq i {
-  width: 3px;
-  height: 100%;
-  background: var(--glow);
-  transform-origin: bottom;
-}
-body[data-view='home'] .np-eq i:nth-child(odd) {
-  background: var(--blue);
-}
-body[data-view='home'] .np-eq i:nth-child(even) {
-  background: var(--orange);
-}
-.np-text {
-  display: grid;
-  min-width: 0;
-}
-.np-k {
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.6;
-}
-.np-t {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 700;
-}
-.np-swap {
-  animation: swap 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
 @keyframes swap {
   from {
     transform: translateY(100%);
@@ -485,247 +396,11 @@ body[data-view='home'] .np-eq i:nth-child(even) {
     filter: blur(4px);
   }
 }
-.np-time {
-  font-size: 11px;
-  opacity: 0.7;
-  font-variant-numeric: tabular-nums;
-}
-.np-caret {
-  display: none;
-  font-size: 10px;
-  opacity: 0.7;
-  transition: transform 0.3s;
-}
-.np-caret {
-  display: block;
-}
-body.tid-open .np-caret {
-  transform: rotate(180deg);
-}
-.np-main:hover .np-t {
-  text-decoration: underline;
-}
-.np-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-}
-.np-bar span {
-  display: block;
-  height: 100%;
-  background: var(--glow);
-  transform-origin: left;
-  transform: scaleX(0);
-}
-.np.paused .np-t {
-  opacity: 0.6;
-}
-body.menu-open .np {
-  opacity: 0;
-  pointer-events: none;
-}
 
 /* ─────────────────────── TRACKLIST PANEL ─────────────────────── */
 
-.tid {
-  position: fixed;
-  left: var(--gutter);
-  right: var(--gutter);
-  bottom: 74px;
-  z-index: 57;
-  max-width: 1320px;
-  max-height: min(62vh, 560px);
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  background: rgba(6, 6, 7, 0.94);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f2f2f2;
-  opacity: 0;
-  transform: translateY(16px);
-  pointer-events: none;
-  visibility: hidden;
-  transition: opacity 0.35s, transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.45s;
-}
-body.tid-open .tid {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-  visibility: visible;
-}
-.tid button {
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.tid-head {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 24px;
-  align-items: center;
-  padding: 16px 20px 12px;
-}
-.tid-title {
-  display: grid;
-  gap: 4px;
-}
-.tid-title .mono {
-  color: #8a8a8a;
-}
-.tid-title b {
-  font-size: 18px;
-  font-weight: 800;
-}
-.tid-title a {
-  color: #fff;
-  text-decoration: underline;
-}
-.tid-transport {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.tid-transport button {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  transition: background 0.2s, color 0.2s;
-}
-.tid-transport button:hover {
-  background: #fff;
-  color: #000;
-}
-.tid-transport [data-act='play'] {
-  width: 46px;
-  background: #fff;
-  color: #000;
-}
-.tid-clock {
-  margin-left: 12px;
-  color: #8a8a8a;
-  font-variant-numeric: tabular-nums;
-}
-.tid-clock b {
-  color: #fff;
-  font-weight: 600;
-}
-.tid-close {
-  color: #8a8a8a !important;
-}
-.tid-close:hover {
-  color: #fff !important;
-}
-.tid-seek {
-  position: relative;
-  height: 14px;
-  margin: 0 20px 8px;
-  cursor: pointer;
-  touch-action: none;
-}
-.tid-seek::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 6px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.15);
-}
-.tid-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 6px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--blue), var(--orange));
-  transform-origin: left;
-  transform: scaleX(0);
-}
-.tid-seek i {
-  position: absolute;
-  top: 3px;
-  width: 1px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.35);
-}
-.tid-seek:hover::before {
-  background: rgba(255, 255, 255, 0.25);
-}
 /* Two columns of IDs, like a tracklist on a record sleeve. */
-.tid-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 20px 16px;
-  columns: 2;
-  column-gap: 40px;
-  overflow: auto;
-}
-.tid-list li {
-  display: flex;
-  align-items: stretch;
-  break-inside: avoid;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.tid-list li button {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 62px 1fr;
-  gap: 8px;
-  padding: 10px 6px;
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.35;
-  transition: background 0.2s;
-}
-.tid-list li button .mono {
-  color: #7d7d7d;
-}
-.tid-list li button b {
-  font-weight: 800;
-}
-.tid-list li a {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  color: #7d7d7d;
-}
-.tid-list li a:hover {
-  color: #fff;
-}
-.tid-list li button:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-.tid-list li.playing {
-  background: color-mix(in srgb, var(--blue) 16%, transparent);
-  box-shadow: inset 3px 0 0 var(--blue);
-}
-.tid-list li.playing .mono {
-  color: #fff;
-}
 
-@media (max-width: 760px) {
-  .tid {
-    bottom: 128px;
-    max-height: 60vh;
-  }
-  .tid-head {
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-  }
-  .tid-transport {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  .tid-list {
-    columns: 1;
-  }
-}
 
 /* ─────────────── SHARED (artist pages, pitch pages) ─────────────── */
 
@@ -783,8 +458,8 @@ body.tid-open .tid {
 
 @media (prefers-reduced-motion: reduce) {
   *,
-  *::before,
-  *::after {
+*::before,
+*::after {
     animation-duration: 0.001s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001s !important;
@@ -851,140 +526,21 @@ html.curtain .guard-curtain {
 
 /* ─────────────── TRACK ID, highlighted on the home page ─────────────── */
 
-.np-live {
-  display: none;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 7px;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #000;
-  background: #fff;
-}
-.np-live i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ff2d2d;
-  animation: live 1.2s ease-in-out infinite;
-}
 @keyframes live {
   50% {
     opacity: 0.25;
   }
 }
-.np.paused .np-live i {
-  animation: none;
-  background: #888;
-}
-
-body[data-view='home'] .np {
-  left: 50%;
-  translate: -50% 0;
-  width: min(500px, calc(100vw - 2 * var(--gutter)));
-  height: 56px;
-  border: 1px solid transparent;
-  background:
-    linear-gradient(rgba(8, 8, 10, 0.86), rgba(8, 8, 10, 0.86)) padding-box,
-    linear-gradient(90deg, var(--blue), var(--orange)) border-box;
-  box-shadow: -14px 0 40px -18px var(--blue), 14px 0 40px -18px var(--orange);
-}
-body[data-view='home'] .np-main {
-  grid-template-columns: auto auto 1fr auto auto;
-}
-body[data-view='home'] .np-live {
-  display: inline-flex;
-}
-body[data-view='home'] .np-k {
-  font-size: 10px;
-  font-weight: 800;
-  opacity: 1;
-  background: linear-gradient(90deg, #8fb3ff, #ffb08a);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-body[data-view='home'] .np-t {
-  font-size: 14px;
-}
-.np-caret {
-  font-size: 12px;
-  opacity: 1;
-}
-body[data-view='home'] .np-bar span {
-  background: linear-gradient(90deg, var(--blue), var(--orange));
-}
 /* Until Track ID has been opened once, the chip breathes for attention. */
-body[data-view='home'] .np.np-attn {
-  animation: attn 2.4s ease-in-out infinite;
-}
+
 @keyframes attn {
   50% {
     box-shadow: -18px 0 60px -10px var(--blue), 18px 0 60px -10px var(--orange);
   }
 }
-body[data-view='home'] .tid {
-  left: 50%;
-  right: auto;
-  translate: -50% 0;
-  width: min(1180px, calc(100vw - 2 * var(--gutter)));
-  bottom: 86px;
-}
 
 /* The playing row: unmistakable. */
-.tid-now {
-  display: none;
-  margin-left: 10px;
-  padding: 2px 6px;
-  font-style: normal;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #000;
-  background: linear-gradient(90deg, #8fb3ff, #ffb08a);
-  vertical-align: 1px;
-}
-.tid-list li.playing {
-  background: linear-gradient(90deg, rgba(47, 123, 255, 0.28), rgba(255, 106, 26, 0.12));
-  box-shadow: inset 3px 0 0 var(--blue), 0 0 24px -10px var(--blue);
-}
-.tid-list li.playing b {
-  color: #fff;
-}
-.tid-list li.playing .tid-now {
-  display: inline-block;
-}
 
-@media (max-width: 1400px) and (min-width: 761px) {
-  body[data-view='home'] .np {
-    left: var(--gutter);
-    translate: none;
-    width: min(460px, 48vw);
-  }
-  body[data-view='home'] .tid {
-    left: var(--gutter);
-    translate: none;
-  }
-}
-@media (max-width: 760px) {
-  body[data-view='home'] .np {
-    left: var(--gutter);
-    translate: none;
-    width: calc(100vw - 2 * var(--gutter));
-  }
-  body[data-view='home'] .tid {
-    left: var(--gutter);
-    translate: none;
-    width: calc(100vw - 2 * var(--gutter));
-    bottom: 128px;
-  }
-  body[data-view='home'] .np-live {
-    padding: 2px 5px;
-  }
-}
 
 /* ─────────────── "WE DON'T GIVE COOKIES" PROMPT ─────────────── */
 
@@ -1097,21 +653,7 @@ body[data-view='home'] .tid {
   font-size: 9px;
 }
 /* Content pages: the same card, as a non-blocking banner. */
-.vibe-banner {
-  position: fixed;
-  left: var(--gutter);
-  bottom: 76px;
-  z-index: 58;
-  transition: opacity 0.5s, transform 0.5s;
-}
-.vibe-banner .vibe {
-  margin: 0;
-}
-.vibe-banner.vibe-out {
-  opacity: 0;
-  transform: translateY(14px);
-  pointer-events: none;
-}
+
 .gate-credit,
 .credit {
   font-family: var(--mono);
@@ -1142,23 +684,13 @@ body[data-view='home'] .tid {
   pointer-events: auto;
 }
 @media (max-width: 760px) {
-  .vibe-banner {
-    right: var(--gutter);
-    bottom: 128px;
-  }
   .vibe-title {
     font-size: 19px;
   }
 }
 
 /* Tracklist access is consistent on the home, artist, feature and pitch pages. */
-.tid-list li a { flex: none; width: 94px; padding: 8px; font-size: 11px; text-align: center; }
-.tid-list li button { min-width: 0; }
-.np-main:focus-visible, .tid button:focus-visible, .tid a:focus-visible { outline: 2px solid #8fb3ff; outline-offset: -2px; }
-@media (max-width: 760px) {
-  .tid-list li button { min-width: 0; }
-  .tid-list li a { width: 78px; }
-}
+
 
 .legal-links { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12px; line-height: 1.5; }
 .legal-links a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; }
@@ -1192,4 +724,3 @@ body:not([data-view='home']) .discovery-home { display: none; }
 .discovery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin: 32px 0; }
 .discovery-home a:focus-visible { outline: 3px solid #acd0ff; outline-offset: 4px; }
 @media(max-width:600px) { .discovery-grid { grid-template-columns: 1fr; gap: 12px; } }
-.tid-unavailable { display:flex; align-items:center; min-height:44px; padding:8px 0; color:var(--muted); font-size:12px; }

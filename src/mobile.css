@@ -16,8 +16,13 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .release-portfolio, body .b-bio, body .s-app { padding-top: calc(140px + var(--safe-top)); }
   body .release-heading { margin-bottom: 26px; }
   body .release-heading h1 { font-size: clamp(34px, 10vw, 52px); margin: 16px 0; }
-  body .release-heading p, body .release-meta p, body .release-note, body .b-para, body .a-ab p,
-  body .feature p:not(.mono), body .pitch p:not(.mono) { font-family: var(--font); font-weight: 700; line-height: 1.65; }
+  body .release-heading p,
+body .release-meta p,
+body .release-note,
+body .b-para,
+body .a-ab p,
+body .feature p:not(.mono),
+body .pitch p:not(.mono) { font-family: var(--font); font-weight: 700; line-height: 1.65; }
   body .release-heading p { font-size: 16px; }
   body .release-grid { gap: 24px 16px; }
   body .release-art > span { min-height: 44px; display: flex; align-items: center; padding: 10px 16px; }
@@ -37,38 +42,7 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .b-ids > a { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; line-height: 1.5; }
 
   /* One consistent audio dock; pre-save moves out of the way of the tracklist. */
-  body .np, body[data-view='home'] .np { left: var(--gutter); right: var(--gutter); bottom: calc(8px + var(--safe-bottom)); translate: none; width: auto; height: 56px; background: #101014; border: 1px solid #444; border-radius: 8px; backdrop-filter: none; animation: none; }
-  body .np-play { width: 48px; }
-  body .np-play svg, body .tid-transport svg { width: 18px; height: 18px; }
-  body .np-main, body[data-view='home'] .np-main { grid-template-columns: auto minmax(0, 1fr) auto auto; padding: 0 10px; gap: 8px; }
-  body[data-view='home'] .np-live { display: none; }
-  body .np-t, body[data-view='home'] .np-t { font-size: 12px; }
-  body .np-k { font-size: 9px; }
-  body .np-time { font-size: 11px; }
-  body .np-eq { gap: 1px; }
-  body .np-eq i { width: 2px; }
-  body .presave { left: var(--gutter); right: var(--gutter); bottom: calc(72px + var(--safe-bottom)); height: 44px; gap: 8px; }
-  body .presave-cta, body .presave-clock { min-height: 44px; }
-  body .presave .cd { gap: 8px; }
-  body .presave .cd b { font-size: 15px; }
-  body.tid-open .presave { opacity: 0; visibility: hidden; pointer-events: none; }
-  body.tid-open { overflow: hidden; }
-  body .tid, body[data-view='home'] .tid { left: var(--gutter); right: var(--gutter); bottom: calc(76px + var(--safe-bottom)); width: auto; translate: none; max-height: calc(100dvh - 106px - var(--safe-top) - var(--safe-bottom)); border-radius: 12px; background: #101014; backdrop-filter: none; overflow: hidden; }
-  body .tid-head { padding: 14px 12px 8px; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
-  body .tid-title { min-width: 0; gap: 6px; }
-  body .tid-title b { font-size: 14px; line-height: 1.4; }
-  body .tid-title .mono { font-size: 10px; line-height: 1.5; }
-  body .tid-close { min-width: 60px; min-height: 44px; align-self: start; font-size: 11px; }
-  body .tid-transport { grid-column: 1 / -1; grid-row: 2; gap: 8px; }
-  body .tid-transport button { width: 44px; height: 44px; }
-  body .tid-clock { margin-left: auto; font-size: 11px; }
-  body .tid-seek { height: 44px; min-height: 44px; margin: 0 14px 8px; }
-  body .tid-list { columns: auto; display: block; overflow-y: auto; overflow-x: hidden; padding: 0 12px 14px; min-height: 0; overscroll-behavior: contain; touch-action: pan-y; }
-  body .tid-list li { min-height: 64px; }
-  body .tid-list li button { grid-template-columns: 42px minmax(0, 1fr); gap: 6px; padding: 12px 4px; font-size: 13px; line-height: 1.5; }
-  body .tid-list li a { width: 76px; min-height: 44px; padding: 8px 4px; font-size: 11px; }
-  body .tid-now { margin: 4px 0 0; font-size: 8px; }
-  body.menu-open .tid { visibility: hidden; opacity: 0; pointer-events: none; }
+
 
   /* Reachable prompt and menu, including small phones and landscape. */
   body .gate { padding: calc(20px + var(--safe-top)) var(--gutter) calc(20px + var(--safe-bottom)); align-content: start; gap: 12px; overscroll-behavior: contain; }
@@ -82,7 +56,6 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .vibe-meter { grid-template-columns: 42px minmax(0, 1fr); line-height: 1.5; }
   body .gate-credit { margin: 0; }
   body .gate-out { transform: none; filter: none; transition: opacity .2s; }
-  body .vibe-banner { bottom: calc(128px + var(--safe-bottom)); right: var(--gutter); max-height: calc(100dvh - 160px - var(--safe-bottom)); overflow-y: auto; overscroll-behavior: contain; }
   body .menu { clip-path: none; opacity: 0; transform: translateY(-8px); transition: opacity .2s, transform .2s, visibility .2s; }
   body.menu-open .menu { opacity: 1; transform: none; }
   body .m-inner { padding: calc(76px + var(--safe-top)) var(--gutter) calc(28px + var(--safe-bottom)); gap: 32px; grid-template-columns: minmax(0, 1fr); overscroll-behavior: contain; }
@@ -117,11 +90,10 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .p-stamp { animation: none; transform: none; max-width: 100%; position: static; justify-self: end; margin: 8px 0; font-size: 11px; }
 }
 .seq-hint { display: none; }
-@media (max-width: 360px) { body .vibe-actions { grid-template-columns: 1fr; } body .presave .cd { gap: 4px; } body .presave .cd b { font-size: 13px; } }
+@media (max-width: 360px) { body .vibe-actions { grid-template-columns: 1fr; } }
 @media (max-width: 760px), (pointer: coarse) {
   body[data-view='artist']::after, body[data-view='feature']::after { animation: none; opacity: .035; }
   body .a-sheen, body .spark, body .p-logo { animation: none; }
-  body .np-attn { animation: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
@@ -133,7 +105,4 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .home .side { padding: 60px 24px 124px; justify-content: center; gap: 8px; }
   body .side-logo { width: 72px; }
   body .side-name { font-size: 22px; }
-  body .tid-title > .mono:last-child { display: none; }
-  body .tid-title b { font-size: 12px; }
-  body .tid-head { padding-top: 8px; gap: 4px; }
 }

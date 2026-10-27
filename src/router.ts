@@ -12,7 +12,12 @@ export type SubRoute = 'home' | 'listen' | 'sequencer' | 'about';
 export interface Route {
   artist?: ArtistRoute;
   page: SubRoute;
+  /** A static content page (journal, mix, legal…) shown inside the shell. */
+  doc?: string;
 }
+
+/** Static pages that open inside the shell so the mix never stops. */
+const DOC = /^(?:journal|mixes|music|legal|frequency-unity|acnd\/press)\/(?:[^?#]*\/)?$/;
 
 const ROUTE = /(?:^|\/)(acnd|apurba)\/(?:(listen|sequencer|about)\/?)?(?:index\.html)?$|(?:^|\/)(acnd|apurba)$/;
 
@@ -33,6 +38,7 @@ export const routeHref = (artist?: ArtistRoute, page: SubRoute = 'home'): string
 
 export function parse(pathname = location.pathname): Route {
   if (!pathname.startsWith(ROOT)) return { page: 'home' };
+  if (DOC.test(pathname.slice(ROOT.length))) return { page: 'home', doc: pathname };
   const [artist, sub] = pathname.slice(ROOT.length).replace(/index\.html$/, '').split('/');
   if (artist !== 'acnd' && artist !== 'apurba') return { page: 'home' };
   const page = sub === 'listen' || sub === 'sequencer' || sub === 'about' ? sub : 'home';
@@ -50,21 +56,23 @@ export function upgradeLegacyHash(): void {
 function routable(url: URL): boolean {
   if (url.origin !== location.origin || !url.pathname.startsWith(ROOT)) return false;
   const rest = url.pathname.slice(ROOT.length);
-  return rest === '' || rest === 'index.html' || /^(acnd|apurba)\/((listen|sequencer|about)\/)?$/.test(rest);
+  return rest === '' || rest === 'index.html' || /^(acnd|apurba)\/((listen|sequencer|about)\/)?$/.test(rest) || DOC.test(rest);
 }
 
 /**
- * Take over clicks on interactive routes so the mix keeps playing between
- * pages; everything else (journal, legal, press, new tabs) navigates normally.
+ * Take over clicks on site pages so the mix keeps playing between them;
+ * external links, downloads and new tabs behave normally.
  */
-export function interceptLinks(go: (path: string) => void): void {
-  document.addEventListener('click', (e) => {
+export function interceptLinks(go: (path: string) => void, doc: Document = document): void {
+  doc.addEventListener('click', (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href]') : null;
+    // Duck-typed: clicks inside the content frame come from another realm.
+    const t = e.target as Element | null;
+    const a = t && typeof t.closest === 'function' ? t.closest<HTMLAnchorElement>('a[href]') : null;
     if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
-    const url = new URL(a.href, location.href);
-    if (!routable(url) || url.hash) return;
+    const url = new URL(a.href, doc.location.href);
+    if (!routable(url) || (url.hash && url.pathname === doc.location.pathname)) return;
     e.preventDefault();
-    go(url.pathname);
+    go(url.pathname + url.hash);
   });
 }

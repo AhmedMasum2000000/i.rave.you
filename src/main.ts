@@ -4,13 +4,14 @@ import { installGuard } from './guard';
 import './artist.css';
 import './mobile.css';
 import './fx.css';
+import './bar.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, type ArtistId } from './data';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
-import { esc, mountGate, reducedMotion } from './ui';
+import { esc, mountGate, reducedMotion, resumeRemembered } from './ui';
 import { ROOT, interceptLinks, parse, routeHref, upgradeLegacyHash } from './router';
 
 // Assets resolve from the site root whatever route the visitor landed on.
@@ -31,18 +32,21 @@ const teardown = (): void => {
 
 /** `/acnd/`, `/acnd/listen/`, `/apurba/about/`… anything else is the duality home. */
 const route = (): void => {
-  const { artist, page } = parse();
+  const { artist, page, doc } = parse();
+  // Moving between content pages reuses the open frame.
+  if (doc && showDoc(doc)) return void window.dispatchEvent(new Event('routechange'));
   teardown();
   window.scrollTo({ top: 0, behavior: 'instant' });
-  if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
+  if (doc) cleanup.push(renderDoc(doc));
+  else if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
   else renderHome();
-  syncSearchMetadata(artist as ArtistId | undefined);
+  if (!doc) syncSearchMetadata(artist as ArtistId | undefined);
   window.dispatchEvent(new Event('routechange'));
 };
 
 /** Move to another view without reloading, so the mix plays on uninterrupted. */
 export function navigate(path: string): void {
-  if (path === location.pathname) return;
+  if (path === location.pathname + location.hash) return;
   history.pushState(null, '', path);
   transition(route);
 }
@@ -50,6 +54,57 @@ export function navigate(path: string): void {
 // Later navigations dissolve between pages; the first render is immediate.
 window.addEventListener('popstate', () => transition(route));
 interceptLinks(navigate);
+
+/* ─────────────────────────── CONTENT PAGES ──────────────────────────── */
+
+/**
+ * Journal, mix, release, legal and feature pages are complete static
+ * documents (crawlable, script-free where it matters). Opened from the site,
+ * they load in a full-screen frame inside this shell: the mix and the player
+ * bar never reload, the address bar shows the page's own URL, and links inside
+ * the page are routed back here.
+ */
+let frame: HTMLIFrameElement | null = null;
+
+const framePath = (f: HTMLIFrameElement): string => {
+  try {
+    const l = f.contentWindow!.location;
+    return l.pathname + l.hash;
+  } catch {
+    return '';
+  }
+};
+
+function renderDoc(path: string): () => void {
+  document.body.dataset.view = 'doc';
+  delete document.body.dataset.artist;
+  delete document.body.dataset.lean;
+  app.innerHTML = `<iframe class="doc-frame" title="Page" src="${esc(path)}"></iframe>`;
+  const f = app.querySelector<HTMLIFrameElement>('.doc-frame')!;
+  frame = f;
+  f.addEventListener('load', () => {
+    const d = f.contentDocument;
+    if (!d) return;
+    d.documentElement.classList.add('in-shell');
+    document.title = d.title || document.title;
+    f.title = d.title || 'Page';
+    interceptLinks(navigate, d);
+    // A navigation the shell didn't route (a form, a typed URL): follow it.
+    const at = framePath(f);
+    if (at && at !== location.pathname + location.hash) history.replaceState(null, '', at);
+    window.dispatchEvent(new Event('routechange'));
+  });
+  return () => {
+    frame = null;
+  };
+}
+
+/** Point the open frame at another page without adding a history entry. */
+function showDoc(path: string): boolean {
+  if (!frame?.contentWindow) return false;
+  if (framePath(frame) !== path) frame.contentWindow.location.replace(path);
+  return true;
+}
 
 /* ──────────────────────────────── HOME ──────────────────────────────── */
 
@@ -117,7 +172,10 @@ route();
 mountChrome();
 mountPlayer();
 mountFx();
-void mountGate({
+// Only a first visit to the home page asks about sound; every other page
+// leaves the choice to the player bar's play button.
+if (parse().artist || parse().doc) resumeRemembered();
+else void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
   line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',
   cta: 'Click to enter',
