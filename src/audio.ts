@@ -135,9 +135,9 @@ export function start(): void {
   const media = el!;
   media.preload = 'auto';
 
-  // 'balanced' keeps output steady without the large 'playback' buffers, which
-  // delayed sound after a click and left the visuals running ahead of it.
-  ctx = new AudioContext({ latencyHint: 'balanced' });
+  // 'interactive' asks for the smallest output buffers the device allows, so
+  // sound follows a click at once and stays in step with the visuals.
+  ctx = new AudioContext({ latencyHint: 'interactive' });
   master = ctx.createGain();
   master.gain.value = 1;
   analyser = ctx.createAnalyser();
