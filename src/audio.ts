@@ -33,6 +33,13 @@ let spare: HTMLAudioElement | null = null;
 /** A jump being loaded on the spare deck. */
 let cue: { target: number; timer: number } | null = null;
 let stallTimer = 0;
+/**
+ * A pause keeps the player running silently for a minute, remembering where it
+ * stopped: pressing play again then sounds at once instead of waiting for the
+ * media pipeline to restart.
+ */
+let holdAt: number | null = null;
+let holdTimer = 0;
 
 export const audioCtx = (): AudioContext | null => ctx;
 /** Where other sound (the sequencer) should connect, so it shares the transport fades. */
@@ -192,7 +199,7 @@ export function start(): void {
 function savePos(): void {
   if (!el) return;
   try {
-    localStorage.setItem(POS_KEY, String(el.currentTime));
+    localStorage.setItem(POS_KEY, String(time()));
   } catch {
     /* ignore */
   }
@@ -222,6 +229,25 @@ export function play(): void {
   clearTimeout(pauseTimer);
   void ctx.resume();
   const g = focusGain.gain;
+  if (holdAt !== null && !el.paused) {
+    // Still running silently: step back to where it paused, then fade in.
+    clearTimeout(holdTimer);
+    const media = el;
+    let up = false;
+    const fadeIn = (): void => {
+      if (up || userPaused || !ctx || !focusGain) return;
+      up = true;
+      focusGain.gain.cancelScheduledValues(ctx.currentTime);
+      focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.015);
+    };
+    media.addEventListener('seeked', fadeIn, { once: true });
+    window.setTimeout(fadeIn, 250);
+    media.currentTime = holdAt;
+    holdAt = null;
+    emitState();
+    return;
+  }
+  holdAt = null;
   // Resume from silence and ramp in, so playback never starts on a click.
   g.cancelScheduledValues(ctx.currentTime);
   if (el.paused) g.setValueAtTime(0, ctx.currentTime);
@@ -234,6 +260,12 @@ export function play(): void {
 export function pause(): void {
   if (!el) return;
   cancelCue();
+  // Already holding silently: keep the spot it paused at.
+  if (holdAt !== null) {
+    userPaused = true;
+    emitState();
+    return;
+  }
   userPaused = true;
   clearTimeout(pauseTimer);
   if (ctx && focusGain && !el.paused && ctx.state === 'running') {
@@ -242,8 +274,16 @@ export function pause(): void {
     g.setValueAtTime(g.value, ctx.currentTime);
     g.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
     pauseTimer = window.setTimeout(() => {
-      el?.pause();
+      if (!el) return;
+      holdAt = el.currentTime;
       savePos();
+      clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(() => {
+        if (!el || holdAt === null) return;
+        el.pause();
+        el.currentTime = holdAt;
+        holdAt = null;
+      }, 60000);
     }, 140);
   } else {
     el.pause();
@@ -264,6 +304,12 @@ export function seek(sec: number): void {
   prepare();
   const media = el!;
   const target = Math.max(0, Math.min(sec, duration() - 0.5));
+  if (holdAt !== null) {
+    holdAt = target;
+    onTime();
+    savePos();
+    return;
+  }
   if (!ctx || !focusGain || !isPlaying()) {
     media.currentTime = target;
     onTime();
@@ -408,7 +454,7 @@ export function skip(dir: -1 | 1): void {
   seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
-export const time = (): number => cue?.target ?? el?.currentTime ?? 0;
+export const time = (): number => cue?.target ?? holdAt ?? el?.currentTime ?? 0;
 export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : 2743.6);
 
 export function trackIndexAt(sec: number): number {
