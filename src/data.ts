@@ -262,7 +262,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { title: 'Nitol Paye Electric', artists: 'অপূর্ব x Ahmed Masum', year: 2025, tag: 'Collab', cover: 'img/nitol-paye-electric.jpg', url: 'https://youtu.be/om5QGreRaYg' },
       { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: 'Collab', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
     ],
-    listen: { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
+    listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {
       intro:
         'Qbic Pulse is a radio show: ACND and অপূর্ব on Hong Kong Community Radio. For forty-five minutes the light half and the dark half pass the decks back and forth, until you stop being able to tell who is playing.',
@@ -285,8 +285,10 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     patterns: ['Initiate', 'Down In Bossa', 'Observateur', 'Her...'],
     links: [
       { label: 'Pre-save “Down In Bossa”', url: NEXT_RELEASE.presave },
+      { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
       { label: 'SoundCloud', url: 'https://soundcloud.com/acndlovestoes' },
-      { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
+      { label: 'Instagram', url: 'https://www.instagram.com/acnd_music/' },
+      { label: 'Facebook', url: 'https://www.facebook.com/ahmed.masum.peace' },
       { label: 'Apple Music', url: 'https://music.apple.com/us/song/her/6794554132' },
       { label: 'YouTube Music', url: 'https://music.youtube.com/watch?v=s_b17eFeZgM' },
     ],
