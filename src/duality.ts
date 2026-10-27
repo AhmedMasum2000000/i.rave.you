@@ -93,14 +93,14 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   let prevStamp = 0;
 
   const resize = (): void => {
-    dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.5) * (quality < 1 ? 0.8 : 1);
+    dpr = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.25) * (quality < 1 ? 0.8 : 1);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
-    const n = Math.round(Math.min(compact ? 100 : 520, (W * H) / (compact ? 4200 : 2600)) * quality);
+    const n = Math.round(Math.min(compact ? 80 : 300, (W * H) / (compact ? 5000 : 4000)) * quality);
     ps.length = 0;
     for (let i = 0; i < n; i++) ps.push(spawn(true));
     if (reduced && raf) requestAnimationFrame(frame);
@@ -163,7 +163,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     if (!reduced && prevStamp && quality > 0.5) {
       const budget = compact ? 1000 / 24 : 1000 / 45;
       slowFrames = now - prevStamp > budget ? slowFrames + 1 : Math.max(0, slowFrames - 1);
-      if (slowFrames > 45) {
+      if (slowFrames > 15) {
         quality = Math.max(0.5, quality - 0.25);
         slowFrames = 0;
         resize();

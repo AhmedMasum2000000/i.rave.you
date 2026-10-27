@@ -135,9 +135,9 @@ export function start(): void {
   const media = el!;
   media.preload = 'auto';
 
-  // 'playback' asks for larger render buffers: steadier output on phones while
-  // the visuals are busy, at a latency nobody notices on a DJ mix.
-  ctx = new AudioContext({ latencyHint: 'playback' });
+  // 'balanced' keeps output steady without the large 'playback' buffers, which
+  // delayed sound after a click and left the visuals running ahead of it.
+  ctx = new AudioContext({ latencyHint: 'balanced' });
   master = ctx.createGain();
   master.gain.value = 1;
   analyser = ctx.createAnalyser();
@@ -225,7 +225,7 @@ export function play(): void {
   // Resume from silence and ramp in, so playback never starts on a click.
   g.cancelScheduledValues(ctx.currentTime);
   if (el.paused) g.setValueAtTime(0, ctx.currentTime);
-  g.setTargetAtTime(1, ctx.currentTime, 0.06);
+  g.setTargetAtTime(1, ctx.currentTime, 0.015);
   void el.play().then(emitState).catch(emitState);
   emitState();
 }
