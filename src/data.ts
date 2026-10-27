@@ -252,12 +252,11 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     ],
     notes: [
       { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music (Warner Music sublabel). Pre-save now.', url: NEXT_RELEASE.presave },
-      { label: 'B', text: '“Observateur d’étoiles” and “Her...” are out now on every platform.' },
+      { label: 'B', text: '“Her...” is out now on every platform.' },
       { label: 'C', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens the mix you are hearing.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
     ],
     releases: [
       { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: '30.10', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
-      { title: 'Observateur d’étoiles', artists: 'ACND', year: 2026, tag: '14.08', cover: 'img/observateur.webp', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
       { title: 'Her...', artists: 'ACND', year: 2026, tag: '24.07', cover: 'img/her.webp', url: 'https://open.spotify.com/track/1728ckXv0wfIEBhUsGP7TN' },
       { title: 'Nitol Paye Electric', artists: 'অপূর্ব x Ahmed Masum', year: 2025, tag: 'Collab', cover: 'img/nitol-paye-electric.jpg', url: 'https://youtu.be/om5QGreRaYg' },
       { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: 'Collab', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
@@ -269,20 +268,19 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       blocks: [
         { label: '01', text: 'Their HKCR set opens on Initiate^1, the first thing ACND and অপূর্ব finished together. Still unreleased, and the reason this site exists.' },
         { label: '02', text: 'From there it climbs through melodic techno, acid and progressive, the corners ACND keeps coming back to.' },
-        { label: '03', text: 'Next comes Down In Bossa^2: Afro House with Ash Army, out 30 October on Profi Music. Until then, there is Observateur d’étoiles^3.' },
+        { label: '03', text: 'Next comes Down In Bossa^2: Afro House with Ash Army, out 30 October on Profi Music.' },
       ],
     },
     footnotes: [
       { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
       { text: 'Down In Bossa, Ash Army & ACND. Afro House, out 30.10.2026 on Profi Music.', link: { label: 'Pre-save', url: NEXT_RELEASE.presave } },
-      { text: 'Observateur d’étoiles and Her... are out now everywhere.', link: { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' } },
     ],
     media: [
       { src: 'img/acnd-portrait.webp', caption: 'ACND', sub: 'DHAKA (BD)' },
       { src: 'img/down-in-bossa.jpg', caption: 'DOWN IN BOSSA', sub: '30.10 · PROFI MUSIC' },
-      { src: 'img/observateur.webp', caption: 'OBSERVATEUR D’ÉTOILES', sub: 'OUT NOW' },
+      { src: 'img/her.webp', caption: 'HER...', sub: 'OUT NOW' },
     ],
-    patterns: ['Initiate', 'Down In Bossa', 'Observateur', 'Her...'],
+    patterns: ['Initiate', 'Down In Bossa', 'Her...', 'Nitol Paye'],
     links: [
       { label: 'Pre-save “Down In Bossa”', url: NEXT_RELEASE.presave },
       { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
