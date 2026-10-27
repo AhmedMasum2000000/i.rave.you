@@ -252,14 +252,10 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     ],
     notes: [
       { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music (Warner Music sublabel). Pre-save now.', url: NEXT_RELEASE.presave },
-      { label: 'B', text: '“Her...” is out now on every platform.' },
-      { label: 'C', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens the mix you are hearing.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
+      { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
     ],
     releases: [
       { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: '30.10', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
-      { title: 'Her...', artists: 'ACND', year: 2026, tag: '24.07', cover: 'img/her.webp', url: 'https://open.spotify.com/track/1728ckXv0wfIEBhUsGP7TN' },
-      { title: 'Nitol Paye Electric', artists: 'অপূর্ব x Ahmed Masum', year: 2025, tag: 'Collab', cover: 'img/nitol-paye-electric.jpg', url: 'https://youtu.be/om5QGreRaYg' },
-      { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: 'Collab', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
     ],
     listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {
@@ -278,17 +274,15 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     media: [
       { src: 'img/acnd-portrait.webp', caption: 'ACND', sub: 'DHAKA (BD)' },
       { src: 'img/down-in-bossa.jpg', caption: 'DOWN IN BOSSA', sub: '30.10 · PROFI MUSIC' },
-      { src: 'img/her.webp', caption: 'HER...', sub: 'OUT NOW' },
+      { src: 'img/acnd-portrait.webp', caption: 'ACND × অপূর্ব', sub: 'QBIC PULSE · HKCR' },
     ],
-    patterns: ['Initiate', 'Down In Bossa', 'Her...', 'Nitol Paye'],
+    patterns: ['Initiate', 'Down In Bossa', 'Qbic Pulse', 'Ascend'],
     links: [
       { label: 'Pre-save “Down In Bossa”', url: NEXT_RELEASE.presave },
       { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
       { label: 'SoundCloud', url: 'https://soundcloud.com/acndlovestoes' },
       { label: 'Instagram', url: 'https://www.instagram.com/acnd_music/' },
       { label: 'Facebook', url: 'https://www.facebook.com/ahmed.masum.peace' },
-      { label: 'Apple Music', url: 'https://music.apple.com/us/song/her/6794554132' },
-      { label: 'YouTube Music', url: 'https://music.youtube.com/watch?v=s_b17eFeZgM' },
     ],
   },
 };

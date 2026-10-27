@@ -139,7 +139,7 @@ function homePage(a: Artist): string {
 function listenPage(a: Artist): string {
   const rel = a.releases;
   const half = Math.ceil(rel.length / 2);
-  const sides = [rel.slice(0, half), rel.slice(half)];
+  const sides = rel.length > 1 ? [rel.slice(0, half), rel.slice(half)] : [rel];
   const row = (i: number): string => `
     <button type="button" data-rel="${i}" class="${i === 0 ? 'on' : ''}">
       <span>${esc(rel[i].title)}<sup>${i < half ? 'A' : 'B'}${(i % half) + 1}</sup></span>
@@ -151,7 +151,7 @@ function listenPage(a: Artist): string {
         <div class="l-tracks">
           <div class="panel-head mono"><span>● Releases</span><span>${rel.length}</span></div>
           ${sides.map((s, k) => `<div class="l-side${k === 0 ? ' on' : ''}" data-side="${k}">${s.map((_, j) => row(k * half + j)).join('')}</div>`).join('')}
-          <div class="l-tabs mono"><button data-tab="0" class="on">aSide</button><button data-tab="1">bSide</button></div>
+          ${sides.length > 1 ? `<div class="l-tabs mono"><button data-tab="0" class="on">aSide</button><button data-tab="1">bSide</button></div>` : ''}
         </div>
         <div class="l-vinyl"><div class="l-disc"><div class="l-label" data-rel-cover>${logo(a, 'l-label-logo')}</div></div></div>
         <div class="l-player mono">
