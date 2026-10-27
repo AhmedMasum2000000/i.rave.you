@@ -478,38 +478,6 @@ body[data-artist='apurba'] .a-door-img {
 .a-foot > span:last-child {
   text-align: right;
 }
-.a-sleeve {
-  position: relative;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  height: 70vh;
-  background: var(--bg);
-}
-.a-sleeve-art {
-  display: grid;
-  place-content: center;
-  gap: 4px;
-  width: 150px;
-  aspect-ratio: 1;
-  background: linear-gradient(90deg, #000 50%, var(--paper) 50%);
-  box-shadow: -12px 0 40px -8px var(--blue), 12px 0 40px -8px var(--orange);
-  text-align: center;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.a-sleeve-art span {
-  color: #fff;
-  mix-blend-mode: difference;
-  font-weight: 900;
-  font-size: 16px;
-}
-.a-sleeve-art .bn {
-  font-size: 11px;
-  font-weight: 500;
-}
-.a-sleeve:hover .a-sleeve-art {
-  transform: rotate(-4deg) scale(1.05);
-}
 
 /* ═════════════════════════════ LISTEN ═════════════════════════════ */
 
@@ -1145,62 +1113,8 @@ body.menu-open .m-list li:nth-child(3) { transition-delay: 0.16s; }
   font-size: 10px;
   font-weight: 800;
 }
-.presave {
-  position: fixed;
-  right: var(--gutter);
-  bottom: 16px;
-  z-index: 55;
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  height: 42px;
-}
-.presave-clock {
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
-  background: rgba(10, 10, 12, 0.55);
-  backdrop-filter: blur(10px);
-}
-.presave-cta {
-  display: flex;
-  align-items: stretch;
-  background: var(--paper);
-  color: #000;
-  font-weight: 900;
-  font-size: 13px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: background 0.3s;
-}
-.presave-cta > span:first-child {
-  display: flex;
-  align-items: center;
-  padding: 0 18px;
-}
-.presave-arrow {
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  border-left: 1px solid rgba(0, 0, 0, 0.25);
-  transition: transform 0.3s;
-}
-.presave-cta:hover {
-  background: var(--orange);
-}
-.presave-cta:hover .presave-arrow {
-  transform: translateX(3px);
-}
 /* On the light ACND half of home, keep the dock legible. */
-body[data-view='home'] .presave-clock {
-  mix-blend-mode: normal;
-}
-body.menu-open .presave {
-  opacity: 0;
-  pointer-events: none;
-}
+
 
 /* ═══════════════════════════════ SMALL ═══════════════════════════════ */
 
@@ -1227,8 +1141,8 @@ body.menu-open .presave {
     text-indent: 20%;
   }
   .a-block,
-  .a-block-1,
-  .a-block-2 {
+.a-block-1,
+.a-block-2 {
     grid-template-columns: 52px 1fr;
   }
   .a-side {
@@ -1242,7 +1156,7 @@ body.menu-open .presave {
     margin-top: 8px;
   }
   .a-columns,
-  .a-foot {
+.a-foot {
     grid-template-columns: 1fr;
   }
   .a-foot > span:last-child {
@@ -1261,7 +1175,7 @@ body.menu-open .presave {
     height: 60vh;
   }
   .s-app,
-  .b-bio {
+.b-bio {
     padding-top: 150px;
   }
   .b-grid {
@@ -1277,29 +1191,11 @@ body.menu-open .presave {
   .m-release {
     max-width: 320px;
   }
-  .presave {
-    left: var(--gutter);
-    right: var(--gutter);
-    bottom: 72px;
-    height: 40px;
-    gap: 8px;
-  }
-  .presave-clock {
-    flex: 1;
-    justify-content: center;
-    padding: 0 8px;
-  }
   .cd {
     gap: 10px;
   }
   .cd b {
     font-size: 17px;
-  }
-  .presave-cta {
-    font-size: 11px;
-  }
-  .presave-cta > span:first-child {
-    padding: 0 10px;
   }
   .menu-btn {
     font-size: 16px;

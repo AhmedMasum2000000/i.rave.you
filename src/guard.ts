@@ -19,7 +19,19 @@ const CURTAIN_MS = 1500;
 const editable = (t: EventTarget | null): boolean =>
   t instanceof Element && !!t.closest('input, textarea, select, [contenteditable="true"]');
 
+/** True inside this site's own shell (a content page opened from the site). */
+export function inShell(): boolean {
+  if (window.top === window.self) return false;
+  try {
+    return window.top!.location.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function installGuard(): void {
+  // The shell guards itself; a page shown inside it needs nothing extra.
+  if (inShell()) return;
   // Refuse to be framed by another origin.
   if (window.top !== window.self) {
     try {
@@ -108,7 +120,8 @@ export function installGuard(): void {
 
   // Black out whenever the page is not the thing in focus.
   const sync = (): void => cover(document.hidden || !document.hasFocus());
-  window.addEventListener('blur', () => cover(true));
+  // Focus moving into the content frame is still this page: re-check a tick later.
+  window.addEventListener('blur', () => window.setTimeout(sync, 0));
   window.addEventListener('focus', () => window.setTimeout(sync, 120));
   document.addEventListener('visibilitychange', sync);
   window.addEventListener('beforeprint', () => cover(true));

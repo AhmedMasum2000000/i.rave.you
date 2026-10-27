@@ -1,10 +1,10 @@
-import { isPlaying, sample, spectrum } from './audio';
+import { isPlaying, sample } from './audio';
 import { reducedMotion } from './ui';
 
 /**
  * The mix drives the page. One requestAnimationFrame loop reads the analyser
  * and writes a handful of CSS variables, 0..1, onto the chrome present on every
- * page (player chip, pre-save dock, track list) and anything marked
+ * page (the player bar and its windows) and anything marked
  * `data-pulse`:
  *
  *   --lv-low   low-end energy, smoothed: drives the weight of the Doto type and
@@ -23,7 +23,7 @@ export function mountFx(): void {
 
   let targets: HTMLElement[] = [];
   const collect = (): void => {
-    targets = [...document.querySelectorAll<HTMLElement>('.np, .presave, .tid, .np-now, [data-pulse]')];
+    targets = [...document.querySelectorAll<HTMLElement>('.fbar, .tid, .np-now, [data-pulse]')];
   };
   collect();
   window.addEventListener('routechange', () => requestAnimationFrame(collect));
@@ -71,24 +71,6 @@ export function mountFx(): void {
     vu.style.transform = `scaleX(${level.toFixed(2)})`;
   };
   requestAnimationFrame(loop);
-}
-
-/** Five log-spaced bands from the live spectrum, 0..1, for small meters. */
-export function bands(n = 5): number[] {
-  const spec = spectrum();
-  const out: number[] = [];
-  if (!spec.length || !isPlaying()) return Array.from({ length: n }, () => 0);
-  // 30 Hz .. ~12 kHz on a 2048-point FFT (~23 Hz per bin).
-  const lo = 1;
-  const hi = Math.min(spec.length - 1, 520);
-  for (let i = 0; i < n; i++) {
-    const a = Math.floor(lo * (hi / lo) ** (i / n));
-    const b = Math.max(a + 1, Math.floor(lo * (hi / lo) ** ((i + 1) / n)));
-    let sum = 0;
-    for (let k = a; k < b; k++) sum += spec[k];
-    out.push(sum / ((b - a) * 255));
-  }
-  return out;
 }
 
 /**

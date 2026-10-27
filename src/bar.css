@@ -1,0 +1,258 @@
+/* ═══════════ Player bar, its windows, and the content-page frame ═══════════
+   White bar, black hairlines, mono type: a seek row over a control row. */
+
+:root {
+  --fbar-seek: 44px;
+  --fbar-row: 52px;
+  --fbar-h: calc(var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
+  --bar-ink: #000;
+  --bar-paper: #fff;
+  --bar-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Hind Siliguri', monospace;
+}
+
+.fbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 58;
+  display: grid;
+  grid-template-rows: var(--fbar-seek) var(--fbar-row);
+  padding-bottom: var(--safe-bottom, 0px);
+  background: var(--bar-paper);
+  color: var(--bar-ink);
+  border-top: 1px solid var(--bar-ink);
+  font: 500 12px/1.25 var(--bar-mono);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  view-transition-name: fbar;
+}
+.fbar button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.fbar a { color: inherit; text-decoration: none; }
+.fbar :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: 2px; }
+
+/* ── Seek row: time, hairline with the eye, total ── */
+.fbar-seek {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--bar-ink);
+}
+.fbar-time { font-variant-numeric: tabular-nums; min-width: 5ch; }
+.fbar-time:last-child { text-align: right; }
+.fbar-track { position: relative; height: 100%; cursor: pointer; touch-action: none; }
+.fbar-line { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--bar-ink); }
+.fbar-knob {
+  --kw: 44px;
+  position: absolute;
+  top: 50%;
+  /* The eye travels inside the line, never over the time labels. */
+  left: calc(var(--kw) / 2 + (100% - var(--kw)) * var(--p, 0));
+  width: var(--kw);
+  height: 24px;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.fbar-knob svg { display: block; width: 100%; height: 100%; }
+.fbar-pupil { transform-origin: 22px 12px; transform: scale(calc(0.92 + var(--lv-low, 0) * 0.22)); }
+.fbar.paused .fbar-pupil { transform: none; }
+.fbar-track:focus-visible { outline-offset: -6px; }
+
+/* ── Control row: art | play + track | wordmark | Spotify | pills ── */
+.fbar-row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+.fbar-row > * + * { border-left: 1px solid var(--bar-ink); }
+.fbar-art { flex: none; display: block; width: var(--fbar-row); height: var(--fbar-row); overflow: hidden; }
+.fbar-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fbar-now { flex: 1.3 1 0; display: flex; align-items: center; gap: 14px; min-width: 0; padding: 0 16px; }
+.fbar-play { flex: none; display: grid; place-items: center; width: 30px; height: 30px; }
+.fbar-play svg { width: 30px; height: 30px; fill: currentColor; }
+.fbar-text { display: grid; gap: 3px; min-width: 0; text-align: left; }
+.fbar-title, .fbar-artist { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fbar-artist { text-transform: none; }
+.fbar-text:hover .fbar-title { text-decoration: underline; text-underline-offset: 3px; }
+.fbar-mark {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  font-family: var(--brand-font);
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variation-settings: 'wght' 900;
+}
+.fbar-spotify {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 28px;
+  color: #1a1a1a;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.fbar-spotify svg { width: 28px; height: 28px; color: #1a1a1a; }
+.fbar-spotify:hover, .fbar-spotify:hover svg { color: #1db954; }
+.fbar.fbar-noartist .fbar-spotify { display: none; }
+.fbar-actions { flex: 1 1 0; display: flex; align-items: center; gap: 12px; padding: 0 16px; min-width: 280px; }
+.fbar-pill {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid var(--bar-ink) !important;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.fbar-share:hover { background: var(--bar-ink); color: var(--bar-paper); }
+.fbar-cta { background: var(--bar-ink); color: var(--bar-paper) !important; }
+.fbar-cta:hover { background: #222; }
+.fbar-cd { opacity: 0.75; font-variant-numeric: tabular-nums; text-transform: none; }
+.fbar-cd b { font-weight: 600; }
+body.released .fbar-cd { display: none; }
+
+/* ── The tracklist: a window above the bar ── */
+.tid {
+  position: fixed;
+  left: 20px;
+  bottom: calc(var(--fbar-h) + 12px);
+  z-index: 57;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(560px, calc(100vw - 40px));
+  max-height: min(62vh, calc(100dvh - var(--fbar-h) - 90px));
+  background: var(--bar-paper);
+  color: var(--bar-ink);
+  border: 1px solid var(--bar-ink);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  font: 500 12px/1.4 var(--bar-mono);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.25s, visibility 0.2s;
+}
+body.tid-open .tid { opacity: 1; visibility: visible; transform: none; }
+.tid button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.tid a { color: inherit; }
+.tid :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: -2px; }
+.tid-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d9d9d9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tid-bar button { width: 28px; height: 24px; font-size: 18px; line-height: 1; }
+.tid-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 12px 14px; border-bottom: 1px solid #d9d9d9; }
+.tid-title { display: grid; gap: 4px; min-width: 0; }
+.tid-title b { font-weight: 600; text-transform: uppercase; }
+.tid-title span { color: #555; }
+.tid-transport { display: flex; gap: 6px; }
+.tid-transport button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--bar-ink); border-radius: 50%; }
+.tid-transport button:hover { background: var(--bar-ink); color: var(--bar-paper); }
+.tid-transport svg { width: 12px; height: 12px; fill: currentColor; }
+.tid-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; overscroll-behavior: contain; }
+.tid-list li { display: flex; align-items: stretch; border-bottom: 1px solid #ececec; }
+.tid-list li button { flex: 1; min-width: 0; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; padding: 10px 14px; text-align: left; }
+.tid-list li button:hover { background: #f3f3f3; }
+.tid-list li button b { font-weight: 600; }
+.tid-at { font-variant-numeric: tabular-nums; color: #555; }
+.tid-list li > a, .tid-unavailable { flex: none; display: flex; align-items: center; width: 128px; padding: 0 14px; color: #555; font-size: 11px; text-decoration: none; }
+.tid-list li > a:hover { color: var(--bar-ink); text-decoration: underline; }
+.tid-now { display: none; margin-left: 8px; font-style: normal; font-size: 10px; text-transform: uppercase; }
+.tid-list li.playing { background: #000; color: #fff; }
+.tid-list li.playing .tid-at, .tid-list li.playing > a, .tid-list li.playing .tid-unavailable { color: #bbb; }
+.tid-list li.playing button:hover { background: #111; }
+.tid-list li.playing .tid-now { display: inline; }
+
+/* ── Now playing: a small window that names each new track ── */
+.np-now {
+  position: fixed;
+  left: 20px;
+  bottom: calc(var(--fbar-h) + 12px);
+  z-index: 57;
+  display: grid;
+  gap: 4px;
+  max-width: min(340px, calc(100vw - 40px));
+  padding: 10px 14px 12px;
+  background: var(--bar-paper);
+  color: var(--bar-ink);
+  border: 1px solid var(--bar-ink);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  font: 500 12px/1.35 var(--bar-mono);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s, transform 0.4s;
+}
+.np-now.show { opacity: 1; transform: none; }
+.np-now-k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #555; }
+.np-now-t { font-size: 15px; font-weight: 600; }
+.np-now-a { color: #333; }
+body.menu-open .np-now, body.tid-open .np-now { opacity: 0; }
+
+/* ── Space for the bar ── */
+body:not([data-view='home']):not([data-view='doc']) { padding-bottom: var(--fbar-h); }
+body.menu-open .fbar, body.menu-open .tid { visibility: hidden; }
+
+/* ── Content pages inside the shell ── */
+body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
+.doc-frame {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: calc(100dvh - var(--fbar-h));
+  border: 0;
+  background: #0b0b0b;
+}
+
+/* ── Phones and narrow windows ── */
+@media (max-width: 1100px) {
+  .fbar-spotify { display: none; }
+  .fbar-mark { padding: 0 20px; font-size: 22px; }
+}
+@media (max-width: 760px) {
+  :root { --fbar-seek: 34px; --fbar-row: 58px; }
+  .fbar-seek { gap: 12px; padding: 0 12px; }
+  .fbar-time { font-size: 11px; }
+  .fbar-knob { --kw: 38px; height: 21px; }
+  .fbar-actions { flex: none; min-width: 0; }
+  .fbar-mark, .fbar-share, .fbar-cd { display: none; }
+  .fbar-now { gap: 10px; padding: 0 12px; }
+  .fbar-actions { padding: 0 10px; }
+  .fbar-cta { flex: none; padding: 0 16px; height: 38px; }
+  .tid, .np-now { left: 10px; right: 10px; width: auto; max-width: none; }
+  .tid { max-height: calc(100dvh - var(--fbar-h) - 80px - var(--safe-top, 0px)); }
+  .tid-list li > a, .tid-unavailable { width: 84px; padding: 0 10px; }
+  .tid-list li button { min-height: 52px; }
+}

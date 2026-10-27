@@ -5,9 +5,9 @@ import { asset, esc } from './ui';
 const route = (path: string): string => `${document.documentElement.dataset.root ?? ''}${path}`;
 
 /**
- * Site-wide chrome: a "MENU" button that opens a full-screen index, and a
- * pre-save dock with a live countdown to "Down In Bossa" — boxed digits beside
- * a solid call to action, bottom right on every page.
+ * Site-wide chrome: a "MENU" button that opens a full-screen index, and the
+ * live countdown to "Down In Bossa" wherever `[data-cd]` digits appear (the
+ * menu and the player bar's pre-save pill).
  */
 
 const RELEASE_AT = new Date(NEXT_RELEASE.date).getTime();
@@ -136,14 +136,7 @@ export function mountChrome(): void {
   });
   window.addEventListener('routechange', () => set(false));
 
-  // ── pre-save dock ──
-  const dock = document.createElement('div');
-  dock.className = 'presave';
-  dock.innerHTML = `
-    <a class="presave-clock" href="${NEXT_RELEASE.page}" target="_blank" rel="noopener" title="${esc(NEXT_RELEASE.title)} — ${esc(NEXT_RELEASE.artist)}">${clock()}</a>
-    <a class="presave-cta" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save now</span><span class="presave-arrow">→</span></a>`;
-
-  document.body.append(menu, btn, dock);
+  document.body.append(menu, btn);
   tick();
   setInterval(tick, 1000);
 }
