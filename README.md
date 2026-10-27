@@ -10,8 +10,8 @@ Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and
 - **Menu & pre-save** — a site-wide MENU overlay and a live “Down In Bossa” countdown with a PRE-SAVE button.
 - **The set** — Qbic Pulse, hosted by ACND & অপূর্ব for Hong Kong Community Radio (HKCR) — starts from
   the entry record and keeps playing across pages, fading out (paused in place) whenever the tab loses focus.
-  A player chip on every page has play/pause; on the home page it opens the **Track ID** panel: every track
-  with its timestamp, click to jump, previous/next and a seekable bar. Track IDs appear on the home page only.
+  A player chip on every page has play/pause and opens the **Track ID** panel: every track
+  with its timestamp, click to jump, previous/next and a seekable bar. Track IDs and direct original-recording links are available from every page’s player.
 
 ```
 npm install
@@ -28,7 +28,7 @@ All content lives in [`src/data.ts`](src/data.ts): tracklist and timestamps, rel
 | Logos | `public/img/logo-apurba.png`, `public/img/logo-acnd.png` | Black ink on white or transparent. Inverted automatically on dark backgrounds. The layout hides the logo slots until the files exist. |
 | ACND photo | `public/img/acnd.jpg` | Falls back to `acnd-portrait.webp` until present. |
 | অপূর্ব photo | `public/img/apurba.jpg` | Doorway and first photo tile on his pages. Falls back to `apurba-sun.jpg` until present. |
-| Set | `public/audio/x/` | AES-GCM-encrypted 10 s fragments of the AAC 256 kbps set, made by `scripts/encrypt-audio.mjs`. There is no plain audio file on the site. |
+| Set | `public/audio/x/` | Source fragments are authenticated and joined by `scripts/mix-audio.mjs` during Vite development/build. The browser plays the generated continuous `audio/qbic-pulse.m4a` with native buffering and byte-range seeking. |
 | Font | `public/fonts/OffBit-Dot.woff2`, `OffBit-DotBold.woff2` | Optional, licensed copy of OffBit. Without it the site uses Doto (SIL OFL). |
 
 ## Unlisted pages
@@ -48,10 +48,9 @@ MusicRecording, Person and FAQPage structured data, Open Graph/Twitter cards and
 
 `src/guard.ts` deters copying and capture: no selection, copy, right-click, dragging or print; common
 save/view-source/devtools shortcuts are swallowed; the page blacks out when it loses focus, on Print Screen
-and on the macOS screenshot keys; it refuses to be framed. The set streams from encrypted fragments
-(`src/stream.ts`) through Media Source Extensions, so there is no file to download.
+and on the macOS screenshot keys; it refuses to be framed. The mix plays as a continuous, directly accessible audio file (`src/stream.ts`). Source encryption is retained in the repository; it is not download protection for deployed audio.
 
-None of this can stop an OS screenshot, a camera, or recording the speaker output — it closes the easy routes.
+These page controls cannot prevent recording or downloading audio. Music rights must be cleared separately.
 
 To re-encrypt a new set:
 
@@ -61,3 +60,9 @@ STREAM_KEY=<64 hex> STREAM_DURATION=<seconds> node scripts/encrypt-audio.mjs fra
 ```
 
 then put the same key, split and XOR-mixed, in `src/stream-key.ts`.
+
+## Audio startup
+
+The cookie-style prompt preloads the continuous mix and attempts playback immediately. Browsers that block audible autoplay need one real click/tap or key interaction; either Yes button retries the media element and its AudioContext. The player reports actual playback rather than assuming a rejected play request succeeded. Manual pause is respected.
+
+The build authenticates every original AES-GCM fragment using Node.js and emits one continuous AAC/MP4 asset without re-encoding. No browser Web Crypto or MSE is required, so playback also works on HTTP while SSL is being resolved. `npm run dev` serves the same generated asset with byte ranges. Track markers share a single media timeline and do not load separate tracks; normal buffering can still occur on slow connections. No additional build dependencies or external tools are needed.

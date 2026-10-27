@@ -4,7 +4,7 @@ import { attachStream } from './stream';
 /**
  * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
  * every page. Browsers refuse audible autoplay until the visitor interacts with
- * the page once, so `start()` is called from the "enter" gate's click; after
+ * the page once. The prompt attempts playback and retries on its first click; after
  * that it runs, loops and resumes where it left off on the next visit. The
  * visitor can pause, seek and skip between tracks (see `toggle`, `seek`, `skip`).
  */
@@ -41,7 +41,7 @@ let prepared = false;
 export function prepare(): void {
   if (prepared) return;
   prepared = true;
-  // The set streams from encrypted fragments; there is no audio file to save.
+  // Preload the continuous mix before the visitor dismisses the prompt.
   el = document.createElement('audio');
   el.loop = true;
   el.preload = 'auto';
@@ -73,9 +73,12 @@ export function bufferedAhead(): number {
   return 0;
 }
 
-/** Start playback. Must run inside a click: browsers only allow sound after one. */
+/** Attempt playback now; a later real gesture retries if autoplay is blocked. */
 export function start(): void {
-  if (started) return;
+  if (started) {
+    play();
+    return;
+  }
   started = true;
   prepare();
   const media = el!;
@@ -83,7 +86,7 @@ export function start(): void {
   ctx = new AudioContext();
   const src = ctx.createMediaElementSource(media);
   master = ctx.createGain();
-  master.gain.value = 0;
+  master.gain.value = 1;
   analyser = ctx.createAnalyser();
   analyser.fftSize = 1024;
   analyser.smoothingTimeConstant = 0.82;
@@ -93,13 +96,22 @@ export function start(): void {
   analyser.connect(master);
   master.connect(focusGain);
   focusGain.connect(ctx.destination);
-  master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5);
 
-  void media.play().catch(() => {
-    // Should not happen after a click, but try again on the next interaction.
-    const retry = (): void => void media.play();
-    window.addEventListener('pointerdown', retry, { once: true });
-  });
+  // A browser may reject the initial autoplay. Recover both the media element
+  // and suspended AudioContext on a real gesture; never claim it is playing early.
+  const retry = (): void => { if (!userPaused && !isPlaying()) play(); };
+  const removeRetry = (): void => {
+    if (!isPlaying()) return;
+    window.removeEventListener('pointerdown', retry);
+    window.removeEventListener('keydown', retry);
+  };
+  window.addEventListener('pointerdown', retry);
+  window.addEventListener('keydown', retry);
+  media.addEventListener('playing', () => { emitState(); removeRetry(); });
+  ctx.addEventListener('statechange', () => { emitState(); removeRetry(); });
+  media.addEventListener('waiting', emitState);
+  media.addEventListener('error', emitState);
+  play();
 
   window.addEventListener('pagehide', savePos);
   document.addEventListener('visibilitychange', onFocusChange);
@@ -146,8 +158,8 @@ function emitState(): void {
   stateListeners.forEach((fn) => fn(isPlaying()));
 }
 
-/** Playing from the visitor's point of view: a tab-blur pause still counts as playing. */
-export const isPlaying = (): boolean => started && !userPaused;
+/** Report actual audible playback, including autoplay rejection or suspension. */
+export const isPlaying = (): boolean => !!el && !el.paused && !el.ended && !el.error && ctx?.state === 'running' && !userPaused;
 
 export function onState(fn: (playing: boolean) => void): () => void {
   stateListeners.add(fn);
@@ -166,7 +178,7 @@ export function play(): void {
   void ctx.resume();
   focusGain.gain.cancelScheduledValues(ctx.currentTime);
   focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.08);
-  void el.play().catch(() => undefined);
+  void el.play().then(emitState).catch(emitState);
   emitState();
 }
 
@@ -182,8 +194,8 @@ export function pause(): void {
 export const toggle = (): void => (isPlaying() ? pause() : play());
 
 export function seek(sec: number): void {
-  if (!el) return;
-  el.currentTime = Math.max(0, Math.min(sec, duration() - 0.5));
+  prepare();
+  el!.currentTime = Math.max(0, Math.min(sec, duration() - 0.5));
   onTime();
   savePos();
 }

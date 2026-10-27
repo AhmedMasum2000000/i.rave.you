@@ -1,4 +1,4 @@
-import { bufferedAhead, prepare, start } from './audio';
+import { bufferedAhead, isPlaying, prepare, start } from './audio';
 
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -29,12 +29,13 @@ const prompt = (): string => `
 /** Fill the meter from what the player has already buffered while the visitor reads. */
 function meter(root: HTMLElement): () => void {
   prepare();
+  start();
   const bar = root.querySelector<HTMLElement>('.vibe-bar i')!;
   const status = root.querySelector<HTMLElement>('.vibe-status')!;
   const id = window.setInterval(() => {
     const p = Math.min(1, bufferedAhead() / 30);
     bar.style.transform = `scaleX(${Math.max(0.04, p)})`;
-    status.textContent = p >= 1 ? 'Decks are warm. Pick a yes.' : `Warming up the decks… ${Math.round(p * 100)}%`;
+    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Tap either Yes to start the mix.' : 'Buffering the mix… Tap Yes to start.';
     root.classList.toggle('vibe-ready', p >= 1);
   }, 200);
   return () => clearInterval(id);
