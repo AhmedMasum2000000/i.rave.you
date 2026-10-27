@@ -1,20 +1,20 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
+import { resolve } from 'node:path';
+import { defineConfig } from 'vite';
+import { SECRET_PATHS } from './src/secret';
 
-export default defineConfig(() => {
-  return {
-    base: './',
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
+// Relative base so the build works on a GitHub Pages project path and on a
+// custom domain alike.
+export default defineConfig({
+  base: './',
+  build: {
+    target: 'es2020',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        acndPitch: resolve(__dirname, `${SECRET_PATHS.acnd}/index.html`),
+        apurbaPitch: resolve(__dirname, `${SECRET_PATHS.apurba}/index.html`),
+        ashPitch: resolve(__dirname, `${SECRET_PATHS.ash}/index.html`),
       },
     },
-    server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-  };
+  },
 });
