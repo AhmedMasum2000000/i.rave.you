@@ -2,11 +2,11 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-const origin = "https://iraveyou.online";
+const origin = "https://iraveyou.com";
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 9);
+assert.equal(urls.length, 20);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -77,8 +77,78 @@ for (const path of ["acnd-7q4x2k", "apurba-9m1v8t", "ash-army-3k8w5n"]) {
 }
 assert.match(
   readFileSync(resolve(root, "robots.txt"), "utf8"),
-  /Sitemap: https:\/\/iraveyou.online\/sitemap.xml/,
+  /Sitemap: https:\/\/iraveyou.com\/sitemap.xml/,
 );
 console.log(
   "PASS identity credits, 15-track list, script-free discovery pages, private pitch exclusions and sitemap reference",
+);
+
+// Check the published cluster, including related links and in-page references.
+const journalUrls = urls.filter((url) =>
+  new URL(url).pathname.startsWith("/journal/"),
+);
+assert.equal(journalUrls.length, 11);
+const articleUrls = journalUrls.filter(
+  (url) => new URL(url).pathname !== "/journal/",
+);
+const graph = new Map();
+for (const url of articleUrls) {
+  const html = readFileSync(
+    resolve(root, "." + new URL(url).pathname, "index.html"),
+    "utf8",
+  );
+  assert.equal([...html.matchAll(/<h1\b/g)].length, 1);
+  assert.match(html, /property="og:type" content="article"/);
+  assert.match(html, /class="[^"]*article-answer[^"]*"/);
+  const json = JSON.parse(
+    html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
+  );
+  const article = json["@graph"].find(
+    (entity) => entity["@type"] === "Article",
+  );
+  assert.equal(article.url, url);
+  assert.equal(article.about["@id"], origin + "/acnd/#artist");
+  assert.equal(article.datePublished, "2026-10-28");
+  for (const match of html.matchAll(/href="#([^"]+)"/g)) {
+    assert.ok(
+      html.includes(`id="${match[1]}"`),
+      `broken section anchor ${match[1]} in ${url}`,
+    );
+  }
+  const related = html.match(
+    /<section class="related">([\s\S]*?)<\/section>/,
+  )[1];
+  const targets = [...related.matchAll(/href="([^"]+)"/g)]
+    .map((m) => new URL(m[1], url).href)
+    .filter((link) => articleUrls.includes(link));
+  assert.equal(targets.length, 3);
+  assert.ok(!targets.includes(url));
+  graph.set(url, targets);
+  assert.doesNotMatch(html, /<audio|<script(?! type="application\/ld\+json")/);
+  assert.doesNotMatch(html, /iraveyou\.online/);
+}
+for (const start of articleUrls) {
+  const visited = new Set();
+  const queue = [start];
+  while (queue.length) {
+    const current = queue.shift();
+    if (visited.has(current)) continue;
+    visited.add(current);
+    queue.push(...graph.get(current));
+  }
+  assert.equal(
+    visited.size,
+    10,
+    `disconnected related-reading cluster from ${start}`,
+  );
+}
+const identity = readFileSync(
+  resolve(root, "journal/ahmed-masum-acnd-name-guide/index.html"),
+  "utf8",
+);
+assert.match(identity, /Ahmed Al Masum/);
+assert.match(identity, /alternate search spelling/);
+assert.match(acnd, /Ahmed Al Masum/);
+console.log(
+  "PASS ten articles: schema, answer summaries, anchors, 30 related links, connected reading cluster and name variant",
 );

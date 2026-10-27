@@ -82,7 +82,7 @@ export function mountChrome(): void {
   menu.innerHTML = `
     <div class="m-inner">
       <ol class="m-list">
-        <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a> · <a href="${route('mixes/qbic-pulse/')}">Mix tracklist</a> · <a href="${route('music/down-in-bossa/')}">Down In Bossa</a></span></li>
+        <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a> · <a href="${route('journal/')}">Journal · Artist guides</a> · <a href="${route('mixes/qbic-pulse/')}">Mix tracklist</a> · <a href="${route('music/down-in-bossa/')}">Down In Bossa</a></span></li>
         <li class="m-legal-item">
           <details class="m-legal" open>
             <summary>Legal &amp; site information <span aria-hidden="true">⌄</span></summary>
