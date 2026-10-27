@@ -49,7 +49,7 @@ const PITCH: Record<PitchId, Pitch> = {
     numbers: [
       { n: '45:44', label: 'of set, already mixed and playing behind this sentence' },
       { n: String(TRACKLIST.length), label: 'tracks, every ID linked below — no Shazam needed' },
-      { n: '29.10', label: '“Down In Bossa” lands on Profi Music, a Warner Music sublabel' },
+      { n: '30.10', label: '“Down In Bossa” with Ash Army lands on Profi Music, a Warner Music sublabel' },
       { n: '3/3', label: 'festival dates available. Pick one. Or don’t, and keep all three.' },
     ],
     risks: [
@@ -103,12 +103,13 @@ const PITCH: Record<PitchId, Pitch> = {
       { q: 'Range', a: 'Bigroom · Dance · EDM · Future Bass · House · Progressive House · Tech-House · Techno · Hard Techno · K-Pop', aside: 'Ten genres. The runway gets a whole season in one set.' },
       { q: 'Grew up on', a: 'Martin Garrix · DJ Snake · W&W · The Chainsmokers', aside: 'Main-stage DNA, festival-sized hooks.' },
       { q: 'Label home', a: 'Profi Music roster', aside: 'Signed, sealed, and already delivering.' },
+      { q: 'Next release', a: '“Down In Bossa” with ACND · Afro House · out 30.10.2026 on Profi Music', aside: 'Two applicants, one record. Ask about the back-to-back.' },
       { q: 'Set duration & slot', a: 'Your call', aside: 'Name the slot. He brings the hands-in-the-air moment.' },
     ],
     numbers: [
       { n: '16', label: 'the age he started producing' },
       { n: '10', label: 'genres he works across, from future bass to hard techno' },
-      { n: 'EN|DE', label: 'his bio already ships in two languages. The global vision is not a figure of speech.' },
+      { n: '30.10', label: '“Down In Bossa” with ACND drops on Profi Music' },
       { n: '3', label: 'festival dates on Arka’s calendar, 4–6 December. Point at one.' },
     ],
     risks: [
@@ -143,7 +144,7 @@ const META: Record<PitchId, Meta> = {
     number: '0001',
     mix: true,
     profile: asset('index.html#/acnd'),
-    exhibit: { kicker: 'EXHIBIT B · OUT 29.10 · PROFI MUSIC (WARNER MUSIC SUBLABEL)', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
+    exhibit: { kicker: 'EXHIBIT B · ASH ARMY & ACND · OUT 30.10 · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
   },
   apurba: {
     name: 'অপূর্ব',
