@@ -2,9 +2,10 @@
    White bar, black hairlines, mono type: a seek row over a control row. */
 
 :root {
+  --fbar-air: 30px;
   --fbar-seek: 44px;
   --fbar-row: 52px;
-  --fbar-h: calc(var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
+  --fbar-h: calc(var(--fbar-air) + var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
   --bar-ink: #000;
   --bar-paper: #fff;
   --bar-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Hind Siliguri', monospace;
@@ -17,7 +18,7 @@
   bottom: 0;
   z-index: 58;
   display: grid;
-  grid-template-rows: var(--fbar-seek) var(--fbar-row);
+  grid-template-rows: var(--fbar-air) var(--fbar-seek) var(--fbar-row);
   padding-bottom: var(--safe-bottom, 0px);
   background: var(--bar-paper);
   color: var(--bar-ink);
@@ -66,8 +67,13 @@
   pointer-events: none;
 }
 .fbar-knob svg { display: block; width: 100%; height: 100%; }
-.fbar-pupil { transform-origin: 22px 12px; transform: scale(calc(0.92 + var(--lv-low, 0) * 0.22)); }
-.fbar.paused .fbar-pupil { transform: none; }
+.fbar-pupil {
+  transform-origin: 22px 12px;
+  transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)) scale(calc(0.92 + var(--lv-low, 0) * 0.22));
+}
+.fbar.paused .fbar-pupil { transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)); }
+.fbar-eye { transform-origin: 22px 12px; transition: transform 0.07s ease-in; }
+.fbar-eye.blink { transform: scaleY(0.08); }
 .fbar-track:focus-visible { outline-offset: -6px; }
 
 /* ── Control row: art | play + track | wordmark | Spotify | pills ── */
@@ -84,7 +90,15 @@
 .fbar-play svg { width: 30px; height: 30px; fill: currentColor; }
 .fbar-text { display: grid; gap: 3px; min-width: 0; text-align: left; }
 .fbar-title, .fbar-artist { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.fbar-artist { text-transform: none; }
+.fbar-title { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+/* Artist names carry the row: a heavier face that also renders Bangla well. */
+.fbar-artist {
+  font-family: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
 .fbar-text:hover .fbar-title { text-decoration: underline; text-underline-offset: 3px; }
 .fbar-mark {
   flex: none;
@@ -255,4 +269,172 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   .tid { max-height: calc(100dvh - var(--fbar-h) - 80px - var(--safe-top, 0px)); }
   .tid-list li > a, .tid-unavailable { width: 84px; padding: 0 10px; }
   .tid-list li button { min-height: 52px; }
+}
+
+
+/* ── On air: the set's credit as a broadcast ticker on top of the bar ── */
+.fbar-air {
+  display: block;
+  overflow: hidden;
+  background: #000 !important;
+  color: #fff !important;
+  border-bottom: 1px solid #000 !important;
+  text-align: left;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+}
+.fbar-air-run { display: inline-flex; white-space: nowrap; animation: air 48s linear infinite; }
+.fbar-air:hover .fbar-air-run { animation-play-state: paused; }
+.fbar-air-item { display: inline-flex; align-items: center; gap: 0.6em; padding-right: 2.4em; line-height: var(--fbar-air); }
+.fbar-air-item strong { font-weight: 800; color: #fff; }
+.fbar-air-item strong.bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; }
+.fbar-air-item em { font-style: normal; opacity: 0.5; }
+@keyframes air { to { transform: translateX(-50%); } }
+.fbar-onair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-weight: 800;
+  color: #ff3b30;
+  white-space: nowrap;
+  flex: none;
+}
+.fbar-onair i { width: 7px; height: 7px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; animation: onair 1.4s ease-in-out infinite; }
+@keyframes onair { 50% { opacity: 0.25; box-shadow: none; } }
+
+/* ── Tracklist button: the one control that should be hard to miss ── */
+.fbar-tl {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px !important;
+  background: #000 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  position: relative;
+}
+.fbar-tl:hover { background: #1b1b1b !important; }
+.fbar-tl-n { padding: 3px 6px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 3px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.fbar-tl-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.fbar-tl-eq i { width: 3px; height: 100%; background: currentColor; transform-origin: 50% 100%; animation: tl-eq 0.9s ease-in-out infinite; }
+.fbar-tl-eq i:nth-child(2) { animation-delay: -0.3s; }
+.fbar-tl-eq i:nth-child(3) { animation-delay: -0.55s; }
+.fbar-tl-eq i:nth-child(4) { animation-delay: -0.15s; }
+@keyframes tl-eq { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+.fbar.paused .fbar-tl-eq i { animation-play-state: paused; }
+.fbar.fbar-attn .fbar-tl::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px solid #ff3b30;
+  border-radius: 4px;
+  animation: attn-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes attn-ring { 0% { opacity: 1; transform: scale(0.96); } 100% { opacity: 0; transform: scale(1.12); } }
+
+/* ── Tracklist window: the set's headline, then the tracks with clear links ── */
+.tid {
+  width: min(640px, calc(100vw - 40px));
+  max-height: calc(100dvh - var(--fbar-h) - 32px);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+.tid-bar > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+.tid-hero {
+  display: grid;
+  gap: 6px;
+  padding: 18px 18px 16px;
+  background: #000;
+  color: #fff;
+}
+.tid-hero-k { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #ccc; }
+.tid-hero-t { font-family: var(--brand-font); font-size: clamp(34px, 6vw, 52px); font-weight: 900; line-height: 1; letter-spacing: -0.01em; }
+.tid-hero-a { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.tid-hero-a i { font-style: normal; opacity: 0.6; padding: 0 4px; }
+.tid-hero-s { max-width: 52ch; color: #cfcfcf; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+.tid-hero-link { justify-self: start; margin-top: 4px; padding: 7px 14px; border: 1px solid #fff; border-radius: 999px; color: #fff !important; text-decoration: none; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+.tid-hero-link:hover { background: #fff; color: #000 !important; }
+.tid-track { display: grid; gap: 2px; min-width: 0; }
+.tid-artist { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.tid-list li > a {
+  align-self: center;
+  justify-content: center;
+  width: auto;
+  margin: 0 12px 0 0;
+  padding: 7px 12px;
+  border: 1px solid #000;
+  border-radius: 999px;
+  color: #000;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tid-list li > a:hover { background: #000; color: #fff; text-decoration: none; }
+.tid-list li.playing > a { border-color: #fff; color: #fff; }
+.tid-list li.playing > a:hover { background: #fff; color: #000; }
+.tid-list li.playing .tid-artist { color: #fff; }
+
+/* ── Home: the emblem's sneak peek into each world ── */
+.peek {
+  position: absolute;
+  z-index: 3;
+  width: 300px;
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  font: 500 12px/1.4 var(--bar-mono);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.3s var(--ease-out, ease);
+}
+.peek[data-at='left'] { transform: translate(-100%, -50%) translateX(12px); }
+.peek[data-at='right'] { transform: translate(0, -50%) translateX(-12px); }
+.peek[data-at='above'] { transform: translate(-50%, -100%) translateY(10px); }
+.peek[data-at='below'] { transform: translate(-50%, 0) translateY(-10px); }
+.peek.show[data-at='left'] { opacity: 1; transform: translate(-100%, -50%); }
+.peek.show[data-at='right'] { opacity: 1; transform: translate(0, -50%); }
+.peek.show[data-at='above'] { opacity: 1; transform: translate(-50%, -100%); }
+.peek.show[data-at='below'] { opacity: 1; transform: translate(-50%, 0); }
+.peek-apurba { border-left: 4px solid var(--blue); }
+.peek-acnd { border-right: 4px solid var(--orange); }
+.peek-bar { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #ddd; text-transform: uppercase; letter-spacing: 0.06em; }
+.peek-bar .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 14px; letter-spacing: 0; text-transform: none; }
+.peek-body { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 12px; }
+.peek-body img { width: 84px; height: 84px; object-fit: cover; border: 1px solid #000; }
+.peek-body > div { display: grid; align-content: start; gap: 3px; }
+.peek-k { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #555; }
+.peek-body b { font-family: var(--brand-font); font-size: 20px; font-weight: 900; line-height: 1.1; }
+.peek-sub { font-family: 'Hind Siliguri', system-ui, sans-serif; font-weight: 700; font-size: 13px; }
+.peek-cd { margin-top: 4px; font-variant-numeric: tabular-nums; }
+.peek-cd b { font-family: var(--bar-mono); font-size: 13px; font-weight: 700; }
+.peek-summary { margin: 0; padding: 0 12px 12px; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 13px; line-height: 1.5; color: #222; }
+.peek-foot { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; border-top: 1px solid #ddd; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+.peek-go { font-weight: 700; }
+body.flooding .peek { opacity: 0 !important; }
+
+@media (max-width: 760px) {
+  :root { --fbar-air: 26px; }
+  .fbar-tl { padding: 0 12px !important; gap: 0; }
+  .fbar-tl-k, .fbar-tl-n { display: none; }
+  .fbar-tl-eq { height: 18px; }
+  .fbar-tl-eq i { width: 4px; }
+  .fbar-artist { font-size: 14px; }
+  .tid-hero { padding: 14px; }
+  .tid-hero-a { font-size: 19px; }
+  .tid-hero-s { font-size: 13px; }
+  .tid-list li > a { padding: 6px 9px; margin-right: 8px; }
+  .peek { width: min(300px, calc(100vw - 24px)); }
+  .peek-body { grid-template-columns: 64px minmax(0, 1fr); }
+  .peek-body img { width: 64px; height: 64px; }
+  .peek-summary { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fbar-air-run, .fbar-tl-eq i, .fbar-onair i, .fbar.fbar-attn .fbar-tl::after { animation: none; }
 }

@@ -18,7 +18,8 @@ const icon = {
   prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h2v11H3zM13 2.5v11L5.5 8z"/></svg>',
   next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5h2v11h-2zM3 2.5v11L10.5 8z"/></svg>',
   /** An eye with a half-dark, half-light pupil: the site's duality as a knob. */
-  eye: '<svg viewBox="0 0 44 24" aria-hidden="true"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="#fff" stroke="#000" stroke-width="1.4"/><g class="fbar-pupil"><circle cx="22" cy="12" r="6.2" fill="#000"/><path d="M22 6.6a5.4 5.4 0 0 1 0 10.8z" fill="#fff"/></g></svg>',
+  eye: '<svg viewBox="0 0 44 24" aria-hidden="true"><defs><clipPath id="fbar-lid"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z"/></clipPath></defs><g class="fbar-eye"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="#fff"/><g clip-path="url(#fbar-lid)"><g class="fbar-pupil"><circle cx="22" cy="12" r="6.2" fill="#000"/><path d="M22 6.6a5.4 5.4 0 0 1 0 10.8z" fill="#fff"/><circle cx="24.2" cy="9.6" r="1.1" fill="#fff"/></g></g><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="none" stroke="#000" stroke-width="1.4"/></g></svg>',
+  list: '<span class="fbar-tl-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>',
   spotify:
     '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M6.2 9.3c3.9-1.2 8.3-.9 11.6 1M6.8 12.5c3.2-.9 6.7-.6 9.4.9M7.4 15.5c2.5-.6 5.1-.4 7.2.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
 };
@@ -31,7 +32,12 @@ export function mountPlayer(): void {
   bar.className = 'fbar';
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'Mix player');
+  // The credit, said like a broadcast: who made this set, and for whom.
+  const air = `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> ${esc(MIX.show)} <em>—</em> a ${Math.round(2743.6 / 60)}-minute set by <strong>ACND</strong> × <strong class="bn">অপূর্ব</strong> for <strong>${esc(MIX.station)}</strong> (HKCR) <em>—</em> ${TRACKLIST.length} tracks, opening with their unreleased “Initiate” <em>✶</em></span>`;
   bar.innerHTML = `
+    <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="${esc(MIX.show)}: a set by ACND and অপূর্ব for ${esc(MIX.station)}. Open the tracklist.">
+      <span class="fbar-air-run" aria-hidden="true">${air.repeat(4)}</span>
+    </button>
     <div class="fbar-seek">
       <span class="fbar-time" data-t>00:00</span>
       <div class="fbar-track" role="slider" tabindex="0" aria-label="Seek in the mix" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -51,6 +57,9 @@ export function mountPlayer(): void {
           <span class="fbar-artist"></span>
         </button>
       </div>
+      <button type="button" class="fbar-tl" aria-controls="track-id" aria-expanded="false">
+        ${icon.list}<span class="fbar-tl-k">Tracklist</span><span class="fbar-tl-n">01/${TRACKLIST.length}</span>
+      </button>
       <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>
       <a class="fbar-spotify" href="${esc(ARTISTS.acnd.listen.url)}" target="_blank" rel="noopener">${icon.spotify}<span>Spotify</span></a>
       <div class="fbar-actions">
@@ -69,13 +78,20 @@ export function mountPlayer(): void {
   panel.inert = true;
   panel.innerHTML = `
     <header class="tid-bar">
-      <span>Tracklist</span>
+      <span>${icon.list} Tracklist · ${TRACKLIST.length} tracks</span>
       <button type="button" data-act="close" aria-label="Close tracklist">–</button>
     </header>
+    <div class="tid-hero">
+      <span class="tid-hero-k"><b class="fbar-onair"><i></i>On air</b> Hong Kong Community Radio · HKCR</span>
+      <strong class="tid-hero-t">${esc(MIX.show)}</strong>
+      <span class="tid-hero-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
+      <span class="tid-hero-s">A ${Math.round(2743.6 / 60)}-minute set made for ${esc(MIX.station)}, hosted by both artists. ${TRACKLIST.length} tracks, opening with their unreleased collaboration “Initiate”.</span>
+      <a class="tid-hero-link" href="${MIX.stationUrl}" target="_blank" rel="noopener">Visit HKCR ↗</a>
+    </div>
     <div class="tid-head">
       <div class="tid-title">
-        <b>${esc(MIX.show)} on ${esc(MIX.station)}</b>
-        <span>Hosted by ${esc(MIX.hosts)} · made for <a href="${MIX.stationUrl}" target="_blank" rel="noopener">HKCR ↗</a></span>
+        <b>Tracklist</b>
+        <span>Tap a track to jump · open the original recordings</span>
       </div>
       <div class="tid-transport">
         <button type="button" data-act="prev" aria-label="Previous track">${icon.prev}</button>
@@ -88,7 +104,7 @@ export function mountPlayer(): void {
         <li data-i="${i}">
           <button type="button" data-seek="${t.at}" aria-label="Play ${esc(t.title)} from ${fmt(t.at)}">
             <span class="tid-at">${fmt(t.at)}</span>
-            <span><b>${esc(t.title)}</b> — ${esc(t.artist)}<em class="tid-now">Now playing</em></span>
+            <span class="tid-track"><b>${esc(t.title)}</b><span class="tid-artist">${esc(t.artist)}</span><em class="tid-now">Now playing</em></span>
           </button>
           ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(t.title)} by ${esc(t.artist)} on ${esc(t.linkLabel)}">${esc(t.linkLabel)} ↗</a>` : `<span class="tid-unavailable">Unreleased</span>`}
         </li>`,
@@ -105,7 +121,11 @@ export function mountPlayer(): void {
   document.body.append(panel, now, bar);
 
   const playBtn = bar.querySelector<HTMLButtonElement>('.fbar-play')!;
-  const openers = [...bar.querySelectorAll<HTMLButtonElement>('.fbar-art, .fbar-text')];
+  const openers = [...bar.querySelectorAll<HTMLButtonElement>('.fbar-art, .fbar-text, .fbar-tl, .fbar-air')];
+  const textBtn = bar.querySelector<HTMLButtonElement>('.fbar-text')!;
+  const tlCount = bar.querySelector<HTMLElement>('.fbar-tl-n')!;
+  const pupil = bar.querySelector<SVGGElement>('.fbar-pupil')!;
+  const eye = bar.querySelector<SVGGElement>('.fbar-eye')!;
   const title = bar.querySelector<HTMLElement>('.fbar-title')!;
   const artist = bar.querySelector<HTMLElement>('.fbar-artist')!;
   const tT = bar.querySelector<HTMLElement>('[data-t]')!;
@@ -124,11 +144,26 @@ export function mountPlayer(): void {
     rows[current.i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   };
 
+  // Until the tracklist has been opened once, its button asks for attention.
+  const SEEN = 'iry:tid-seen';
+  try {
+    if (localStorage.getItem(SEEN) !== '1') bar.classList.add('fbar-attn');
+  } catch {
+    /* storage unavailable */
+  }
   const open = (on: boolean): void => {
+    if (on) {
+      bar.classList.remove('fbar-attn');
+      try {
+        localStorage.setItem(SEEN, '1');
+      } catch {
+        /* ignore */
+      }
+    }
     document.body.classList.toggle('tid-open', on);
     openers.forEach((b) => b.setAttribute('aria-expanded', String(on)));
     panel.inert = !on;
-    if (!on && panel.contains(document.activeElement)) openers[1].focus();
+    if (!on && panel.contains(document.activeElement)) textBtn.focus();
     if (on) {
       panel.querySelector<HTMLButtonElement>('[data-act="close"]')?.focus({ preventScroll: true });
       window.setTimeout(reveal, 300);
@@ -155,7 +190,8 @@ export function mountPlayer(): void {
     rows.forEach((r, n) => r.classList.toggle('playing', n === i));
     title.textContent = t.title;
     artist.textContent = t.artist;
-    openers[1].setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
+    tlCount.textContent = `${two(i + 1)}/${TRACKLIST.length}`;
+    textBtn.setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
     reveal();
   });
   title.textContent = current.t.title;
@@ -228,6 +264,31 @@ export function mountPlayer(): void {
     if (e.key === 'ArrowLeft') seek(time() - 10);
   });
 
+  // The knob is an eye that follows the pointer, and blinks now and then.
+  let lookX = 0;
+  let lookY = 0;
+  let eyeX = 0;
+  let eyeY = 0;
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      const r = knob.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy) || 1;
+      const reach = Math.min(1, d / 160);
+      lookX = (dx / d) * reach * 9;
+      lookY = (dy / d) * reach * 3.2;
+    },
+    { passive: true },
+  );
+  const blink = (): void => {
+    eye.classList.add('blink');
+    window.setTimeout(() => eye.classList.remove('blink'), 150);
+    window.setTimeout(blink, 3500 + Math.random() * 5000);
+  };
+  window.setTimeout(blink, 4000);
+
   let lastFrame = 0;
   let lastSecond = -1;
   const loop = (stamp: number): void => {
@@ -237,6 +298,10 @@ export function mountPlayer(): void {
     const t = time();
     const frac = Math.min(1, t / duration());
     knob.style.setProperty('--p', frac.toFixed(4));
+    eyeX += (lookX - eyeX) * 0.25;
+    eyeY += (lookY - eyeY) * 0.25;
+    pupil.style.setProperty('--ex', eyeX.toFixed(2));
+    pupil.style.setProperty('--ey', eyeY.toFixed(2));
     if (Math.floor(t) !== lastSecond) {
       lastSecond = Math.floor(t);
       tT.textContent = fmt(t);

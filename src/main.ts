@@ -7,11 +7,11 @@ import './fx.css';
 import './bar.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
-import { ARTISTS, type ArtistId } from './data';
+import { ARTISTS, NEXT_RELEASE, type ArtistId } from './data';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
-import { esc, mountGate, reducedMotion, resumeRemembered } from './ui';
+import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
 import { ROOT, interceptLinks, parse, routeHref, upgradeLegacyHash } from './router';
 
 // Assets resolve from the site root whatever route the visitor landed on.
@@ -143,6 +143,30 @@ function renderHome(): void {
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
 
+  // ── Sneak peek: hovering a half of the emblem opens a window into that world ──
+  const peeks = {
+    apurba: peekCard('apurba'),
+    acnd: peekCard('acnd'),
+  };
+  app.querySelector('.home')!.append(peeks.apurba, peeks.acnd);
+  const touch = matchMedia('(hover: none)').matches;
+  if (touch) for (const id of ['apurba', 'acnd'] as const) peeks[id].querySelector('.peek-go')!.textContent = 'Tap again to enter →';
+  fx.onPeek((side, at) => {
+    for (const id of ['apurba', 'acnd'] as const) {
+      const card = peeks[id];
+      const on = id === side;
+      card.classList.toggle('show', on);
+      card.setAttribute('aria-hidden', String(!on));
+      if (!on) continue;
+      const gap = at.r * 1.45;
+      card.dataset.at = at.wide ? (id === 'apurba' ? 'left' : 'right') : id === 'apurba' ? 'above' : 'below';
+      card.style.left = `${at.wide ? at.x + (id === 'apurba' ? -gap : gap) : at.x}px`;
+      card.style.top = `${at.wide ? at.y : at.y + (id === 'apurba' ? -gap : gap)}px`;
+    }
+    document.body.classList.toggle('peeking', !!side);
+  });
+  let pinned: ArtistId | null = null;
+
   app.querySelectorAll<HTMLAnchorElement>('.side').forEach((el) => {
     const side = el.dataset.side === 'apurba' ? -1 : 1;
     el.addEventListener('pointerenter', (e) => {
@@ -156,14 +180,50 @@ function renderHome(): void {
     });
     el.addEventListener('click', (e) => {
       e.preventDefault();
+      // On touch, the first tap on the emblem opens the peek; a second enters.
+      // A click on the emblem enters the world it is previewing, whichever
+      // side panel lies underneath. On touch the first tap only opens the peek.
+      const hit = fx.hit(e.clientX, e.clientY);
+      if (touch && hit && !pinned) {
+        pinned = hit;
+        fx.peek(hit);
+        return;
+      }
+      const dest = (hit ? pinned ?? hit : el.dataset.side) as ArtistId;
+      pinned = null;
+      fx.peek(null);
       document.body.classList.add('flooding');
-      void fx.flood(el.dataset.side as ArtistId, e.clientX || innerWidth / 2, e.clientY || innerHeight / 2).then(() => {
+      void fx.flood(dest, e.clientX || innerWidth / 2, e.clientY || innerHeight / 2).then(() => {
         document.body.classList.remove('flooding');
-        navigate(routeHref(el.dataset.side as ArtistId));
+        navigate(routeHref(dest));
       });
     });
   });
 
+}
+
+/** The window into one artist's world shown beside the emblem. */
+function peekCard(id: ArtistId): HTMLElement {
+  const a = ARTISTS[id];
+  const r = a.releases[0];
+  const next = id === 'acnd';
+  const el = document.createElement('aside');
+  el.className = `peek peek-${id}`;
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `
+    <header class="peek-bar"><span class="${id === 'apurba' ? 'bn' : ''}">${esc(a.name)}</span><span>Sneak peek</span></header>
+    <div class="peek-body">
+      <img src="${asset(next ? NEXT_RELEASE.cover : r.cover ?? a.hero)}" alt="" width="84" height="84" />
+      <div>
+        <span class="peek-k">${next ? `Next release · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
+        <b>${esc(next ? NEXT_RELEASE.title : r.title)}</b>
+        <span class="peek-sub">${esc(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
+        ${next ? '<span class="peek-cd"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m <b data-cd="s">00</b>s</span>' : ''}
+      </div>
+    </div>
+    <p class="peek-summary">${esc(a.about?.summary ?? a.bio[0])}</p>
+    <footer class="peek-foot"><span>${esc(a.origin)}</span><span class="peek-go">Click to enter →</span></footer>`;
+  return el;
 }
 
 /* ─────────────────────────────── BOOT ───────────────────────────────── */
@@ -173,8 +233,8 @@ mountChrome();
 mountPlayer();
 mountFx();
 // Only a first visit to the home page asks about sound; every other page
-// leaves the choice to the player bar's play button.
-if (parse().artist || parse().doc) resumeRemembered();
+// simply starts the mix (or waits for the first tap if autoplay is blocked).
+if (parse().artist || parse().doc) autoplay();
 else void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
   line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',

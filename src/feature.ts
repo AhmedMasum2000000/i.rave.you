@@ -6,7 +6,7 @@ import './bar.css';
 import { mountChrome } from './chrome';
 import { inShell, installGuard } from './guard';
 import { mountPlayer } from './player';
-import { resumeRemembered, revealOnScroll } from './ui';
+import { autoplay, revealOnScroll } from './ui';
 
 /**
  * The "Beyond the Capital" feature. The article itself is static HTML in
@@ -20,6 +20,6 @@ if (!inShell()) {
   installGuard();
   mountChrome();
   mountPlayer();
-  resumeRemembered();
+  autoplay();
 }
 revealOnScroll(document);

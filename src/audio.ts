@@ -109,7 +109,8 @@ export function start(): void {
   // A browser may reject the initial autoplay. Recover both the media element
   // and suspended AudioContext on a real gesture; never claim it is playing early.
   const retry = (event: Event): void => {
-    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link]')) return;
+    // The play button handles its own tap; retrying here as well would undo it.
+    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play')) return;
     if (!userPaused && !isPlaying()) play();
   };
   const removeRetry = (): void => {
