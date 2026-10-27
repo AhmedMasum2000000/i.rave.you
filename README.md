@@ -28,7 +28,7 @@ All content lives in [`src/data.ts`](src/data.ts): tracklist and timestamps, rel
 | Logos | `public/img/logo-apurba.png`, `public/img/logo-acnd.png` | Black ink on white or transparent. Inverted automatically on dark backgrounds. The layout hides the logo slots until the files exist. |
 | ACND photo | `public/img/acnd.jpg` | Falls back to `acnd-portrait.webp` until present. |
 | অপূর্ব photo | `public/img/apurba.jpg` | Doorway and first photo tile on his pages. Falls back to `apurba-sun.jpg` until present. |
-| Set | `public/audio/x/` | Source fragments are authenticated and joined by `scripts/mix-audio.mjs` during Vite development/build. The browser plays the generated continuous `audio/qbic-pulse.m4a` with native buffering and byte-range seeking. |
+| Set | `public/audio/x/` | Source fragments are authenticated and joined by `scripts/mix-audio.mjs` during Vite development/build. The browser plays the generated continuous `audio/qbic-pulse.mp4` with native buffering and byte-range seeking. |
 | Font | `public/fonts/OffBit-Dot.woff2`, `OffBit-DotBold.woff2` | Optional, licensed copy of OffBit. Without it the site uses Doto (SIL OFL). |
 
 ## Unlisted pages

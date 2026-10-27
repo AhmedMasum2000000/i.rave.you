@@ -15,12 +15,52 @@ function continuousMix(root) {
   const dir = resolve(root, 'public/audio/x');
   const manifest = JSON.parse(readFileSync(resolve(dir, 'm.json'), 'utf8'));
   const names = ['i.bin', ...manifest.s.map((_, i) => `${i}.bin`)];
-  return Buffer.concat(names.map((name) => {
+  const decoded = names.map((name) => {
     const encrypted = readFileSync(resolve(dir, name));
     const decipher = createDecipheriv('aes-256-gcm', key, encrypted.subarray(0, 12));
     decipher.setAuthTag(encrypted.subarray(-16));
     return Buffer.concat([decipher.update(encrypted.subarray(12, -16)), decipher.final()]);
-  }));
+  });
+  const init = decoded[0];
+  // Supply native players with duration and a fragment index up front. Without
+  // these, remote playback scans the entire 45-minute file before starting.
+  const mvhd = init.indexOf(Buffer.from('mvhd'));
+  const version = init[mvhd + 4];
+  const movieScale = init.readUInt32BE(mvhd + (version === 1 ? 24 : 16));
+  const patchDuration = (type, scale, offset0, offset1) => {
+    const at = init.indexOf(Buffer.from(type));
+    if (at < 0) throw new Error(`Missing MP4 ${type} header`);
+    const v = init[at + 4];
+    const value = Math.round(manifest.t * scale);
+    if (v === 1) init.writeBigUInt64BE(BigInt(value), at + offset1);
+    else init.writeUInt32BE(value, at + offset0);
+  };
+  patchDuration('mvhd', movieScale, 20, 28);
+  patchDuration('tkhd', movieScale, 24, 32);
+  const mdhd = init.indexOf(Buffer.from('mdhd'));
+  const scale = init.readUInt32BE(mdhd + (init[mdhd + 4] === 1 ? 24 : 16));
+  patchDuration('mdhd', scale, 20, 28);
+  const tkhd = init.indexOf(Buffer.from('tkhd'));
+  const trackId = init.readUInt32BE(tkhd + (init[tkhd + 4] === 1 ? 24 : 16));
+  const fragments = decoded.slice(1);
+  const starts = fragments.map((fragment) => {
+    const at = fragment.indexOf(Buffer.from('tfdt'));
+    return fragment[at + 4] === 1 ? Number(fragment.readBigUInt64BE(at + 8)) : fragment.readUInt32BE(at + 8);
+  });
+  const index = Buffer.alloc(32 + fragments.length * 12);
+  index.writeUInt32BE(index.length, 0);
+  index.write('sidx', 4);
+  index.writeUInt32BE(trackId, 12);
+  index.writeUInt32BE(scale, 16);
+  index.writeUInt32BE(starts[0], 20);
+  index.writeUInt16BE(fragments.length, 30);
+  fragments.forEach((fragment, i) => {
+    const at = 32 + i * 12;
+    index.writeUInt32BE(fragment.length, at);
+    index.writeUInt32BE((starts[i + 1] ?? Math.round(manifest.t * scale)) - starts[i], at + 4);
+    index.writeUInt32BE(0x90000000, at + 8);
+  });
+  return Buffer.concat([init, index, ...fragments]);
 }
 
 export function mixAudioPlugin() {
@@ -31,11 +71,11 @@ export function mixAudioPlugin() {
     name: 'continuous-mix-audio',
     configResolved(config) { root = config.root; },
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'audio/qbic-pulse.m4a', source: getAudio() });
+      this.emitFile({ type: 'asset', fileName: 'audio/qbic-pulse.mp4', source: getAudio() });
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.split('?')[0] !== '/audio/qbic-pulse.m4a') return next();
+        if (req.url?.split('?')[0] !== '/audio/qbic-pulse.mp4') return next();
         if (req.method !== 'GET' && req.method !== 'HEAD') return next();
         const data = getAudio();
         let start = 0;
