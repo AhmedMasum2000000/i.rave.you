@@ -1,35 +1,34 @@
-# অপূর্ব (Apurba) — Official Artist Website
+# I RAVE YOU
 
-The public-facing artist website for অপূর্ব (Apurba), the independent electronic music project of Khalid Bin Alam.
+Two artists, one pulse: **অপূর্ব** (black · white · blue glow) and **ACND** (white · black · orange glow).
 
-## Requirements
+- **Home** — a live yin-yang: the screen splits along an S-curve that breathes with the mix, particles
+  and HUD rings invert as they cross it, and clicking a side floods the screen into that artist's world.
+- **Artist pages** (`#/apurba`, `#/acnd`) — modelled on the ascension.pegassi.be layout: arched chrome
+  wordmark over a lit doorway, word-by-word statement, tracklist + spinning record, releases,
+  IDs, a playable 16-step sequencer, about, and a jump to the other half.
+- **The mix** plays from the moment the visitor clicks the entry record, with no transport controls.
+  The current track ID shows (and links) in the corner. Browsers refuse audible autoplay without one
+  click, which is why the entry gate exists.
 
-- Node.js 22.12 or later
-- npm
-
-## Local development
-
-```sh
+```
 npm install
 npm run dev
+npm run build   # -> dist/
 ```
 
-This site is a static React/Vite application and does not require a Gemini API key or server-side environment variables. The production build pre-renders the page HTML for crawlers and hydrates it in the browser.
+## Editing
 
-## Production build
+All content lives in [`src/data.ts`](src/data.ts): tracklist and timestamps, releases, IDs, links, bios.
 
-```sh
-npm run build
-npm run preview
-```
+| Asset | Path | Notes |
+| --- | --- | --- |
+| Logos | `public/img/logo-apurba.png`, `public/img/logo-acnd.png` | Black ink on white or transparent. Inverted automatically on dark backgrounds. The layout hides the logo slots until the files exist. |
+| ACND photo | `public/img/acnd.jpg` | Falls back to `acnd-portrait.webp` until present. |
+| Mix | `public/audio/i-rave-you-mix.m4a` | AAC 256 kbps, encoded from the 24-bit FLAC master. |
+| Font | `public/fonts/OffBit-Dot.woff2`, `OffBit-DotBold.woff2` | Optional, licensed copy of OffBit. Without it the site uses Doto (SIL OFL). |
 
-The production-ready static site is written to `dist/`. Deploy the **contents** of that directory to a static web host; `node_modules/` is not part of the release. Configure the chosen custom domain with HTTPS and serve the site at the domain root. Keep SPA fallback/rewrite behavior enabled if the hosting provider requires it.
+## Unlisted pages
 
-## Team handover and launch checklist
-
-- Start from the project folder. Install dependencies with `npm install` and create a release build with `npm run build`.
-- Hand over or deploy the generated `dist/` directory. It contains the pre-rendered page, static assets, and `robots.txt`.
-- This project has no configured production domain yet. Before launch, add the selected domain's canonical URL, Open Graph URL, absolute structured-data URLs, and sitemap; then verify `robots.txt` and those URLs on the live site.
-- Verify the official artist streaming/profile links, embeds, images, and press-kit downloads on the hosted build.
-- The booking form only opens an email draft; it does not send or store inquiries. It currently has no preset recipient, so configure a verified booking address or another inquiry service before launch.
-- No server-side API key or environment configuration is required for the static site.
+`afw26/acnd-7q4x2k/` and `afw26/apurba-9m1v8t/` are Arka Fashion Week '26 pitch pages. Nothing links
+to them and they are `noindex`. Share the URLs directly. Their paths are set in `src/secret.ts`.
