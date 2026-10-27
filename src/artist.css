@@ -320,39 +320,6 @@ body[data-artist='apurba'] .a-door-img {
 }
 
 /* ── the mix tracklist, centred, two to a line ── */
-.a-tracklist {
-  position: relative;
-  z-index: 4;
-  background: var(--bg);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.2em 0.9em;
-  padding: 8vh 12vw 16vh;
-  font-weight: 800;
-  font-size: clamp(20px, 2.3vw, 36px);
-  line-height: 1.15;
-  text-align: center;
-}
-.a-tracklist a {
-  color: var(--dim);
-  transition: color 0.3s;
-}
-.a-tracklist a .mono {
-  font-size: 11px;
-  vertical-align: middle;
-  margin-right: 6px;
-}
-.a-tracklist em {
-  font-style: normal;
-}
-.a-tracklist a:hover,
-.a-tracklist a.playing {
-  color: var(--fg);
-}
-.a-tracklist a.playing .mono {
-  color: var(--glow);
-}
 
 /* ── media tiles with a caption beside them ── */
 .a-media-row {
@@ -633,23 +600,59 @@ body[data-artist='apurba'] .a-door-img {
   font-size: 11px;
   color: var(--dim);
 }
+.l-play {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #333;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 10px;
+}
+.l-play:hover {
+  border-color: var(--glow);
+  color: var(--glow);
+}
+.l-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.l-side button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0 7px 8px;
+  border: 0;
+  border-left: 2px solid #2a2a2a;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.l-side button span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.l-side button sup {
+  font-size: 0.7em;
+  margin-left: 3px;
+}
+.l-side button:hover {
+  color: var(--fg);
+}
+.l-side button.on {
+  color: var(--fg);
+  border-left-color: var(--glow);
+}
 .l-title {
   color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.l-eq {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-.l-eq i {
-  width: 3px;
-  height: 100%;
-  background: var(--glow);
-  transform-origin: bottom;
 }
 .l-bar {
   position: absolute;
@@ -1206,9 +1209,6 @@ body.menu-open .presave {
   }
   .a-side {
     padding-left: 0;
-  }
-  .a-tracklist {
-    padding: 6vh var(--gutter) 12vh;
   }
   .a-media-right {
     margin-left: 0;

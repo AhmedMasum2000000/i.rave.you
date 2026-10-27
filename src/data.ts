@@ -33,6 +33,8 @@ export interface Footnote {
 
 export interface Media {
   src: string;
+  /** Shown instead while `src` has not been added to public/img yet. */
+  fallback?: string;
   caption: string;
   sub: string;
 }
@@ -71,8 +73,13 @@ export interface Artist {
 
 /* ─────────────────────────────── THE MIX ──────────────────────────────── */
 
+/** The set playing in the background: made for Hong Kong Community Radio. */
 export const MIX = {
-  title: 'I RAVE YOU — Duality Mix',
+  title: 'Qbic Pulse on HKCR',
+  show: 'Qbic Pulse',
+  hosts: 'ACND & অপূর্ব',
+  station: 'Hong Kong Community Radio',
+  stationUrl: 'https://hkcr.live/',
   file: 'audio/i-rave-you-mix.m4a',
   bpm: 125,
 };
@@ -146,7 +153,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     latin: 'APURBA',
     logo: 'img/logo-apurba.png',
     hero: 'img/apurba-sun.jpg',
-    heroAlt: 'অপূর্ব — a glowing blue spiral sun on black.',
+    heroAlt: 'অপূর্ব (Khalid Bin Alam).',
     role: 'Producer · DJ · Sound engineer',
     origin: 'Cumilla, Bangladesh',
     info: ['অপূর্ব (Apurba)', 'Khalid Bin Alam', 'Cumilla, Bangladesh', 'Producing since 2016', '“Language doesn’t matter.', 'Frequency does.”'],
@@ -194,21 +201,21 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/6ciIrhy1tI3vHlU1yGDiNk' },
     essay: {
       intro:
-        'অপূর্ব is the dark half of the mix. Psychedelic texture, hypnotic grooves and sub-bass that speaks before anyone says a word.',
+        'অপূর্ব is the dark half of Qbic Pulse, the show he hosts with ACND on Hong Kong Community Radio. Psychedelic texture, hypnotic grooves and sub-bass that speaks before anyone says a word.',
       blocks: [
-        { label: '01', text: 'Initiate^1 is where the two halves met: ACND and অপূর্ব, still unreleased, opening the set.' },
+        { label: '01', text: 'Initiate^1 is where the two halves met: ACND and অপূর্ব, still unreleased, opening their HKCR set.' },
         { label: '02', text: 'Before অপূর্ব there was Euphonic^2, an open production lab on YouTube from 2018 to 2023.' },
         { label: '03', text: 'Since then, a Billboard Bangladesh feature^3, a London Love compilation^4, and four aliases sharing one frequency.' },
       ],
     },
     footnotes: [
-      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens the mix.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
+      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
       { text: 'Euphonic, the first channel: future house, synthwave and remixes.', link: { label: 'YouTube', url: 'https://www.youtube.com/@euphonic404' } },
       { text: '“Nitol Paye Electric”, অপূর্ব x Ahmed Masum, featured by Billboard Bangladesh.', link: { label: 'Watch', url: 'https://youtu.be/om5QGreRaYg' } },
       { text: 'London Love, a compilation with international artists.', link: { label: 'Spotify', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' } },
     ],
     media: [
-      { src: 'img/apurba-sun.jpg', caption: 'অপূর্ব', sub: 'CUMILLA (BD)' },
+      { src: 'img/apurba.jpg', fallback: 'img/apurba-sun.jpg', caption: 'অপূর্ব', sub: 'CUMILLA (BD)' },
       { src: 'img/sunset-mix.jpg', caption: 'LUMINOUS LULLABIES', sub: 'SET 01' },
       { src: 'img/monolithic-flow.jpg', caption: 'MONOLITHIC FLOW', sub: '2026' },
     ],
@@ -255,18 +262,18 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { title: 'Nitol Paye Electric', artists: 'অপূর্ব x Ahmed Masum', year: 2025, tag: 'Collab', cover: 'img/nitol-paye-electric.jpg', url: 'https://youtu.be/om5QGreRaYg' },
       { title: 'Opening', artists: 'অপূর্ব, Hridnic, Ahmed Masum, Prothey', year: 2025, tag: 'Collab', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
     ],
-    listen: { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
+    listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {
       intro:
-        'I Rave You is one record with two artists on it. For forty-five minutes the light half and the dark half pass the decks back and forth, until you stop being able to tell who is playing.',
+        'Qbic Pulse is a radio show: ACND and অপূর্ব on Hong Kong Community Radio. For forty-five minutes the light half and the dark half pass the decks back and forth, until you stop being able to tell who is playing.',
       blocks: [
-        { label: '01', text: 'It opens on Initiate^1, the first thing ACND and অপূর্ব finished together. Still unreleased, and the reason this site exists.' },
+        { label: '01', text: 'Their HKCR set opens on Initiate^1, the first thing ACND and অপূর্ব finished together. Still unreleased, and the reason this site exists.' },
         { label: '02', text: 'From there it climbs through melodic techno, acid and progressive, the corners ACND keeps coming back to.' },
         { label: '03', text: 'Next comes Down In Bossa^2: Afro House with Ash Army, out 30 October on Profi Music. Until then, there is Observateur d’étoiles^3.' },
       ],
     },
     footnotes: [
-      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens the mix.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
+      { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.', link: { label: 'Listen', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' } },
       { text: 'Down In Bossa, Ash Army & ACND. Afro House, out 30.10.2026 on Profi Music.', link: { label: 'Pre-save', url: NEXT_RELEASE.presave } },
       { text: 'Observateur d’étoiles and Her... are out now everywhere.', link: { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' } },
     ],
@@ -278,8 +285,10 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     patterns: ['Initiate', 'Down In Bossa', 'Observateur', 'Her...'],
     links: [
       { label: 'Pre-save “Down In Bossa”', url: NEXT_RELEASE.presave },
+      { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
       { label: 'SoundCloud', url: 'https://soundcloud.com/acndlovestoes' },
-      { label: 'Spotify', url: 'https://open.spotify.com/track/2KKx8ekirGh7xB4cm4EQ0S' },
+      { label: 'Instagram', url: 'https://www.instagram.com/acnd_music/' },
+      { label: 'Facebook', url: 'https://www.facebook.com/ahmed.masum.peace' },
       { label: 'Apple Music', url: 'https://music.apple.com/us/song/her/6794554132' },
       { label: 'YouTube Music', url: 'https://music.youtube.com/watch?v=s_b17eFeZgM' },
     ],

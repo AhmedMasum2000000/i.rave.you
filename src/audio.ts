@@ -2,10 +2,11 @@ import { MIX, TRACKLIST, type MixTrack } from './data';
 import { asset } from './paths';
 
 /**
- * The mix plays on its own — there is deliberately no play, pause or seek
- * control. Browsers refuse audible autoplay until the visitor interacts with
+ * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
+ * every page. Browsers refuse audible autoplay until the visitor interacts with
  * the page once, so `start()` is called from the "enter" gate's click; after
- * that the mix runs, loops and resumes where it left off on the next visit.
+ * that it runs, loops and resumes where it left off on the next visit. The
+ * visitor can pause, seek and skip between tracks (see `toggle`, `seek`, `skip`).
  */
 
 const POS_KEY = 'iry:mix-pos';
@@ -16,6 +17,9 @@ let master: GainNode | null = null;
 /** Separate from `master` so ducking and tab-focus fades never fight. */
 let focusGain: GainNode | null = null;
 let pauseTimer = 0;
+/** True when the visitor paused; tab-focus changes must not override that. */
+let userPaused = false;
+const stateListeners = new Set<(playing: boolean) => void>();
 let analyser: AnalyserNode | null = null;
 let freq: Uint8Array<ArrayBuffer> = new Uint8Array(0);
 let started = false;
@@ -63,6 +67,8 @@ export function start(): void {
   });
 
   el.addEventListener('timeupdate', onTime);
+  el.addEventListener('play', emitState);
+  el.addEventListener('pause', emitState);
   window.addEventListener('pagehide', savePos);
   document.addEventListener('visibilitychange', onFocusChange);
   window.addEventListener('blur', onFocusChange);
@@ -81,6 +87,7 @@ function onFocusChange(): void {
   g.cancelScheduledValues(ctx.currentTime);
   g.setValueAtTime(g.value, ctx.currentTime);
   clearTimeout(pauseTimer);
+  if (userPaused) return;
   if (away) {
     g.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
     pauseTimer = window.setTimeout(() => {
@@ -101,6 +108,60 @@ function savePos(): void {
   } catch {
     /* ignore */
   }
+}
+
+function emitState(): void {
+  stateListeners.forEach((fn) => fn(isPlaying()));
+}
+
+/** Playing from the visitor's point of view: a tab-blur pause still counts as playing. */
+export const isPlaying = (): boolean => started && !userPaused;
+
+export function onState(fn: (playing: boolean) => void): () => void {
+  stateListeners.add(fn);
+  fn(isPlaying());
+  return () => stateListeners.delete(fn);
+}
+
+export function play(): void {
+  if (!started) {
+    start();
+    emitState();
+    return;
+  }
+  if (!el || !ctx || !focusGain) return;
+  userPaused = false;
+  void ctx.resume();
+  focusGain.gain.cancelScheduledValues(ctx.currentTime);
+  focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.08);
+  void el.play().catch(() => undefined);
+  emitState();
+}
+
+export function pause(): void {
+  if (!el) return;
+  userPaused = true;
+  clearTimeout(pauseTimer);
+  el.pause();
+  savePos();
+  emitState();
+}
+
+export const toggle = (): void => (isPlaying() ? pause() : play());
+
+export function seek(sec: number): void {
+  if (!el) return;
+  el.currentTime = Math.max(0, Math.min(sec, duration() - 0.5));
+  onTime();
+  savePos();
+}
+
+/** Jump to the previous (-1) or next (+1) track ID. */
+export function skip(dir: -1 | 1): void {
+  const i = trackIndexAt(time());
+  // "Previous" restarts the current track unless we're near its start.
+  const target = dir < 0 && time() - TRACKLIST[i].at > 4 ? i : i + dir;
+  seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
 export const time = (): number => el?.currentTime ?? 0;
