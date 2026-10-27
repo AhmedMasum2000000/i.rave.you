@@ -4,7 +4,8 @@ import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, type ArtistId } from './data';
 import { mountDuality, type DualityHandle } from './duality';
-import { esc, mountGate, mountNowPlaying, reducedMotion } from './ui';
+import { mountPlayer } from './player';
+import { esc, mountGate, reducedMotion } from './ui';
 
 const app = document.getElementById('app')!;
 let cleanup: (() => void)[] = [];
@@ -90,9 +91,9 @@ function renderHome(): void {
 
 route();
 mountChrome();
-mountNowPlaying();
+mountPlayer();
 void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
-  line: 'Two artists. One pulse. 45 minutes that do not stop.',
+  line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',
   cta: 'Click to enter',
 });

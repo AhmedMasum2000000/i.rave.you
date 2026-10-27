@@ -1,8 +1,9 @@
 import './style.css';
 import './arka.css';
-import { onTrack, sample } from './audio';
-import { ARTISTS, MIX, NEXT_RELEASE, TRACKLIST, fmt, type ArtistId } from './data';
-import { asset, esc, mountGate, mountNowPlaying, revealOnScroll } from './ui';
+import { sample } from './audio';
+import { ARTISTS, MIX, NEXT_RELEASE, fmt, type ArtistId } from './data';
+import { mountPlayer } from './player';
+import { asset, esc, mountGate, revealOnScroll } from './ui';
 
 /**
  * Unlisted pitch pages for Arka Fashion Week '26: COLLECTIVE LIVE.
@@ -40,22 +41,22 @@ const PITCH: Record<PitchId, Pitch> = {
       { q: 'Stage name', a: 'ACND (Ascend)', aside: 'Four letters, one direction: up.' },
       { q: 'Genre', a: 'Techno / Melodic Techno / Acid Techno / Progressive', aside: 'Four genres walk into a club. Only one kick drum walks out.' },
       { q: 'The vibe', a: '“Something no one has ever seen, heard or felt before — the pinnacle of peakness. The Mind of ACND.”', aside: 'We checked. “Peakness” is not in the dictionary. Yet.' },
-      { q: 'Preferred set duration', a: '45 minutes', aside: 'The mix on this page runs 45:44. You are listening to the rehearsal.' },
+      { q: 'Preferred set duration', a: '45 minutes', aside: 'The set playing on this page runs 45:44, made for Hong Kong Community Radio. Consider it the rehearsal.' },
       { q: 'Preferred time of day', a: 'Anytime', aside: 'Daylight is just a very slow strobe.' },
       { q: 'Dates available', a: '☑ 4 December  ☑ 5 December  ☑ 6 December', aside: 'All three. He’d have ticked a fourth if you had one.' },
       { q: 'Equipment needed', a: '☑ DJ deck  ☑ Other: Love', aside: 'Brings his own Love. No extension cord required.' },
       { q: 'Anything else?', a: '“Love what Arka is doing, and what it stands for.”', aside: 'That’s it. That’s the whole rider. No green M&Ms.' },
     ],
     numbers: [
-      { n: '45:44', label: 'of set, already mixed and playing behind this sentence' },
-      { n: String(TRACKLIST.length), label: 'tracks, every ID linked below — no Shazam needed' },
+      { n: '45:44', label: 'of the Qbic Pulse set he co-hosted on Hong Kong Community Radio, playing behind this sentence' },
+      { n: 'HKCR', label: 'Hong Kong Community Radio: the station this set was made for' },
       { n: '30.10', label: '“Down In Bossa” with Ash Army lands on Profi Music, a Warner Music sublabel' },
       { n: '3/3', label: 'festival dates available. Pick one. Or don’t, and keep all three.' },
     ],
     risks: [
       ['Models walking in time with the kick', 'High', 'Encouraged'],
       ['Front row forgets to check their phones', 'Medium', 'Unavoidable'],
-      ['Audience demands track IDs', 'Certain', 'They’re all on this page'],
+      ['Audience demands track IDs', 'Certain', 'They’re on the I Rave You homepage'],
       ['Set runs past 45 minutes', 'Low', 'He counts in bars, not vibes'],
       ['Spontaneous outbreak of Love', 'Confirmed', 'Listed under equipment'],
     ],
@@ -79,13 +80,13 @@ const PITCH: Record<PitchId, Pitch> = {
       { n: '2016', label: 'the year the self-taught practice started' },
       { n: '10+', label: 'releases on Spotify across অপূর্ব and his aliases' },
       { n: '4', label: 'aliases, one frequency' },
-      { n: '45:44', label: 'of the I RAVE YOU mix playing right now — it opens with his collab “Initiate”' },
+      { n: '45:44', label: 'of the Qbic Pulse set he co-hosted with ACND on Hong Kong Community Radio, playing right now' },
     ],
     risks: [
       ['Sub-bass rearranges the front row’s internal organs', 'Medium', 'Wear something structured'],
       ['Crowd forgets which language they speak', 'High', 'Intended. Frequency does.'],
       ['Psychedelic textures clash with the collection', 'Low', 'They’ll complement it. Like black and white.'],
-      ['Someone asks “who is this?”', 'Certain', 'অপূর্ব. Every link is below.'],
+      ['Someone asks “who is this?”', 'Certain', 'অপূর্ব. Every link is one click away.'],
     ],
     close: 'Every collection needs its shadow to show its shape. Book the dark half — and ask about the other one. Selected applicants will be contacted; we’ll keep the volume up until then.',
     sign: '— অপূর্ব',
@@ -130,7 +131,7 @@ interface Meta {
   photo?: string;
   glow: string;
   number: string;
-  /** Plays the I RAVE YOU mix and lists its tracks. */
+  /** Plays the HKCR set in the background, with a gate to start it. */
   mix: boolean;
   profile?: string;
   exhibit: { kicker: string; label: string; url: string };
@@ -144,7 +145,7 @@ const META: Record<PitchId, Meta> = {
     number: '0001',
     mix: true,
     profile: asset('index.html#/acnd'),
-    exhibit: { kicker: 'EXHIBIT B · ASH ARMY & ACND · OUT 30.10 · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
+    exhibit: { kicker: 'EXHIBIT A · ASH ARMY & ACND · OUT 30.10 · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
   },
   apurba: {
     name: 'অপূর্ব',
@@ -153,7 +154,7 @@ const META: Record<PitchId, Meta> = {
     number: '0002',
     mix: true,
     profile: asset('index.html#/apurba'),
-    exhibit: { kicker: 'EXHIBIT B · EVERY RELEASE, SET & ALIAS', label: 'All links in one place ↗', url: 'https://linktr.ee/youmeiyou' },
+    exhibit: { kicker: 'EXHIBIT A · EVERY RELEASE, SET & ALIAS', label: 'All links in one place ↗', url: 'https://linktr.ee/youmeiyou' },
   },
   ash: {
     name: 'Ash Army',
@@ -178,15 +179,6 @@ const mark = m.logo
     ? `<img class="p-photo" src="${asset(m.photo)}" alt="${esc(m.name)}" onerror="this.remove()" />`
     : '';
 
-const tracks = m.mix
-  ? `<span class="label mono">Exhibit A — the set you are hearing</span>
-      <ol class="p-tracks">
-        ${TRACKLIST.map(
-          (t, i) =>
-            `<li data-i="${i}"><a href="${esc(t.url)}" target="_blank" rel="noopener"><span class="mono">${fmt(t.at)}</span><span><b>${esc(t.title)}</b> — ${esc(t.artist)}</span><span class="mono">↗</span></a></li>`,
-        ).join('')}
-      </ol>`
-  : '';
 
 document.getElementById('app')!.innerHTML = `
   <div class="pitch" style="--glow:${m.glow}">
@@ -232,7 +224,6 @@ document.getElementById('app')!.innerHTML = `
     </section>
 
     <section class="p-proof">
-      ${tracks}
       <a class="p-presave" href="${m.exhibit.url}" target="_blank" rel="noopener">
         <span class="mono">${esc(m.exhibit.kicker)}</span>
         <b>${esc(m.exhibit.label)}</b>
@@ -261,9 +252,7 @@ const loop = (): void => {
 requestAnimationFrame(loop);
 
 if (m.mix) {
-  const items = [...document.querySelectorAll<HTMLElement>('.p-tracks li')];
-  onTrack((_, i) => items.forEach((li, k) => li.classList.toggle('playing', k === i)));
-  mountNowPlaying();
+  mountPlayer();
   void mountGate({
     kicker: `For Arka Fashion Week ’26 — from ${m.name}`,
     line: 'Sound on. This application comes with its own soundtrack.',

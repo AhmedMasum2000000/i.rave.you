@@ -1,5 +1,5 @@
-import { onTrack, sample, time, trackIndexAt } from './audio';
-import { ARTISTS, MIX, OTHER, TRACKLIST, fmt, type Artist, type MixTrack } from './data';
+import { duration, onState, sample, time, toggle } from './audio';
+import { ARTISTS, MIX, OTHER, fmt, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
 import { asset, esc, img, reducedMotion, revealOnScroll } from './ui';
@@ -21,8 +21,6 @@ export const logo = (a: Artist, cls: string): string =>
 const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
 
 const href = (a: Artist, page: Page): string => (page === 'home' ? `#/${a.id}` : `#/${a.id}/${page}`);
-
-const dur = (i: number): number => (TRACKLIST[i + 1]?.at ?? 2743) - TRACKLIST[i].at;
 
 function nav(a: Artist, page: Page): string {
   const link = (p: Page, label: string): string =>
@@ -57,7 +55,7 @@ const media = (a: Artist, i: number, cls: string): string => {
   const m = a.media[i % a.media.length];
   return `
     <figure class="a-media ${cls}" data-reveal>
-      ${img(m.src, m.caption, 'a-media-img')}
+      ${img(m.src, m.caption, 'a-media-img', m.fallback)}
       <figcaption class="mono"><span>● ${esc(m.caption)}</span><span>${esc(m.sub)}</span></figcaption>
     </figure>`;
 };
@@ -93,7 +91,7 @@ function homePage(a: Artist): string {
       <span class="a-hero-r mono">01</span>
       <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">${esc(a.listen.label)}</a>
       <div class="a-scene">
-        <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : a.hero, a.heroAlt, 'a-door-img', a.hero)}</div>
+        <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero)}</div>
         <div class="a-stairs" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
       </div>
       <h1 class="a-mark" aria-label="${esc(a.name)}">
@@ -115,15 +113,6 @@ function homePage(a: Artist): string {
         </div>`,
         )
         .join('')}
-    </section>
-
-    <section class="a-tracklist">
-      ${TRACKLIST.map(
-        (t, i) => `
-        <a href="${esc(t.url)}" target="_blank" rel="noopener" data-i="${i}">
-          <span class="mono">${String(i + 1).padStart(2, '0')}</span>${esc(t.title.replace(/ \(.*\)$/, ''))} <em>(${fmt(t.at)})</em>
-        </a>`,
-      ).join('')}
     </section>
 
     <section class="a-media-row">
@@ -148,36 +137,38 @@ function homePage(a: Artist): string {
 }
 
 function listenPage(a: Artist): string {
-  const sides = [TRACKLIST.slice(0, 8), TRACKLIST.slice(8)];
-  const row = (t: MixTrack, i: number): string => `
-    <a href="${esc(t.url)}" target="_blank" rel="noopener" data-i="${i}">
-      <span>${esc(t.title.replace(/ \(.*\)$/, ''))}<sup>${i < 8 ? 'A' : 'B'}${(i % 8) + 1}</sup></span>
-      <span class="mono">(${fmt(dur(i))})</span>
-    </a>`;
+  const rel = a.releases;
+  const half = Math.ceil(rel.length / 2);
+  const sides = [rel.slice(0, half), rel.slice(half)];
+  const row = (i: number): string => `
+    <button type="button" data-rel="${i}" class="${i === 0 ? 'on' : ''}">
+      <span>${esc(rel[i].title)}<sup>${i < half ? 'A' : 'B'}${(i % half) + 1}</sup></span>
+      <span class="mono">(${esc(rel[i].tag)})</span>
+    </button>`;
   return `
     <section class="l-app">
       <div class="l-left">
         <div class="l-tracks">
-          <div class="panel-head mono"><span>● Tracks</span><span>${TRACKLIST.length}</span></div>
-          ${sides.map((s, k) => `<div class="l-side${k === 0 ? ' on' : ''}" data-side="${k}">${s.map((t) => row(t, TRACKLIST.indexOf(t))).join('')}</div>`).join('')}
+          <div class="panel-head mono"><span>● Releases</span><span>${rel.length}</span></div>
+          ${sides.map((s, k) => `<div class="l-side${k === 0 ? ' on' : ''}" data-side="${k}">${s.map((_, j) => row(k * half + j)).join('')}</div>`).join('')}
           <div class="l-tabs mono"><button data-tab="0" class="on">aSide</button><button data-tab="1">bSide</button></div>
         </div>
-        <div class="l-vinyl"><div class="l-disc"><div class="l-label">${logo(a, 'l-label-logo')}</div></div></div>
+        <div class="l-vinyl"><div class="l-disc"><div class="l-label" data-rel-cover>${logo(a, 'l-label-logo')}</div></div></div>
         <div class="l-player mono">
-          <span class="l-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="l-title" data-now-title>${esc(MIX.title)}</span>
-          <span><b data-now-time>00:00</b>/<span data-now-dur>00:00</span></span>
+          <button type="button" class="l-play" data-l-play aria-label="Pause"></button>
+          <span class="l-title">${esc(MIX.show)} on HKCR · ${esc(MIX.hosts)}</span>
+          <span><b data-now-time>00:00</b>/<span data-now-dur>45:43</span></span>
           <span>BPM ${MIX.bpm}</span>
           <span class="l-bar"><span data-now-bar></span></span>
         </div>
       </div>
       ${media(a, 0, 'l-media')}
       <div class="l-desc">
-        <div class="panel-head mono"><span data-now-k>● Now playing</span></div>
-        <p class="l-desc-title" data-now-big>—</p>
-        <p data-now-artist></p>
+        <div class="panel-head mono"><span>● ${esc(a.latin)}</span><span data-rel-tag></span></div>
+        <p class="l-desc-title" data-rel-title></p>
+        <p data-rel-artists></p>
         <p>${esc(a.essay.intro)}</p>
-        <a data-now-link target="_blank" rel="noopener" href="#">Open this ID ↗</a>
+        <a data-rel-link target="_blank" rel="noopener" href="#">Listen ↗</a>
       </div>
     </section>`;
 }
@@ -250,23 +241,33 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
 
   if (page === 'sequencer') cleanup.push(mountSequencer(app.querySelector('.seq-body')!, a.id, MIX.bpm, a.patterns));
 
-  // Everything that follows the playing ID: list highlights, titles, links.
-  const items = [...app.querySelectorAll<HTMLElement>('[data-i]')];
-  const set = (sel: string, fn: (el: HTMLElement) => void): void => app.querySelectorAll<HTMLElement>(sel).forEach(fn);
-  cleanup.push(
-    onTrack((t, i) => {
-      items.forEach((el) => el.classList.toggle('playing', Number(el.dataset.i) === i));
-      set('[data-now-title]', (el) => (el.textContent = `${t.artist} - ${t.title}`));
-      set('[data-now-big]', (el) => (el.textContent = t.title));
-      set('[data-now-artist]', (el) => (el.textContent = `${t.artist} · ID ${String(i + 1).padStart(2, '0')} of ${TRACKLIST.length} · in at ${fmt(t.at)}`));
-      set('[data-now-dur]', (el) => (el.textContent = fmt(dur(i))));
-      set('[data-now-link]', (el) => el.setAttribute('href', t.url));
-      // Follow the playing side on the listen page.
-      const side = i < 8 ? 0 : 1;
-      app.querySelectorAll<HTMLElement>('.l-side').forEach((s) => s.classList.toggle('on', Number(s.dataset.side) === side));
-      app.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.classList.toggle('on', Number(b.dataset.tab) === side));
-    }),
-  );
+  // Listen page: choosing a release puts its cover on the record and its link in the panel.
+  const pick = (i: number): void => {
+    const r = a.releases[i];
+    if (!r) return;
+    app.querySelectorAll<HTMLElement>('[data-rel]').forEach((b) => b.classList.toggle('on', Number(b.dataset.rel) === i));
+    const set = (sel: string, fn: (el: HTMLElement) => void): void => app.querySelectorAll<HTMLElement>(sel).forEach(fn);
+    set('[data-rel-title]', (el) => (el.textContent = r.title));
+    set('[data-rel-artists]', (el) => (el.textContent = `${r.artists} · ${r.year}`));
+    set('[data-rel-tag]', (el) => (el.textContent = r.tag));
+    set('[data-rel-link]', (el) => el.setAttribute('href', r.url));
+    set('[data-rel-cover]', (el) => {
+      el.innerHTML = r.cover ? img(r.cover, `${r.title} cover art`, 'l-cover') : logo(a, 'l-label-logo');
+    });
+  };
+  if (page === 'listen') pick(0);
+  app.querySelectorAll<HTMLButtonElement>('[data-rel]').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.rel))));
+
+  const lPlay = app.querySelector<HTMLButtonElement>('[data-l-play]');
+  if (lPlay) {
+    lPlay.addEventListener('click', toggle);
+    cleanup.push(
+      onState((on) => {
+        lPlay.textContent = on ? '❚❚' : '▶';
+        lPlay.setAttribute('aria-label', on ? 'Pause' : 'Play');
+      }),
+    );
+  }
 
   app.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) =>
     b.addEventListener('click', () => {
@@ -279,20 +280,17 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
   const nowBar = app.querySelector<HTMLElement>('[data-now-bar]');
   const disc = app.querySelector<HTMLElement>('.l-disc');
   const hero = app.querySelector<HTMLElement>('.a-hero');
-  const eq = [...app.querySelectorAll<HTMLElement>('.l-eq i')];
   let angle = 0;
   let raf = 0;
   const loop = (): void => {
     const lv = sample();
     const now = time();
-    const i = trackIndexAt(now);
-    if (nowTime) nowTime.textContent = fmt(now - TRACKLIST[i].at);
-    if (nowBar) nowBar.style.transform = `scaleX(${(now - TRACKLIST[i].at) / dur(i)})`;
+    if (nowTime) nowTime.textContent = fmt(now);
+    if (nowBar) nowBar.style.transform = `scaleX(${now / duration()})`;
     if (disc) {
       angle += 0.5 + lv.low * 2;
       disc.style.transform = `rotate(${angle}deg)`;
     }
-    eq.forEach((e, k) => (e.style.transform = `scaleY(${0.2 + Math.min(1, [lv.low, lv.mid, lv.high][k] * 2.4)})`));
     if (hero) {
       hero.style.setProperty('--beat', lv.beat.toFixed(3));
       hero.style.setProperty('--sy', String(Math.min(1, window.scrollY / innerHeight)));
