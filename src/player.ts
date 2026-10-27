@@ -40,6 +40,7 @@ export function mountPlayer(): void {
       <span class="fbar-air-run" aria-hidden="true">${(air + news).repeat(3)}</span>
     </button>
     <div class="fbar-seek">
+      <span class="fbar-mix-m">ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
       <span class="fbar-time" data-t>00:00</span>
       <div class="fbar-track" role="slider" tabindex="0" aria-label="Seek in the mix" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <span class="fbar-line"></span>
@@ -58,7 +59,6 @@ export function mountPlayer(): void {
       <div class="fbar-now">
         <button type="button" class="fbar-play" aria-label="Play">${icon.play}</button>
         <button type="button" class="fbar-text" aria-controls="track-id" aria-expanded="false">
-          <span class="fbar-kick">ACND × অপূর্ব · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
           <span class="fbar-title"></span>
           <span class="fbar-artist"></span>
         </button>
