@@ -2,7 +2,7 @@ import { ARTISTS, NEXT_RELEASE, type Artist } from './data';
 import { asset, esc } from './ui';
 
 /** Route links resolve from the site root, so the menu works on nested pages too. */
-const route = (hash: string): string => `${document.documentElement.dataset.root ?? ''}${hash}`;
+const route = (path: string): string => `${document.documentElement.dataset.root ?? ''}${path}`;
 
 /**
  * Site-wide chrome: a "MENU" button that opens a full-screen index, and a
@@ -54,12 +54,11 @@ function tick(): void {
 
 const artistLinks = (a: Artist): string => `
   <li class="m-artist m-${a.id}">
-    <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="${route(`#/${a.id}`)}" data-close>${esc(a.name)}</a>
+    <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="${route(`${a.id}/`)}" data-close>${esc(a.name)}</a>
     <span class="m-sub mono">
-      <a href="${route(`${a.id}/`)}">Artist profile ↗</a>
-      <a href="${route(`#/${a.id}/listen`)}" data-close>Releases</a>
-      <a href="${route(`#/${a.id}/sequencer`)}" data-close>Sequencer</a>
-      <a href="${route(`#/${a.id}/about`)}" data-close>About</a>
+      <a href="${route(`${a.id}/listen/`)}" data-close>Releases</a>
+      <a href="${route(`${a.id}/sequencer/`)}" data-close>Sequencer</a>
+      <a href="${route(`${a.id}/about/`)}" data-close>About</a>
     </span>
   </li>`;
 
@@ -82,7 +81,7 @@ export function mountChrome(): void {
   menu.innerHTML = `
     <div class="m-inner">
       <ol class="m-list">
-        <li><a class="m-big" href="${route('#/')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a> · <a href="${route('journal/')}">Journal · Artist guides</a> · <a href="${route('mixes/qbic-pulse/')}">Mix tracklist</a> · <a href="${route('music/down-in-bossa/')}">Down In Bossa</a></span></li>
+        <li><a class="m-big" href="${route('')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a> · <a href="${route('journal/')}">Journal · Artist guides</a> · <a href="${route('mixes/qbic-pulse/')}">Mix tracklist</a> · <a href="${route('music/down-in-bossa/')}">Down In Bossa</a></span></li>
         <li class="m-legal-item">
           <details class="m-legal" open>
             <summary>Legal &amp; site information <span aria-hidden="true">⌄</span></summary>
@@ -105,7 +104,7 @@ export function mountChrome(): void {
         ${clock()}
         <a class="m-presave" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save now</span><span>→</span></a>
         <a class="m-page mono" href="${NEXT_RELEASE.page}" target="_blank" rel="noopener">Release page ↗</a>
-        <p class="credit">Site by <a href="${route('#/acnd')}" data-close>ACND</a></p>
+        <p class="credit">Site by <a href="${route('acnd/')}" data-close>ACND</a></p>
       </aside>
     </div>`;
 
@@ -135,7 +134,7 @@ export function mountChrome(): void {
     e.preventDefault();
     controls[next].focus();
   });
-  window.addEventListener('hashchange', () => set(false));
+  window.addEventListener('routechange', () => set(false));
 
   // ── pre-save dock ──
   const dock = document.createElement('div');

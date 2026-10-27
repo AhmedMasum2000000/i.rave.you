@@ -3,6 +3,7 @@ import { ARTISTS, MIX, OTHER, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
 import { asset, esc, img, reducedMotion, revealOnScroll } from './ui';
+import { link, routeHref } from './router';
 
 /**
  * Artist pages, laid out after ascension.pegassi.be: a grained black canvas,
@@ -20,13 +21,13 @@ export const logo = (a: Artist, cls: string): string =>
 /** `^n` in copy becomes a superscript footnote marker. */
 const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
 
-const href = (a: Artist, page: Page): string => (page === 'home' ? `#/${a.id}` : `#/${a.id}/${page}`);
+const href = (a: Artist, page: Page): string => routeHref(a.id, page);
 
 function nav(a: Artist, page: Page): string {
   const link = (p: Page, label: string): string =>
     `<a href="${href(a, p)}" class="${page === p ? 'on' : ''}">${label}</a>`;
   return `
-    <nav class="a-nav">
+    <nav class="a-nav" data-pulse>
       <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${esc(a.latin)}</span></a>
       <div class="a-links">${link('listen', 'Releases')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
       <div class="a-info">${a.info.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
@@ -42,12 +43,12 @@ function footer(a: Artist): string {
     <footer class="a-foot">
       <span>${esc(a.latin)} 2026</span>
       <nav class="legal-links" aria-label="Legal information"><a href="${asset('legal/terms/')}">Terms of use</a><a href="${asset('legal/privacy/')}">Privacy</a><a href="${asset('legal/copyright/')}">Copyright contact</a></nav>
-      <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
+      <div><a href="${link()}">I Rave You</a><a href="${link('frequency-unity/')}">Feature: Beyond the Capital</a><a href="${routeHref(other.id)}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}
-      <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="#/acnd">ACND</a></span></span>
+      <span>${esc(a.origin)}<br /><span class="credit">Site by <a href="${routeHref('acnd')}">ACND</a></span></span>
     </footer>
-    <a class="a-sleeve" href="#/" aria-label="Back to I Rave You">
+    <a class="a-sleeve" href="${link()}" aria-label="Back to I Rave You">
       <span class="a-sleeve-art"><span>I RAVE YOU</span><span class="bn">অপূর্ব ◐ ACND</span></span>
     </a>`;
 }
@@ -77,28 +78,20 @@ const footnotes = (a: Artist): string => `
 /* ─────────────────────────────── PAGES ──────────────────────────────── */
 
 function homePage(a: Artist): string {
-  const sparks = [
-    [8, 30],
-    [93, 22],
-    [16, 78],
-    [86, 70],
-    [50, 4],
-  ]
-    .map(([x, y], i) => `<i class="spark" style="left:${x}%;top:${y}%;--d:${i * 0.7}s"></i>`)
-    .join('');
   return `
-    <section class="a-hero">
+    <section class="a-hero" data-pulse>
       <span class="a-hero-l mono">Mix</span>
       <span class="a-hero-r mono">01</span>
-      <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">${esc(a.listen.label)}</a>
+      <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">Listen on ${esc(a.listen.label)} ↗</a>
       <div class="a-scene">
         <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero)}</div>
-        <div class="a-stairs" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
+        <div class="a-floor" aria-hidden="true">
+          <div class="a-reflect">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', '', 'a-door-img', a.hero)}</div>
+        </div>
       </div>
       <h1 class="a-mark" aria-label="${esc(a.name)}">
         ${logo(a, 'a-mark-logo')}
         <span class="a-sheen" style="--logo:url('${asset(a.logo)}')" aria-hidden="true"></span>
-        ${sparks}
       </h1>
     </section>
 

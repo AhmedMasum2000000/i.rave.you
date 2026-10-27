@@ -47,6 +47,9 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   const g = canvas.getContext('2d')!;
   const blueGlow = sprite(BLUE, 64);
   const orangeGlow = sprite(ORANGE, 64);
+  // Big soft halos for the emblem, drawn once instead of a per-frame shadowBlur.
+  const blueHalo = sprite(BLUE, 160);
+  const orangeHalo = sprite(ORANGE, 160);
 
   const compact = matchMedia('(pointer: coarse), (max-width: 760px)').matches;
   let lastFrame = 0;
@@ -62,16 +65,26 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   let rot = 0;
   let floodState: { color: string; x: number; y: number; r: number; done: () => void } | null = null;
   const ps: P[] = [];
+  /** Shockwaves that leave the emblem on each kick. */
+  const waves: { r: number; a: number }[] = [];
+  let lastWave = 0;
+  /** Cursor parallax for the emblem, eased. */
+  let tiltX = 0;
+  let tiltY = 0;
+  /** Adaptive quality: shed particles and resolution if frames run long. */
+  let quality = 1;
+  let slowFrames = 0;
+  let prevStamp = 0;
 
   const resize = (): void => {
-    dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.5);
+    dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.5) * (quality < 1 ? 0.8 : 1);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
-    const n = Math.round(Math.min(compact ? 100 : 520, (W * H) / (compact ? 4200 : 2600)));
+    const n = Math.round(Math.min(compact ? 100 : 520, (W * H) / (compact ? 4200 : 2600)) * quality);
     ps.length = 0;
     for (let i = 0; i < n; i++) ps.push(spawn(true));
     if (reduced && raf) requestAnimationFrame(frame);
@@ -105,8 +118,14 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     wide() ? x < edge(y, t, amp) : y < edgeH(x, t, amp);
   /** Trace the seam, offset towards the dark (-) or light (+) side. */
   const seam = (t: number, amp: number, off: number): void => {
-    if (wide()) for (let y = 0; y <= H; y += 8) g.lineTo(edge(y, t, amp) + off, y);
-    else for (let x = 0; x <= W; x += 8) g.lineTo(x, edgeH(x, t, amp) + off);
+    // Always finish exactly on the far edge so no sliver is left unfilled.
+    if (wide()) {
+      for (let y = 0; y < H; y += 8) g.lineTo(edge(y, t, amp) + off, y);
+      g.lineTo(edge(H, t, amp) + off, H);
+    } else {
+      for (let x = 0; x < W; x += 8) g.lineTo(x, edgeH(x, t, amp) + off);
+      g.lineTo(W, edgeH(W, t, amp) + off);
+    }
   };
 
   const onMove = (e: PointerEvent): void => {
@@ -124,6 +143,17 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       return;
     }
     lastFrame = now;
+    // Long frames starve the audio thread on phones: degrade before that happens.
+    if (!reduced && prevStamp && quality > 0.5) {
+      const budget = compact ? 1000 / 24 : 1000 / 45;
+      slowFrames = now - prevStamp > budget ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+      if (slowFrames > 45) {
+        quality = Math.max(0.5, quality - 0.25);
+        slowFrames = 0;
+        resize();
+      }
+    }
+    prevStamp = now;
     const t = reduced ? 0 : now / 1000;
     const lv = sample();
     split += (splitTarget - split) * 0.06;
@@ -144,20 +174,20 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.fill();
 
     // ── seam glow: blue bleeding into black, orange into white ──
-    g.lineWidth = 2;
-    g.globalAlpha = 0.55 + lv.beat * 0.45;
-    g.shadowBlur = 24;
-    g.shadowColor = BLUE;
-    g.strokeStyle = BLUE;
-    g.beginPath();
-    seam(t, lv.low, -3);
-    g.stroke();
-    g.shadowColor = ORANGE;
-    g.strokeStyle = ORANGE;
-    g.beginPath();
-    seam(t, lv.low, 3);
-    g.stroke();
-    g.shadowBlur = 0;
+    // Layered strokes fake a bloom for a fraction of shadowBlur's cost.
+    const glowA = 0.55 + lv.beat * 0.45;
+    for (const [w, a] of [[18, 0.06], [8, 0.16], [2, 1]] as const) {
+      g.lineWidth = w * (1 + lv.beat * 0.5);
+      g.globalAlpha = a * glowA;
+      g.strokeStyle = BLUE;
+      g.beginPath();
+      seam(t, lv.low, -3 - (w > 2 ? w / 3 : 0));
+      g.stroke();
+      g.strokeStyle = ORANGE;
+      g.beginPath();
+      seam(t, lv.low, 3 + (w > 2 ? w / 3 : 0));
+      g.stroke();
+    }
     g.globalAlpha = 1;
 
     // ── particles: flow field, inverted per side by `difference` ──
@@ -202,10 +232,65 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.globalAlpha = 1;
 
     // ── the emblem: a rotating yin-yang sitting on the seam ──
-    const cx = wide() ? edge(H / 2, t, lv.low) : W / 2;
-    const cy = wide() ? H / 2 : edgeH(W / 2, t, lv.low);
+    if (mouseX >= 0 && !reduced) {
+      tiltX += ((mouseX / W - 0.5) * 18 - tiltX) * 0.05;
+      tiltY += ((mouseY / H - 0.5) * 18 - tiltY) * 0.05;
+    }
+    const cx = (wide() ? edge(H / 2, t, lv.low) : W / 2) + tiltX;
+    const cy = (wide() ? H / 2 : edgeH(W / 2, t, lv.low)) + tiltY;
     const R = (wide() ? Math.min(W, H) * 0.13 : W * 0.1) * (1 + lv.beat * 0.06);
-    drawYinYang(g, cx, cy, R, rot, lv.beat);
+
+    // ── kick shockwaves, inverted per side ──
+    if (!reduced && lv.beat > 0.75 && now - lastWave > 460 && waves.length < 3) {
+      lastWave = now;
+      waves.push({ r: R * 1.05, a: 0.55 * lv.beat });
+    }
+    g.globalCompositeOperation = 'difference';
+    g.strokeStyle = '#f4f3ef';
+    for (let i = waves.length - 1; i >= 0; i--) {
+      const w = waves[i];
+      w.r += 2.5 + w.r * 0.022;
+      w.a *= 0.93;
+      if (w.a < 0.02 || w.r > Math.max(W, H)) {
+        waves.splice(i, 1);
+        continue;
+      }
+      g.globalAlpha = w.a;
+      g.lineWidth = 1 + w.a * 2;
+      g.beginPath();
+      g.arc(cx, cy, w.r, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+
+    // Halos: blue bleeds into the dark half, orange into the light.
+    const hs = R * (3.2 + lv.beat * 0.9);
+    g.globalAlpha = 0.5 + lv.beat * 0.35;
+    // Clip each halo to its own half along the live seam, so no colour crosses it.
+    const darkPath = (): void => {
+      g.beginPath();
+      g.moveTo(0, 0);
+      seam(t, lv.low, 0);
+      g.lineTo(wide() ? 0 : W, wide() ? H : 0);
+      g.closePath();
+    };
+    g.save();
+    darkPath();
+    g.clip();
+    g.drawImage(blueHalo, cx - hs / 2, cy - hs / 2, hs, hs);
+    g.restore();
+    g.save();
+    darkPath();
+    g.rect(0, 0, W, H);
+    g.clip('evenodd');
+    g.globalCompositeOperation = 'multiply';
+    g.drawImage(orangeHalo, cx - hs / 2, cy - hs / 2, hs, hs);
+    g.restore();
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+
+    drawYinYang(g, cx, cy, R, rot, lv.beat, false);
 
     // ── HUD rings, spectrum halo, ticks — all inverted per side ──
     g.globalCompositeOperation = 'difference';
@@ -279,14 +364,14 @@ function ring(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, ro
 }
 
 /** Classic taijitu. Left/dark half carries a blue eye, light half an orange one. */
-export function drawYinYang(g: CanvasRenderingContext2D, cx: number, cy: number, R: number, rot: number, beat: number): void {
+export function drawYinYang(g: CanvasRenderingContext2D, cx: number, cy: number, R: number, rot: number, beat: number, blur = true): void {
   g.save();
   g.translate(cx, cy);
   g.rotate(rot);
   const light = '#f4f3ef';
   const dark = '#000';
 
-  g.shadowBlur = 40 + beat * 60;
+  g.shadowBlur = blur ? 40 + beat * 60 : 0;
   g.shadowColor = BLUE;
   g.fillStyle = dark;
   g.beginPath();
@@ -310,7 +395,7 @@ export function drawYinYang(g: CanvasRenderingContext2D, cx: number, cy: number,
 
   // The eyes — each half holds a seed of the other, lit in its glow colour.
   const eye = R * (0.12 + beat * 0.03);
-  g.shadowBlur = 20 + beat * 40;
+  g.shadowBlur = blur ? 20 + beat * 40 : 0;
   g.shadowColor = ORANGE;
   g.fillStyle = light;
   g.beginPath();

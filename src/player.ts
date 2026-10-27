@@ -1,6 +1,7 @@
-import { duration, isPlaying, onState, onTrack, sample, seek, skip, time, toggle } from './audio';
+import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle } from './audio';
 import { MIX, TRACKLIST, fmt, type MixTrack } from './data';
 import { esc } from './ui';
+import { bands } from './fx';
 
 /** Persistent mix controls and tracklist, available on every page. */
 
@@ -62,7 +63,26 @@ export function mountPlayer(): void {
       ).join('')}
     </ol>`;
 
-  document.body.append(panel, np);
+  // A quiet card names each new track as the mix moves on.
+  const now = document.createElement('div');
+  now.className = 'np-now';
+  now.setAttribute('role', 'status');
+  now.setAttribute('aria-live', 'polite');
+  now.innerHTML = `<span class="np-now-k mono"></span><b class="np-now-t"></b><span class="np-now-a"></span>`;
+
+  document.body.append(panel, np, now);
+  let nowTimer = 0;
+  let firstTrack = true;
+  const announce = (t: MixTrack, i: number): void => {
+    now.querySelector('.np-now-k')!.textContent = `Now playing · ${String(i + 1).padStart(2, '0')}/${TRACKLIST.length}`;
+    now.querySelector('.np-now-t')!.textContent = t.title;
+    now.querySelector('.np-now-a')!.textContent = t.artist;
+    now.classList.remove('show');
+    void now.offsetWidth;
+    now.classList.add('show');
+    clearTimeout(nowTimer);
+    nowTimer = window.setTimeout(() => now.classList.remove('show'), 5200);
+  };
 
   const playBtns = [np.querySelector<HTMLButtonElement>('.np-play')!, panel.querySelector<HTMLButtonElement>('[data-act="play"]')!];
   const main = np.querySelector<HTMLButtonElement>('.np-main')!;
@@ -127,6 +147,8 @@ export function mountPlayer(): void {
   };
 
   onTrack((t, i) => {
+    if (!firstTrack && isPlaying() && !document.body.classList.contains('tid-open')) announce(t, i);
+    firstTrack = false;
     current = { t, i };
     rows.forEach((r, n) => r.classList.toggle('playing', n === i));
     label();
@@ -185,7 +207,6 @@ export function mountPlayer(): void {
       return;
     }
     lastFrame = stamp;
-    const lv = sample();
     const now = time();
     const frac = now / duration();
     if (Math.floor(now) !== lastSecond) {
@@ -199,8 +220,13 @@ export function mountPlayer(): void {
       fill.style.transform = `scaleX(${frac})`;
       seekBar.setAttribute('aria-valuenow', String(Math.round(frac * 100)));
     }
-    const v = [lv.low, lv.mid, lv.high, lv.mid * 0.8, lv.low * 0.7];
-    eq.forEach((el, n) => (el.style.transform = `scaleY(${isPlaying() ? 0.15 + Math.min(1, v[n] * 2.2) : 0.15})`));
+    // A real five-band meter: sub, low, mid, presence, air.
+    const v = bands(eq.length);
+    // Mastered music sits high in every band; show the movement above that floor.
+    eq.forEach((el, n) => {
+      const x = Math.max(0, Math.min(1, (v[n] * (1 + n * 0.15) - 0.4) / 0.5));
+      el.style.transform = `scaleY(${(0.12 + x * 0.88).toFixed(3)})`;
+    });
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);

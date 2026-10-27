@@ -60,9 +60,20 @@ const list = mix.match(/<ol class="tracks">([\s\S]*?)<\/ol>/)[1];
 assert.equal([...list.matchAll(/<li>/g)].length, 15);
 assert.match(list, /43:19/);
 assert.match(list, /Vakabular Remix/);
+// Artist profiles are the interactive app at clean URLs, with the full
+// crawlable profile in the document; every sub-page exists as a real file.
+for (const id of ["acnd", "apurba"]) {
+  const html = readFileSync(resolve(root, id, "index.html"), "utf8");
+  assert.match(html, /<div id="app"><\/div><section class="discovery-home discovery-profile">/);
+  assert.match(html, /<script type="module"[^>]*src="\.\.\/assets\//);
+  for (const sub of ["listen", "sequencer", "about"]) {
+    const page = readFileSync(resolve(root, id, sub, "index.html"), "utf8");
+    assert.match(page, new RegExp(`rel="canonical" href="${origin}/${id}/"`));
+    assert.match(page, /src="\.\.\/\.\.\/assets\//);
+  }
+}
+for (const html of [home, acnd, apurba]) assert.doesNotMatch(html, /href="[^"]*#\//);
 for (const path of [
-  "acnd",
-  "apurba",
   "music/down-in-bossa",
   "mixes/qbic-pulse",
 ])
@@ -80,7 +91,7 @@ assert.match(
   /Sitemap: https:\/\/iraveyou.com\/sitemap.xml/,
 );
 console.log(
-  "PASS identity credits, 15-track list, script-free discovery pages, private pitch exclusions and sitemap reference",
+  "PASS identity credits, 15-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
 );
 
 // Check the published cluster, including related links and in-page references.

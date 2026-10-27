@@ -147,7 +147,7 @@ const META: Record<PitchId, Meta> = {
     glow: 'var(--orange)',
     number: '0001',
     mix: true,
-    profile: asset('index.html#/acnd'),
+    profile: asset('acnd/'),
     exhibit: { kicker: 'EXHIBIT A · ASH ARMY & ACND · OUT 30.10 · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
   },
   apurba: {
@@ -156,7 +156,7 @@ const META: Record<PitchId, Meta> = {
     glow: 'var(--blue)',
     number: '0002',
     mix: true,
-    profile: asset('index.html#/apurba'),
+    profile: asset('apurba/'),
     exhibit: { kicker: 'EXHIBIT A · EVERY RELEASE, SET & ALIAS', label: 'All links in one place ↗', url: 'https://linktr.ee/youmeiyou' },
   },
   ash: {
