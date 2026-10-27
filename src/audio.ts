@@ -107,18 +107,30 @@ function connectDeck(media: HTMLAudioElement, level: number): void {
   deckGain.set(media, gain);
 }
 
+/** When the player last received audio data from the network. */
+let lastProgress = 0;
+document.addEventListener('progress', () => { lastProgress = performance.now(); }, true);
+
 /**
- * A stalled connection (a phone switching networks, a dropped socket) can
- * leave the player waiting forever. After a few seconds, ask again from the
- * same spot; the buffered audio in front is kept.
+ * A dead connection (a phone switching networks, a dropped socket) can leave
+ * the player waiting forever. Only when no data has arrived for 8 s, ask again
+ * from the same spot. A slow but working download is never interrupted:
+ * restarting it would throw away the progress and make the wait longer.
  */
 function watchStall(): void {
   clearTimeout(stallTimer);
   stallTimer = window.setTimeout(() => {
     if (!el || userPaused || el.paused || el.readyState >= 3 || !navigator.onLine) return;
-    el.currentTime = el.currentTime;
+    if (performance.now() - lastProgress > 8000) el.currentTime = el.currentTime;
     watchStall();
   }, 4000);
+}
+
+/** Stop an idle deck downloading, so it never takes bandwidth from the deck on air. */
+function free(deck: HTMLAudioElement): void {
+  deck.pause();
+  deck.removeAttribute('src');
+  deck.load();
 }
 
 /** Seconds of audio ready in front of the playhead (0 until prepared). */
@@ -359,7 +371,7 @@ function cancelCue(): void {
   if (!cue) return;
   clearTimeout(cue.timer);
   cue = null;
-  spare?.pause();
+  if (spare) free(spare);
 }
 
 /**
@@ -378,6 +390,7 @@ function cueDeck(target: number): void {
     connectDeck(spare, 0);
   }
   const next = spare;
+  if (!next.getAttribute('src')) next.src = el.currentSrc || el.src;
   if (cue) {
     cue.target = target;
     if (next.readyState >= 1) next.currentTime = target;
@@ -430,7 +443,7 @@ function crossfade(next: HTMLAudioElement): void {
   el = next;
   spare = prev;
   window.setTimeout(() => {
-    if (spare === prev) prev.pause();
+    if (spare === prev) free(prev);
   }, 300);
   onTime();
   savePos();
