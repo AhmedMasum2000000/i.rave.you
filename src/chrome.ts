@@ -56,7 +56,7 @@ const artistLinks = (a: Artist): string => `
   <li class="m-artist m-${a.id}">
     <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="${route(`#/${a.id}`)}" data-close>${esc(a.name)}</a>
     <span class="m-sub mono">
-      <a href="${route(`#/${a.id}/listen`)}" data-close>Listen</a>
+      <a href="${route(`#/${a.id}/listen`)}" data-close>Releases</a>
       <a href="${route(`#/${a.id}/sequencer`)}" data-close>Sequencer</a>
       <a href="${route(`#/${a.id}/about`)}" data-close>About</a>
     </span>

@@ -2,14 +2,7 @@ import { duration, isPlaying, onState, onTrack, sample, seek, skip, time, toggle
 import { MIX, TRACKLIST, fmt, type MixTrack } from './data';
 import { esc } from './ui';
 
-/**
- * The background player.
- *
- * Everywhere: a small chip, bottom left, with play/pause and elapsed time.
- * On the home page only: the chip names the current track ID and opens the
- * full Track ID panel — every track of the HKCR set, click to jump, prev/next
- * and a seekable progress bar.
- */
+/** Persistent mix controls and tracklist, available on every page. */
 
 const icon = {
   play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>',
@@ -17,8 +10,6 @@ const icon = {
   prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h2v11H3zM13 2.5v11L5.5 8z"/></svg>',
   next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5h2v11h-2zM3 2.5v11L10.5 8z"/></svg>',
 };
-
-const isHome = (): boolean => document.body.dataset.view === 'home';
 
 export function mountPlayer(): void {
   const np = document.createElement('div');
@@ -37,11 +28,12 @@ export function mountPlayer(): void {
   const panel = document.createElement('section');
   panel.id = 'track-id';
   panel.className = 'tid';
-  panel.setAttribute('aria-label', 'Track ID');
+  panel.setAttribute('aria-label', 'Mix tracklist');
+  panel.inert = true;
   panel.innerHTML = `
     <header class="tid-head">
       <div class="tid-title">
-        <span class="mono">● Track ID</span>
+        <span class="mono">● Mix tracklist</span>
         <b>${esc(MIX.show)} on ${esc(MIX.station)}</b>
         <span class="mono">Hosted by ${esc(MIX.hosts)} · made for <a href="${MIX.stationUrl}" target="_blank" rel="noopener">HKCR ↗</a></span>
       </div>
@@ -65,7 +57,7 @@ export function mountPlayer(): void {
             <span class="mono">${fmt(t.at)}</span>
             <span><b>${esc(t.title)}</b> - ${esc(t.artist)}<em class="tid-now mono">Now playing</em></span>
           </button>
-          <a href="${esc(t.url)}" target="_blank" rel="noopener" aria-label="Open ${esc(t.title)}">↗</a>
+          <a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(t.title)} by ${esc(t.artist)} on ${esc(t.linkLabel)}">${esc(t.linkLabel)} ↗</a>
         </li>`,
       ).join('')}
     </ol>`;
@@ -85,8 +77,8 @@ export function mountPlayer(): void {
   const tD = panel.querySelector<HTMLElement>('[data-d]')!;
   const rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
 
-  let current: { t: MixTrack; i: number } | null = null;
-  let lastHome: boolean | null = null;
+  let current: { t: MixTrack; i: number } = { t: TRACKLIST[0], i: 0 };
+  rows[0]?.classList.add('playing');
 
   // The chip pulses for attention until the visitor has opened Track ID once.
   const SEEN = 'iry:tid-seen';
@@ -107,6 +99,8 @@ export function mountPlayer(): void {
   const open = (on: boolean): void => {
     document.body.classList.toggle('tid-open', on);
     main.setAttribute('aria-expanded', String(on));
+    panel.inert = !on;
+    if (!on && panel.contains(document.activeElement)) main.focus();
     if (on) {
       seen = true;
       np.classList.remove('np-attn');
@@ -119,18 +113,16 @@ export function mountPlayer(): void {
     }
   };
 
-  /** The chip names the track ID on home only; elsewhere it names the show. */
+  /** The same track ID and panel access follow the listener across routes. */
   const label = (): void => {
-    const home = isHome();
-    if (home && current) {
+    if (current) {
       k.textContent = `TRACK ID · ${String(current.i + 1).padStart(2, '0')}/${TRACKLIST.length}`;
       title.textContent = `${current.t.title} - ${current.t.artist}`;
     } else {
       k.textContent = `${MIX.show} · HKCR`;
       title.textContent = `Hosted by ${MIX.hosts}`;
     }
-    main.disabled = !home;
-    if (!home) open(false);
+    main.setAttribute('aria-label', `Open mix tracklist: ${title.textContent}`);
   };
 
   onTrack((t, i) => {
@@ -151,14 +143,16 @@ export function mountPlayer(): void {
     np.classList.toggle('paused', !playing);
   });
 
+  label();
+
   playBtns.forEach((b) => b.addEventListener('click', toggle));
   main.addEventListener('click', () => open(!document.body.classList.contains('tid-open')));
   panel.addEventListener('click', (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act], [data-seek]');
     if (!el) return;
     if (el.dataset.seek) {
-      seek(Number(el.dataset.seek));
       if (!isPlaying()) toggle();
+      seek(Number(el.dataset.seek));
     } else if (el.dataset.act === 'prev') skip(-1);
     else if (el.dataset.act === 'next') skip(1);
     else if (el.dataset.act === 'close') open(false);
@@ -183,11 +177,6 @@ export function mountPlayer(): void {
   });
 
   const loop = (): void => {
-    const home = isHome();
-    if (home !== lastHome) {
-      lastHome = home;
-      label();
-    }
     const lv = sample();
     const now = time();
     const frac = now / duration();

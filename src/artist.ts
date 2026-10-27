@@ -1,5 +1,5 @@
-import { duration, onState, sample, time, toggle } from './audio';
-import { ARTISTS, MIX, OTHER, fmt, type Artist } from './data';
+import { sample } from './audio';
+import { ARTISTS, MIX, OTHER, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
 import { asset, esc, img, reducedMotion, revealOnScroll } from './ui';
@@ -28,7 +28,7 @@ function nav(a: Artist, page: Page): string {
   return `
     <nav class="a-nav">
       <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${esc(a.latin)}<sup>®</sup></span></a>
-      <div class="a-links">${link('listen', 'Listen')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
+      <div class="a-links">${link('listen', 'Releases')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
       <div class="a-info">${a.info.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
     </nav>`;
 }
@@ -137,40 +137,26 @@ function homePage(a: Artist): string {
 }
 
 function listenPage(a: Artist): string {
-  const rel = a.releases;
-  const half = Math.ceil(rel.length / 2);
-  const sides = rel.length > 1 ? [rel.slice(0, half), rel.slice(half)] : [rel];
-  const row = (i: number): string => `
-    <button type="button" data-rel="${i}" class="${i === 0 ? 'on' : ''}">
-      <span>${esc(rel[i].title)}<sup>${i < half ? 'A' : 'B'}${(i % half) + 1}</sup></span>
-      <span class="mono">(${esc(rel[i].tag)})</span>
-    </button>`;
   return `
-    <section class="l-app">
-      <div class="l-left">
-        <div class="l-tracks">
-          <div class="panel-head mono"><span>● Releases</span><span>${rel.length}</span></div>
-          ${sides.map((s, k) => `<div class="l-side${k === 0 ? ' on' : ''}" data-side="${k}">${s.map((_, j) => row(k * half + j)).join('')}</div>`).join('')}
-          ${sides.length > 1 ? `<div class="l-tabs mono"><button data-tab="0" class="on">aSide</button><button data-tab="1">bSide</button></div>` : ''}
-        </div>
-        <div class="l-vinyl"><div class="l-disc"><div class="l-label" data-rel-cover>${logo(a, 'l-label-logo')}</div></div></div>
-        <div class="l-player mono">
-          <button type="button" class="l-play" data-l-play aria-label="Pause"></button>
-          <span class="l-title">${esc(MIX.show)} on HKCR · ${esc(MIX.hosts)}</span>
-          <span><b data-now-time>00:00</b>/<span data-now-dur>45:43</span></span>
-          <span>BPM ${MIX.bpm}</span>
-          <span class="l-bar"><span data-now-bar></span></span>
-        </div>
+    <section class="release-portfolio" aria-labelledby="release-heading">
+      <header class="release-heading">
+        <span class="a-label mono">● ${esc(a.latin)} · ${a.releases.length} ${a.releases.length === 1 ? 'release' : 'releases'}</span>
+        <h1 id="release-heading">${a.id === 'acnd' ? 'Coming next.' : 'Selected releases.'}</h1>
+        <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Upcoming on Profi Music, 30 October 2026.' : esc(a.bio[1])}</p>
+      </header>
+      <div class="release-grid">
+        ${a.releases.map((r) => `
+          <article class="release-card">
+            <a class="release-art" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" aria-label="${a.id === 'acnd' ? 'Pre-save' : 'Listen to'} ${esc(r.title)} by ${esc(r.artists)}">
+              ${r.cover ? img(r.cover, `${r.title} cover art`, 'release-cover') : logo(a, 'release-cover')}
+              <span>${a.id === 'acnd' ? 'Pre-save' : 'Listen'} ↗</span>
+            </a>
+            <div class="release-meta"><span class="mono">${esc(r.tag)}</span><h2>${esc(r.title)}</h2><p>${esc(r.artists)}</p></div>
+          </article>`).join('')}
       </div>
-      ${media(a, 0, 'l-media')}
-      <div class="l-desc">
-        <div class="panel-head mono"><span>● ${esc(a.latin)}</span><span data-rel-tag></span></div>
-        <p class="l-desc-title" data-rel-title></p>
-        <p data-rel-artists></p>
-        <p>${esc(a.essay.intro)}</p>
-        <a data-rel-link target="_blank" rel="noopener" href="#">Listen ↗</a>
-      </div>
-    </section>`;
+      <p class="release-note">Open releases on their streaming platforms. The Qbic Pulse mix and its tracklist are available in the player below.</p>
+    </section>
+    ${footer(a)}`;
 }
 
 function sequencerPage(): string {
@@ -183,11 +169,10 @@ function aboutPage(a: Artist): string {
       <span class="a-label mono">● ${esc(a.latin)}</span>
       <div class="b-grid">
         <div class="b-text">
-          <p class="a-big a-intro" data-words>${sup(a.essay.intro)}</p>
-          ${a.essay.blocks.map((b) => `<p class="b-para" data-words>${sup(b.text)}</p>`).join('')}
-          ${a.bio.map((p) => `<p class="b-para" data-words>${esc(p)}</p>`).join('')}
+          <h1 class="a-big a-intro">${esc(a.about?.summary ?? a.statement)}</h1>
+          ${(a.about?.paragraphs ?? a.bio).map((p) => `<p class="b-para" data-words>${esc(p)}</p>`).join('')}
         </div>
-        ${footnotes(a)}
+        <aside class="about-summary"><span class="a-label mono">● At a glance</span><p>${esc(a.origin)}</p><p>${esc(a.role)}</p></aside>
       </div>
     </section>
 
@@ -241,56 +226,10 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
 
   if (page === 'sequencer') cleanup.push(mountSequencer(app.querySelector('.seq-body')!, a.id, MIX.bpm, a.patterns));
 
-  // Listen page: choosing a release puts its cover on the record and its link in the panel.
-  const pick = (i: number): void => {
-    const r = a.releases[i];
-    if (!r) return;
-    app.querySelectorAll<HTMLElement>('[data-rel]').forEach((b) => b.classList.toggle('on', Number(b.dataset.rel) === i));
-    const set = (sel: string, fn: (el: HTMLElement) => void): void => app.querySelectorAll<HTMLElement>(sel).forEach(fn);
-    set('[data-rel-title]', (el) => (el.textContent = r.title));
-    set('[data-rel-artists]', (el) => (el.textContent = `${r.artists} · ${r.year}`));
-    set('[data-rel-tag]', (el) => (el.textContent = r.tag));
-    set('[data-rel-link]', (el) => el.setAttribute('href', r.url));
-    set('[data-rel-cover]', (el) => {
-      el.innerHTML = r.cover ? img(r.cover, `${r.title} cover art`, 'l-cover') : logo(a, 'l-label-logo');
-    });
-  };
-  if (page === 'listen') pick(0);
-  app.querySelectorAll<HTMLButtonElement>('[data-rel]').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.rel))));
-
-  const lPlay = app.querySelector<HTMLButtonElement>('[data-l-play]');
-  if (lPlay) {
-    lPlay.addEventListener('click', toggle);
-    cleanup.push(
-      onState((on) => {
-        lPlay.textContent = on ? '❚❚' : '▶';
-        lPlay.setAttribute('aria-label', on ? 'Pause' : 'Play');
-      }),
-    );
-  }
-
-  app.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) =>
-    b.addEventListener('click', () => {
-      app.querySelectorAll<HTMLElement>('.l-side').forEach((s) => s.classList.toggle('on', s.dataset.side === b.dataset.tab));
-      app.querySelectorAll<HTMLElement>('[data-tab]').forEach((x) => x.classList.toggle('on', x === b));
-    }),
-  );
-
-  const nowTime = app.querySelector<HTMLElement>('[data-now-time]');
-  const nowBar = app.querySelector<HTMLElement>('[data-now-bar]');
-  const disc = app.querySelector<HTMLElement>('.l-disc');
   const hero = app.querySelector<HTMLElement>('.a-hero');
-  let angle = 0;
   let raf = 0;
   const loop = (): void => {
     const lv = sample();
-    const now = time();
-    if (nowTime) nowTime.textContent = fmt(now);
-    if (nowBar) nowBar.style.transform = `scaleX(${now / duration()})`;
-    if (disc) {
-      angle += 0.5 + lv.low * 2;
-      disc.style.transform = `rotate(${angle}deg)`;
-    }
     if (hero) {
       hero.style.setProperty('--beat', lv.beat.toFixed(3));
       hero.style.setProperty('--sy', String(Math.min(1, window.scrollY / innerHeight)));

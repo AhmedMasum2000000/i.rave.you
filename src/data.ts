@@ -53,6 +53,7 @@ export interface Artist {
   info: string[];
   statement: string;
   bio: string[];
+  about?: { summary: string; paragraphs: string[] };
   notes: { label: string; text: string; url?: string }[];
   releases: Release[];
   /** Optional list under the releases on the about page. */
@@ -88,6 +89,7 @@ export interface MixTrack {
   artist: string;
   title: string;
   url: string;
+  linkLabel: string;
 }
 
 const t = (mmss: string): number => {
@@ -95,32 +97,32 @@ const t = (mmss: string): number => {
   return m * 60 + s;
 };
 
-/** No public pages are known for most IDs, so these open a SoundCloud search. */
-const sc = (q: string): string => `https://soundcloud.com/search?q=${encodeURIComponent(q)}`;
+/** Only verified recording links belong here; never substitute a search result. */
 
-const raw: [string, string, string, string?][] = [
+const raw: [string, string, string, string][] = [
   ['00:00', 'ACND x অপূর্ব', 'Initiate (unreleased ID)', 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt'],
-  ['03:37', 'Remusic', 'Ancestral Calling'],
-  ['06:35', 'Acrobat, Thomas Gandey, Vakabular', 'Acid (Vakabular Remix)'],
-  ['09:41', 'Kevin de Vries, SLVR, Stella von Lingen', 'Life'],
-  ['12:28', 'MAMI, Bound', 'Lose My Body'],
-  ['15:43', 'HERMEN', 'Subra'],
-  ['18:59', 'Solvane, Prismode', 'Mars'],
-  ['21:37', 'Mark Hoffen, Bittermind', 'WTF'],
-  ['25:30', 'Andy Syn, Heinrich & Heine', 'I Need Every Little Piece of You (Original Mix)'],
-  ['30:48', 'Rem Siman', 'Pria'],
-  ['33:47', '7 SKIES', 'QUENTE'],
-  ['35:41', 'Jules Brand', 'LOSE CONTROL'],
-  ['38:11', 'Add-us', 'Duck Duck'],
-  ['40:57', 'Adapter', 'Nakupenda'],
-  ['43:19', 'Axl Stace', 'Mystic'],
+  ['03:37', 'Remusic', 'Ancestral Calling', 'https://music.apple.com/us/album/ancestral-calling/1859226382?i=1859226383'],
+  ['06:35', 'Acrobat, Thomas Gandey, Vakabular', 'Acid (Vakabular Remix)', 'https://soundcloud.com/soundfocuslabel/acid-vakabular-remix'],
+  ['09:41', 'Kevin de Vries, SLVR, Stella von Lingen', 'Life', 'https://music.apple.com/us/album/life/1817532708?i=1817532715'],
+  ['12:28', 'MAMI, Bound', 'Lose My Body', 'https://music.apple.com/us/album/lose-my-body/1863695815?i=1863695820'],
+  ['15:43', 'HERMEN', 'Subra', 'https://music.apple.com/us/album/subra/6800439351?i=6800439352'],
+  ['18:59', 'Solvane, Prismode', 'Mars', 'https://music.apple.com/us/album/mars/1875941684?i=1875941685'],
+  ['21:37', 'Mark Hoffen, Bittermind', 'WTF', 'https://soundcloud.com/mark-hoffen/mark-hoffen-bittermind-wtf-1'],
+  ['25:30', 'Andy Syn, Heinrich & Heine', 'I Need Every Little Piece of You (Original Mix)', 'https://soundcloud.com/andysyn-scmusic/i-need-every-little-piece-of'],
+  ['30:48', 'Rem Siman', 'Pria', 'https://music.apple.com/us/album/pria/1874878989?i=1874879266'],
+  ['33:47', '7 SKIES', 'QUENTE', 'https://music.apple.com/us/album/quente/6771727958?i=6771727959'],
+  ['35:41', 'Jules Brand', 'LOSE CONTROL', 'https://music.apple.com/us/album/lose-control/1895377568?i=6763565980'],
+  ['38:11', 'Add-us', 'Duck Duck', 'https://music.apple.com/us/album/duck-duck/1887146298?i=1887146303'],
+  ['40:57', 'Adapter', 'Nakupenda', 'https://soundcloud.com/adapterdj/nakupenda'],
+  ['43:19', 'Axl Stace', 'Mystic', 'https://music.apple.com/us/album/mystic/1872550832?i=1872550833'],
 ];
 
 export const TRACKLIST: MixTrack[] = raw.map(([at, artist, title, url]) => ({
   at: t(at),
   artist,
   title,
-  url: url ?? sc(`${artist.split(',')[0]} ${title.replace(/\(.*\)/, '')}`),
+  url,
+  linkLabel: url.includes('music.apple.com') ? 'Apple Music' : 'SoundCloud',
 }));
 
 export const fmt = (sec: number): string => {
@@ -155,14 +157,24 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     heroAlt: 'অপূর্ব (Khalid Bin Alam).',
     role: 'Producer · DJ · Sound engineer',
     origin: 'Cumilla, Bangladesh',
-    info: ['অপূর্ব (Apurba)', 'Khalid Bin Alam', 'Cumilla, Bangladesh', 'Producing since 2016', '“Language doesn’t matter.', 'Frequency does.”'],
+    info: ['অপূর্ব (Opurbo)', 'Khalid Bin Alam', 'Cumilla, Bangladesh', 'Producing since 2016', '“Language doesn’t matter.', 'Frequency does.”'],
     statement:
       'অপূর্ব is the dark half. Psychedelic textures, hypnotic grooves and sub-bass that talks before anyone says a word. Language doesn’t matter. Frequency does.',
     bio: [
-      'অপূর্ব (Apurba) is the independent electronic music project of Khalid Bin Alam, a producer, DJ and sound engineer from Cumilla, Bangladesh. Since 2016 his self-taught practice has spanned production, mixing, mastering, sound design and live performance.',
-      'His work moves between psychedelic and melodic electronic music, bass-driven club sounds, ambient composition and cinematic experiments — genre as a tool, not a limitation.',
-      'Before অপূর্ব there was Euphonic: an open production lab on YouTube from 2018 to 2023. Today the wider practice includes Luminous Lullabies, Zalvix, A&R with Badenstock Records and playlist curation through PlayLSD.',
+      'অপূর্ব (Opurbo) is the independent electronic music project of Khalid Bin Alam, a self-taught producer and DJ from Cumilla, Bangladesh. His electronic music journey began in 2016.',
+      'His work spans psychedelic and melodic electronic music, bass-driven club sounds, ambient textures and experimental production. Underground energy meets organic atmosphere, with sound as a way to communicate beyond language.',
+      'Rooted in Bangladesh and reaching toward an international audience, his practice brings together production, DJ performance, music curation and support for independent electronic music culture.',
     ],
+    about: {
+      summary: 'অপূর্ব — Independent electronic music from Bangladesh, exploring rhythm, psychedelia, and the space between sound and consciousness.',
+      paragraphs: [
+        'অপূর্ব (Opurbo) is the creative identity of Khalid Bin Alam, an independent electronic music artist from Cumilla, Bangladesh. Beginning his journey in 2016, he developed a self-taught practice across production, DJing, mixing, mastering and sound design.',
+        'His music explores the relationship between rhythm, atmosphere, psychedelic textures and emotional energy. It moves through psychedelic and melodic electronic music, bass-driven club sounds, ambient compositions and cinematic experimentation, treating genre as a creative tool rather than a boundary.',
+        'Underground dance culture, hypnotic grooves, spiritual curiosity and organic textures shape his sound. His practice extends beyond records to DJ performance, music curation and supporting independent artists and electronic music culture.',
+        'Rooted in Bangladesh and oriented toward an international electronic music audience, অপূর্ব continues to experiment with new sonic directions. Independence and a belief that sound can communicate beyond language remain central to the project.',
+        'The evolving identity is underground, psychedelic and emotionally expressive, connected to the physical experience of music.',
+      ],
+    },
     notes: [
       { label: 'A', text: '“Nitol Paye Electric” — অপূর্ব x Ahmed Masum, featured by Billboard Bangladesh.', url: 'https://youtu.be/om5QGreRaYg' },
       { label: 'B', text: 'Released on the London Love compilation alongside international artists.', url: 'https://open.spotify.com/album/6wNfZrP6Xgx19753ppoOy3' },
@@ -254,7 +266,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.', url: 'https://on.soundcloud.com/WyJeosbzhDrQ5eqSHt' },
     ],
     releases: [
-      { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: '30.10', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
+      { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Upcoming · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
     ],
     listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {

@@ -512,13 +512,13 @@ body[data-view='home'] .np-eq i:nth-child(even) {
   opacity: 0.7;
   transition: transform 0.3s;
 }
-body[data-view='home'] .np-caret {
+.np-caret {
   display: block;
 }
 body.tid-open .np-caret {
   transform: rotate(180deg);
 }
-body[data-view='home'] .np-main:hover .np-t {
+.np-main:hover .np-t {
   text-decoration: underline;
 }
 .np-bar {
@@ -543,7 +543,7 @@ body.menu-open .np {
   pointer-events: none;
 }
 
-/* ─────────────────────── TRACK ID PANEL (home only) ─────────────────────── */
+/* ─────────────────────── TRACKLIST PANEL ─────────────────────── */
 
 .tid {
   position: fixed;
@@ -565,7 +565,7 @@ body.menu-open .np {
   visibility: hidden;
   transition: opacity 0.35s, transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.45s;
 }
-body[data-view='home'].tid-open .tid {
+body.tid-open .tid {
   opacity: 1;
   transform: none;
   pointer-events: auto;
@@ -925,7 +925,7 @@ body[data-view='home'] .np-k {
 body[data-view='home'] .np-t {
   font-size: 14px;
 }
-body[data-view='home'] .np-caret {
+.np-caret {
   font-size: 12px;
   opacity: 1;
 }
@@ -1165,4 +1165,13 @@ body[data-view='home'] .tid {
   .vibe-title {
     font-size: 19px;
   }
+}
+
+/* Tracklist access is consistent on the home, artist, feature and pitch pages. */
+.tid-list li a { flex: none; width: 94px; padding: 8px; font-size: 11px; text-align: center; }
+.tid-list li button { min-width: 0; }
+.np-main:focus-visible, .tid button:focus-visible, .tid a:focus-visible { outline: 2px solid #8fb3ff; outline-offset: -2px; }
+@media (max-width: 760px) {
+  .tid-list li button { min-width: 0; }
+  .tid-list li a { width: 78px; }
 }

@@ -256,8 +256,9 @@ const loop = (): void => {
 };
 requestAnimationFrame(loop);
 
+mountPlayer();
+
 if (m.mix) {
-  mountPlayer();
   void mountGate({
     kicker: `For Arka Fashion Week ’26 — from ${m.name}`,
     line: 'Sound on. This application comes with its own soundtrack.',

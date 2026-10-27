@@ -1281,3 +1281,24 @@ body.menu-open .presave {
     font-size: 16px;
   }
 }
+
+/* Release artwork leads the portfolio; mix playback stays in the global player. */
+.release-portfolio { padding: 130px var(--gutter) 70px; max-width: 1500px; margin: auto; }
+.release-heading { max-width: 760px; margin-bottom: 38px; }
+.release-heading h1 { font-size: clamp(36px, 6vw, 84px); line-height: 1.05; margin: 22px 0; }
+.release-heading p, .release-note { color: #b4b4b4; line-height: 1.7; }
+.release-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px 20px; }
+.release-card { min-width: 0; border: 1px solid #303030; background: #141414; }
+.release-art { display: block; position: relative; overflow: hidden; aspect-ratio: 1; }
+.release-cover { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.release-art:hover .release-cover { transform: scale(1.03); }
+.release-art span { position: absolute; bottom: 14px; right: 14px; padding: 10px 14px; background: #080808; color: white; border: 1px solid #777; }
+.release-meta { padding: 20px; }
+.release-meta > span { font-size: 11px; color: #b4b4b4; }
+.release-meta h2 { margin: 12px 0; font-size: 24px; }
+.release-meta p { color: #b4b4b4; font-size: 13px; line-height: 1.6; }
+.release-note { margin-top: 32px; font-size: 12px; }
+.about-summary { padding: 20px 0; line-height: 1.8; }
+body[data-artist='acnd'] .release-grid { grid-template-columns: minmax(0, 560px); }
+@media (max-width: 900px) { .release-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .release-grid { grid-template-columns: minmax(0, 1fr); } .release-portfolio { padding-top: 160px; } }
