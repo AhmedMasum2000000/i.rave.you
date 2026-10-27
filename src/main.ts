@@ -5,6 +5,8 @@ import './artist.css';
 import './mobile.css';
 import './fx.css';
 import './bar.css';
+import './polish.css';
+import './menu.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, NEXT_RELEASE, type ArtistId } from './data';
@@ -12,7 +14,7 @@ import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
-import { ROOT, interceptLinks, parse, routeHref, upgradeLegacyHash } from './router';
+import { ROOT, interceptLinks, link, parse, routeHref, upgradeLegacyHash } from './router';
 
 // Assets resolve from the site root whatever route the visitor landed on.
 document.documentElement.dataset.root = ROOT;
@@ -124,6 +126,13 @@ function renderHome(): void {
           <a class="credit home-credit" href="${routeHref('acnd')}">Site by ACND</a>
         </span>
       </header>
+      <a class="news" href="${link('music/down-in-bossa/')}">
+        <b class="news-k">New</b>
+        <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong> · ${esc(NEXT_RELEASE.artist)}</span>
+        <span class="news-d">Out <span data-days></span></span>
+        <span class="news-go">Details →</span>
+      </a>
+      <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Out on</span> Profi Music</p>
 
       <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba" aria-label="Enter অপূর্ব">
         ${logo(A, 'side-logo')}

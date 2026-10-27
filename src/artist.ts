@@ -2,7 +2,7 @@ import { sample } from './audio';
 import { ARTISTS, MIX, OTHER, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
-import { asset, esc, img, reducedMotion, revealOnScroll } from './ui';
+import { asset, esc, exists, img, reducedMotion, revealOnScroll, typewrite } from './ui';
 import { link, routeHref } from './router';
 
 /**
@@ -16,7 +16,7 @@ export type Page = 'home' | 'listen' | 'sequencer' | 'about';
 
 /** Logo image with a typeset fallback while the artwork file is absent. */
 export const logo = (a: Artist, cls: string): string =>
-  `<span class="logo ${cls}"><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" onerror="this.parentNode.classList.add('nologo')" /><span class="logo-text">${esc(a.name)}</span></span>`;
+  `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${asset(a.logo.replace(/\.png$/, '.webp'))}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text">${esc(a.name)}</span></span>`;
 
 /** `^n` in copy becomes a superscript footnote marker. */
 const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
@@ -72,6 +72,40 @@ const footnotes = (a: Artist): string => `
       .join('')}
   </ol>`;
 
+/** Everyone credited alongside this artist on their releases. */
+const collaborators = (a: Artist): string[] => {
+  const names = new Set<string>();
+  for (const r of a.releases)
+    for (const n of r.artists.split('·')[0].split(/,|&/)) {
+      const name = n.replace(/\(.*?\)/g, '').trim();
+      if (name && name !== a.name && name !== a.latin && name !== 'Various Artists') names.add(name);
+    }
+  names.add(ARTISTS[OTHER[a.id]].name);
+  return [...names];
+};
+
+/** Selected credits: the record, stated plainly. */
+function credits(a: Artist): string {
+  const other = ARTISTS[OTHER[a.id]];
+  const rows: [string, string, string][] = [
+    ['Radio', MIX.station, `${MIX.show} — a set with ${other.name}`],
+    ...(a.id === 'acnd'
+      ? ([
+          ['Label', 'Profi Music', 'Down In Bossa with Ash Army · 30.10.2026'],
+          ['Remix', 'Nitol Paye Electric', 'ACND remix'],
+        ] as [string, string, string][])
+      : ([['Catalogue', `${a.releases.length} releases`, 'Spotify · Apple Music · SoundCloud']] as [string, string, string][])),
+    ['With', collaborators(a).join(' · '), 'Collaborators'],
+  ];
+  return `
+    <section class="a-credits">
+      <span class="a-label mono" data-type>● Selected credits</span>
+      <ol class="cred-list">
+        ${rows.map(([k, b, sub], i) => `<li data-reveal style="--d:${i}"><span class="cred-k mono">${esc(k)}</span><b class="${/[\u0980-\u09FF]/.test(b) ? 'bn' : ''}">${esc(b)}</b><span class="cred-s">${esc(sub)}</span></li>`).join('')}
+      </ol>
+    </section>`;
+}
+
 /* ─────────────────────────────── PAGES ──────────────────────────────── */
 
 function homePage(a: Artist): string {
@@ -81,7 +115,7 @@ function homePage(a: Artist): string {
       <span class="a-hero-r mono">01</span>
       <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">Listen on ${esc(a.listen.label)} ↗</a>
       <div class="a-scene">
-        <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero)}</div>
+        <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero, true)}</div>
         <div class="a-floor" aria-hidden="true">
           <div class="a-reflect">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', '', 'a-door-img', a.hero)}</div>
         </div>
@@ -93,8 +127,8 @@ function homePage(a: Artist): string {
     </section>
 
     <section class="a-essay">
-      <span class="a-label mono">● The mix</span>
-      <p class="a-big a-intro">${sup(a.essay.intro)}</p>
+      <span class="a-label mono" data-type>● The mix</span>
+      <p class="a-big a-intro" data-type>${sup(a.essay.intro)}</p>
       ${a.essay.blocks
         .map(
           (b, i) => `
@@ -111,8 +145,8 @@ function homePage(a: Artist): string {
     </section>
 
     <section class="a-bio">
-      <span class="a-label mono">● ${esc(a.latin)}</span>
-      <p class="a-big a-intro">${esc(a.bio[0])} ${esc(a.bio[1])}</p>
+      <span class="a-label mono" data-type>● ${esc(a.latin)}</span>
+      <p class="a-big a-intro" data-type>${esc(a.bio[0])} ${esc(a.bio[1])}</p>
     </section>
 
     <section class="a-columns">
@@ -124,6 +158,7 @@ function homePage(a: Artist): string {
         <a class="a-more" href="${href(a, 'about')}">More about ${esc(a.latin)} <span>→</span></a>
       </div>
     </section>
+    ${credits(a)}
     ${footer(a)}`;
 }
 
@@ -131,15 +166,15 @@ function listenPage(a: Artist): string {
   return `
     <section class="release-portfolio" aria-labelledby="release-heading">
       <header class="release-heading">
-        <span class="a-label mono">● ${esc(a.latin)} · ${a.releases.length} ${a.releases.length === 1 ? 'release' : 'releases'}</span>
-        <h1 id="release-heading">${a.id === 'acnd' ? 'Coming next.' : 'Selected releases.'}</h1>
+        <span class="a-label mono" data-type>● ${esc(a.latin)} · ${a.releases.length} ${a.releases.length === 1 ? 'release' : 'releases'}</span>
+        <h1 id="release-heading" data-type>${a.id === 'acnd' ? 'Coming next.' : 'Selected releases.'}</h1>
         <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Upcoming on Profi Music, 30 October 2026.' : esc(a.bio[1])}</p>
       </header>
       <div class="release-grid">
-        ${a.releases.map((r) => `
+        ${a.releases.map((r, i) => `
           <article class="release-card">
             <a class="release-art" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" aria-label="${a.id === 'acnd' ? 'Pre-save' : 'Listen to'} ${esc(r.title)} by ${esc(r.artists)}">
-              ${r.cover ? img(r.cover, `${r.title} cover art`, 'release-cover') : logo(a, 'release-cover')}
+              ${r.cover ? img(r.cover, `${r.title} cover art`, 'release-cover', '', i < 3) : logo(a, 'release-cover')}
               <span>${a.id === 'acnd' ? 'Pre-save' : 'Listen'} ↗</span>
             </a>
             <div class="release-meta"><span class="mono">${esc(r.tag)}</span><h2>${esc(r.title)}</h2><p>${esc(r.artists)}</p></div>
@@ -157,10 +192,10 @@ function sequencerPage(): string {
 function aboutPage(a: Artist): string {
   return `
     <section class="b-bio">
-      <span class="a-label mono">● ${esc(a.latin)}</span>
+      <span class="a-label mono" data-type>● ${esc(a.latin)}</span>
       <div class="b-grid">
         <div class="b-text">
-          <h1 class="a-big a-intro">${esc(a.about?.summary ?? a.statement)}</h1>
+          <h1 class="a-big a-intro" data-type>${esc(a.about?.summary ?? a.statement)}</h1>
           ${(a.about?.paragraphs ?? a.bio).map((p) => `<p class="b-para">${esc(p)}</p>`).join('')}
         </div>
         <aside class="about-summary"><span class="a-label mono">● At a glance</span><p>${esc(a.origin)}</p><p>${esc(a.role)}</p></aside>
@@ -195,6 +230,7 @@ function aboutPage(a: Artist): string {
     </section>`
         : ''
     }
+    ${credits(a)}
     ${footer(a)}`;
 }
 
@@ -214,6 +250,7 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
 
   const io = revealOnScroll(app);
   cleanup.push(() => io.disconnect());
+  cleanup.push(typewrite(app));
 
   if (page === 'sequencer') cleanup.push(mountSequencer(app.querySelector('.seq-body')!, a.id, MIX.bpm, a.patterns));
 
@@ -222,6 +259,8 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
   let lastFrame = 0;
   const frameGap = matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 1000 / 60;
   const loop = (stamp: number): void => {
+    // Past the hero, settle it fully faded once (a fast scroll can skip the last frames).
+    if (hero && window.scrollY > innerHeight && hero.style.getPropertyValue('--sy') !== '1') hero.style.setProperty('--sy', '1');
     if (document.hidden || window.scrollY > innerHeight || stamp - lastFrame < frameGap) {
       raf = requestAnimationFrame(loop);
       return;

@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { SECRET_PATHS } from './src/secret';
@@ -9,6 +10,9 @@ import { ARTISTS, NEXT_RELEASE, TRACKLIST } from './src/data';
 // custom domain alike.
 export default defineConfig({
   base: './',
+  // The pages learn which images exist, so a missing optional photo goes
+  // straight to its fallback and WebP is offered wherever a version exists.
+  define: { __IMAGES__: JSON.stringify(readdirSync(resolve(__dirname, 'public/img'))) },
   plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, tracks: TRACKLIST })],
   build: {
     target: 'es2020',

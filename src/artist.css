@@ -978,118 +978,6 @@ body.menu-open .menu-icon i:first-child {
 body.menu-open .menu-icon i:last-child {
   transform: translateY(-4px) rotate(-45deg);
 }
-.menu {
-  position: fixed;
-  inset: 0;
-  z-index: 85;
-  background: #08080a;
-  color: var(--paper);
-  clip-path: circle(0 at calc(100% - 60px) 30px);
-  transition: clip-path 0.7s cubic-bezier(0.7, 0, 0.2, 1);
-  visibility: hidden;
-}
-body.menu-open .menu {
-  clip-path: circle(150% at calc(100% - 60px) 30px);
-  visibility: visible;
-}
-body.menu-open {
-  overflow: hidden;
-}
-.m-inner {
-  height: 100%;
-  display: grid;
-  grid-template-columns: 1fr minmax(260px, 340px);
-  gap: 5vw;
-  align-items: center;
-  padding: 90px var(--gutter) 40px;
-  overflow: auto;
-}
-.m-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 2vh;
-}
-.m-list li {
-  display: flex;
-  align-items: baseline;
-  gap: 22px;
-  flex-wrap: wrap;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-body.menu-open .m-list li {
-  opacity: 1;
-  transform: none;
-}
-body.menu-open .m-list li:nth-child(2) { transition-delay: 0.08s; }
-body.menu-open .m-list li:nth-child(3) { transition-delay: 0.16s; }
-.m-big {
-  font-weight: 900;
-  font-size: clamp(48px, 9vw, 140px);
-  line-height: 0.9;
-  letter-spacing: -0.02em;
-  transition: color 0.3s, text-shadow 0.3s;
-}
-.m-big.bn {
-  font-weight: 700;
-}
-.m-apurba .m-big:hover {
-  color: var(--blue);
-  text-shadow: 0 0 30px var(--blue);
-}
-.m-acnd .m-big:hover {
-  color: var(--orange);
-  text-shadow: 0 0 30px var(--orange);
-}
-.m-list li:first-child .m-big:hover {
-  color: #fff;
-}
-.m-sub {
-  display: flex;
-  gap: 18px;
-  color: #8a8a8a;
-}
-.m-sub a:hover {
-  color: #fff;
-}
-.m-release {
-  display: grid;
-  gap: 10px;
-  font-size: 13px;
-  color: #aaa;
-}
-.m-release img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-.m-release b {
-  color: #fff;
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 1;
-}
-.m-release .cd {
-  justify-content: space-between;
-}
-.m-presave {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: var(--paper);
-  color: #000;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-.m-presave:hover {
-  background: var(--orange);
-}
-.m-page:hover {
-  color: #fff;
-}
 
 /* ═════════════════ PRE-SAVE DOCK (site-wide, bottom right) ═════════════════ */
 
@@ -1183,13 +1071,6 @@ body.menu-open .m-list li:nth-child(3) { transition-delay: 0.16s; }
   }
   .b-para {
     margin-left: 0;
-  }
-  .m-inner {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-  .m-release {
-    max-width: 320px;
   }
   .cd {
     gap: 10px;

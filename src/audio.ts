@@ -271,7 +271,7 @@ function updateMediaSession(): void {
   navigator.mediaSession.metadata = new MediaMetadata({
     title: t.title,
     artist: t.artist,
-    album: `${MIX.show} · ${MIX.station}`,
+    album: `ACND × অপূর্ব — ${MIX.show} ${MIX.volume} · ${MIX.station}`,
     artwork: [{ src: art, sizes: '512x512', type: 'image/jpeg' }],
   });
 }

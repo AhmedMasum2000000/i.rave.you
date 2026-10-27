@@ -3,6 +3,8 @@ import './artist.css';
 import './feature.css';
 import './mobile.css';
 import './bar.css';
+import './polish.css';
+import './menu.css';
 import { mountChrome } from './chrome';
 import { inShell, installGuard } from './guard';
 import { mountPlayer } from './player';

@@ -33,6 +33,14 @@ const remaining = (): Left => {
 
 const two = (n: number): string => String(n).padStart(2, '0');
 
+/** "in 3 days", "tomorrow", "today" or "out now", for news lines. */
+export function releaseIn(): string {
+  const ms = RELEASE_AT - Date.now();
+  if (ms <= 0) return 'out now';
+  const days = Math.ceil(ms / 864e5);
+  return days > 1 ? `in ${days} days` : ms < 864e5 && new Date(RELEASE_AT).getDate() === new Date().getDate() ? 'today' : 'tomorrow';
+}
+
 const clock = (): string => `
   <span class="cd" aria-live="off">
     <span><b data-cd="d">00</b><i>D</i></span>
@@ -43,6 +51,10 @@ const clock = (): string => `
 
 function tick(): void {
   const r = remaining();
+  const when = releaseIn();
+  document.querySelectorAll<HTMLElement>('[data-days]').forEach((el) => {
+    if (el.textContent !== when) el.textContent = when;
+  });
   document.querySelectorAll<HTMLElement>('[data-cd]').forEach((el) => {
     el.textContent = two(r[el.dataset.cd as 'd' | 'h' | 'm' | 's']);
   });
@@ -52,15 +64,23 @@ function tick(): void {
   }
 }
 
-const artistLinks = (a: Artist): string => `
-  <li class="m-artist m-${a.id}">
-    <a class="m-big ${a.id === 'apurba' ? 'bn' : ''}" href="${route(`${a.id}/`)}" data-close>${esc(a.name)}</a>
-    <span class="m-sub mono">
-      <a href="${route(`${a.id}/listen/`)}" data-close>Releases</a>
-      <a href="${route(`${a.id}/sequencer/`)}" data-close>Sequencer</a>
-      <a href="${route(`${a.id}/about/`)}" data-close>About</a>
-    </span>
+/** One menu row: a big title, and a "+" that opens its small list of links. */
+const row = (n: number, title: string, href: string, subs: [string, string][], cls = ''): string => `
+  <li class="m-row ${cls}" style="--i:${n}">
+    <div class="m-head">
+      <span class="m-num mono">${String(n + 1).padStart(2, '0')}</span>
+      <a class="m-big" href="${href}" data-close>${title}</a>
+      ${subs.length ? `<button type="button" class="m-plus" aria-expanded="false" aria-controls="m-sub-${n}" aria-label="More under ${title.replace(/<[^>]+>/g, '')}">+</button>` : ''}
+    </div>
+    ${subs.length ? `<div class="m-sub" id="m-sub-${n}"><ul>${subs.map(([label, to]) => `<li><a href="${to}"${to.startsWith('http') ? ' target="_blank" rel="noopener"' : ' data-close'}>${label}</a></li>`).join('')}</ul></div>` : ''}
   </li>`;
+
+const artistSubs = (a: Artist): [string, string][] => [
+  ['Releases', route(`${a.id}/listen/`)],
+  ['Sequencer', route(`${a.id}/sequencer/`)],
+  ['About', route(`${a.id}/about/`)],
+  ...(a.id === 'acnd' ? ([['Press kit', route('acnd/press/')]] as [string, string][]) : []),
+];
 
 export function mountChrome(): void {
   // ── menu ──
@@ -78,35 +98,49 @@ export function mountChrome(): void {
   menu.setAttribute('aria-label', 'Site menu');
   menu.setAttribute('aria-hidden', 'true');
   menu.inert = true;
+  const band = `I RAVE YOU ◐ ACND ◐ <span class="bn">অপূর্ব</span> ◐ QBIC PULSE ◐ `;
   menu.innerHTML = `
+    <div class="m-band" aria-hidden="true"><span class="m-band-run">${band.repeat(8)}</span></div>
     <div class="m-inner">
-      <ol class="m-list">
-        <li><a class="m-big" href="${route('')}" data-close>I Rave You</a><span class="m-sub mono">Home · ◐ <a href="${route('frequency-unity/')}" data-close>Feature: Beyond the Capital</a> · <a href="${route('journal/')}">Journal · Artist guides</a> · <a href="${route('mixes/qbic-pulse/')}">Mix tracklist</a> · <a href="${route('music/down-in-bossa/')}">Down In Bossa</a></span></li>
-        <li class="m-legal-item">
-          <details class="m-legal" open>
-            <summary>Legal &amp; site information <span aria-hidden="true">⌄</span></summary>
-            <nav class="m-legal-links" aria-label="Legal submenu">
-              <a class="m-legal-primary" href="${route('legal/terms/')}"><strong>Terms of use ↗</strong><span>Website rules and content rights</span></a>
-              <a href="${route('legal/privacy/')}"><strong>Privacy notice ↗</strong><span>Storage, audio choices and your data</span></a>
-              <a href="${route('legal/copyright/')}"><strong>Copyright &amp; takedown contact ↗</strong><span>Report a rights or credit concern</span></a>
-            </nav>
-          </details>
-        </li>
-        ${artistLinks(ARTISTS.apurba)}
-        ${artistLinks(ARTISTS.acnd)}
-
-      </ol>
+      <nav class="m-nav" aria-label="Site">
+        <ol class="m-list">
+          ${row(0, 'Home', route(''), [
+            ['Feature: Beyond the Capital', route('frequency-unity/')],
+            ['Qbic Pulse tracklist', route('mixes/qbic-pulse/')],
+            ['Down In Bossa', route('music/down-in-bossa/')],
+          ])}
+          ${row(1, `<span class="bn">${esc(ARTISTS.apurba.name)}</span>`, route('apurba/'), artistSubs(ARTISTS.apurba), 'm-apurba')}
+          ${row(2, esc(ARTISTS.acnd.name), route('acnd/'), artistSubs(ARTISTS.acnd), 'm-acnd')}
+          ${row(3, 'Journal', route('journal/'), [])}
+          ${row(4, 'Legal', route('legal/terms/'), [
+            ['Terms of use', route('legal/terms/')],
+            ['Privacy notice', route('legal/privacy/')],
+            ['Copyright contact', route('legal/copyright/')],
+          ])}
+        </ol>
+      </nav>
       <aside class="m-release">
-        <span class="mono">● Next release · ${esc(NEXT_RELEASE.genre)}</span>
-        <img src="${asset(NEXT_RELEASE.cover)}" alt="${esc(NEXT_RELEASE.title)} cover art" loading="lazy" />
+        <span class="m-k mono">Next release · ${esc(NEXT_RELEASE.genre)}</span>
+        <img src="${asset(NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp'))}" alt="${esc(NEXT_RELEASE.title)} cover art" loading="lazy" width="120" height="120" />
         <b>${esc(NEXT_RELEASE.title)}</b>
-        <span>${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.label)}</span>
+        <span class="m-r-sub">${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.label)}</span>
         ${clock()}
-        <a class="m-presave" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save now</span><span>→</span></a>
-        <a class="m-page mono" href="${NEXT_RELEASE.page}" target="_blank" rel="noopener">Release page ↗</a>
-        <p class="credit">Site by <a href="${route('acnd/')}" data-close>ACND</a></p>
+        <a class="m-r-link mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save</span> ↗</a>
+        <p class="m-credit mono">Site by <a href="${route('acnd/')}" data-close>ACND</a></p>
       </aside>
     </div>`;
+
+  // "+" opens one row's small list at a time, like an accordion.
+  menu.addEventListener('click', (e) => {
+    const plus = (e.target as HTMLElement).closest<HTMLButtonElement>('.m-plus');
+    if (!plus) return;
+    const open = plus.getAttribute('aria-expanded') !== 'true';
+    menu.querySelectorAll<HTMLButtonElement>('.m-plus').forEach((b) => {
+      const on = b === plus && open;
+      b.setAttribute('aria-expanded', String(on));
+      b.closest('.m-row')!.classList.toggle('m-open', on);
+    });
+  });
 
   const set = (open: boolean): void => {
     if (open) document.querySelector<HTMLButtonElement>('.tid-close')?.click();
@@ -117,6 +151,11 @@ export function mountChrome(): void {
     if (app) app.inert = open;
     btn.setAttribute('aria-expanded', String(open));
     btn.querySelector('.menu-word')!.textContent = open ? 'Close' : 'Menu';
+    if (!open)
+      menu.querySelectorAll('.m-open').forEach((r) => {
+        r.classList.remove('m-open');
+        r.querySelector('.m-plus')?.setAttribute('aria-expanded', 'false');
+      });
     if (open) menu.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
     else if (menu.contains(document.activeElement)) btn.focus({ preventScroll: true });
   };

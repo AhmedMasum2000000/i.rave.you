@@ -78,6 +78,7 @@ export interface Artist {
 export const MIX = {
   title: 'Qbic Pulse on HKCR',
   show: 'Qbic Pulse',
+  volume: 'Vol. 1',
   hosts: 'ACND & অপূর্ব',
   station: 'Hong Kong Community Radio',
   stationUrl: 'https://hkcr.live/',
