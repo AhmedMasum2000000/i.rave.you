@@ -41,7 +41,7 @@ function footer(a: Artist): string {
   return `
     <footer class="a-foot">
       <span>${esc(a.latin)} 2026</span>
-      <div><a href="#/">I Rave You</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
+      <div><a href="#/">I Rave You</a><a href="frequency-unity/">Feature: Beyond the Capital</a><a href="#/${other.id}" class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</a></div>
       ${col(a.links.slice(0, half))}
       ${col(a.links.slice(half))}
       <span>${esc(a.origin)}</span>

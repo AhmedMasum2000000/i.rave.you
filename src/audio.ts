@@ -1,5 +1,5 @@
 import { MIX, TRACKLIST, type MixTrack } from './data';
-import { asset } from './paths';
+import { attachStream } from './stream';
 
 /**
  * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
@@ -34,16 +34,22 @@ export const isStarted = (): boolean => started;
 export function start(): void {
   if (started) return;
   started = true;
-  el = new Audio(asset(MIX.file));
-  el.preload = 'auto';
+  // The set streams from encrypted fragments; there is no audio file to save.
+  el = document.createElement('audio');
   el.loop = true;
+  el.preload = 'auto';
+  el.hidden = true;
+  el.setAttribute('controlslist', 'nodownload noplaybackrate');
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.body.append(el);
 
+  let saved = 0;
   try {
-    const saved = Number(localStorage.getItem(POS_KEY));
-    if (saved > 0 && saved < 2700) el.currentTime = saved;
+    saved = Number(localStorage.getItem(POS_KEY)) || 0;
   } catch {
     /* storage unavailable — start from the top */
   }
+  attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
 
   ctx = new AudioContext();
   const src = ctx.createMediaElementSource(el);

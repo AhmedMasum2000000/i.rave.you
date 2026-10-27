@@ -14,6 +14,7 @@ export default defineConfig({
         acndPitch: resolve(__dirname, `${SECRET_PATHS.acnd}/index.html`),
         apurbaPitch: resolve(__dirname, `${SECRET_PATHS.apurba}/index.html`),
         ashPitch: resolve(__dirname, `${SECRET_PATHS.ash}/index.html`),
+        feature: resolve(__dirname, 'frequency-unity/index.html'),
       },
     },
   },

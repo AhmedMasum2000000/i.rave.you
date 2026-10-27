@@ -806,3 +806,61 @@ body[data-view='home'].tid-open .tid {
     transition-duration: 0.001s !important;
   }
 }
+
+/* ─────────────── CONTENT GUARD (see src/guard.ts) ─────────────── */
+
+html.guard,
+html.guard body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html.guard input,
+html.guard textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+html.guard img,
+html.guard a {
+  -webkit-user-drag: none;
+}
+html.guard img {
+  pointer-events: none;
+}
+.guard-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: none;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  background: #000;
+  color: #fff;
+  font-family: var(--font);
+  text-align: center;
+}
+.guard-curtain span {
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+}
+.guard-curtain small {
+  font-family: var(--bn);
+  opacity: 0.6;
+}
+html.curtain .guard-curtain {
+  display: grid;
+}
+@media print {
+  html.guard body > * {
+    display: none !important;
+  }
+  html.guard body::after {
+    content: 'Printing is disabled on this site.';
+    display: block;
+    padding: 40px;
+    font: 16px sans-serif;
+    color: #000;
+  }
+}
