@@ -63,11 +63,12 @@ function rememberedEntry(): 'sound' | 'quiet' | null {
 }
 
 /**
- * A visitor who once chose sound gets the mix back on any page they open
- * (on their first tap if the browser blocks autoplay); nobody else is asked.
+ * The mix starts by itself on every page once the page has loaded. If the
+ * browser blocks audible autoplay, the visitor's first tap or key starts it.
+ * Only someone who chose to browse quietly is left in silence.
  */
-export function resumeRemembered(): boolean {
-  if (rememberedEntry() !== 'sound') return false;
+export function autoplay(): boolean {
+  if (rememberedEntry() === 'quiet') return false;
   if (document.readyState === 'complete') start();
   else window.addEventListener('load', () => start(), { once: true });
   return true;
@@ -75,7 +76,10 @@ export function resumeRemembered(): boolean {
 
 export function mountGate(opts: { kicker: string; line: string; cta: string }): Promise<void> {
   // Returning visitors are not asked again: sound resumes and quiet stays quiet.
-  if (resumeRemembered() || rememberedEntry() === 'quiet') return Promise.resolve();
+  if (rememberedEntry()) {
+    autoplay();
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     const gate = document.createElement('div');
     gate.className = 'gate';

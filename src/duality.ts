@@ -27,6 +27,12 @@ export interface DualityHandle {
   lean(side: number): void;
   /** Flood the screen from a point with one side's colour, then resolve. */
   flood(side: 'apurba' | 'acnd', x: number, y: number): Promise<void>;
+  /** Which half of the emblem, if any, is at this screen point. */
+  hit(x: number, y: number): 'apurba' | 'acnd' | null;
+  /** Called when the pointer moves onto a half of the emblem or off it. */
+  onPeek(fn: (side: 'apurba' | 'acnd' | null, at: { x: number; y: number; r: number; wide: boolean }) => void): void;
+  /** Hold the emblem open on one side (touch: first tap peeks, second enters). */
+  peek(side: 'apurba' | 'acnd' | null): void;
   destroy(): void;
 }
 
@@ -71,6 +77,16 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   /** Cursor parallax for the emblem, eased. */
   let tiltX = 0;
   let tiltY = 0;
+  /** The emblem as last drawn, for hit-testing between frames. */
+  const em = { x: 0, y: 0, r: 0 };
+  let hover: 'apurba' | 'acnd' | null = null;
+  let pinned: 'apurba' | 'acnd' | null = null;
+  let hot = 0;
+  let peekFn: Parameters<DualityHandle['onPeek']>[0] | null = null;
+  const sideAt = (x: number, y: number): 'apurba' | 'acnd' | null => {
+    if (!em.r || Math.hypot(x - em.x, y - em.y) > em.r * 1.3) return null;
+    return (wide() ? x < em.x : y < em.y) ? 'apurba' : 'acnd';
+  };
   /** Adaptive quality: shed particles and resolution if frames run long. */
   let quality = 1;
   let slowFrames = 0;
@@ -156,7 +172,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     prevStamp = now;
     const t = reduced ? 0 : now / 1000;
     const lv = sample();
-    split += (splitTarget - split) * 0.06;
+    // While the emblem is hovered it holds still, so it never slides out from under the pointer.
+    split += ((hover ? 0.5 : splitTarget) - split) * 0.06;
     if (!reduced) rot += 0.0025 + lv.low * 0.01;
 
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -238,7 +255,18 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     }
     const cx = (wide() ? edge(H / 2, t, lv.low) : W / 2) + tiltX;
     const cy = (wide() ? H / 2 : edgeH(W / 2, t, lv.low)) + tiltY;
-    const R = (wide() ? Math.min(W, H) * 0.13 : W * 0.1) * (1 + lv.beat * 0.06);
+    // Hovering the emblem wakes it: it swells and turns towards that world.
+    const side = pinned ?? (mouseX >= 0 ? sideAt(mouseX, mouseY) : null);
+    if (side !== hover) {
+      hover = side;
+      peekFn?.(side, { x: cx, y: cy, r: em.r || Math.min(W, H) * 0.13, wide: wide() });
+    }
+    hot += ((side ? 1 : 0) - hot) * 0.12;
+    if (side && !reduced) rot += (side === 'apurba' ? -1 : 1) * 0.012 * hot;
+    const R = (wide() ? Math.min(W, H) * 0.13 : W * 0.1) * (1 + lv.beat * 0.06 + hot * 0.1);
+    em.x = cx;
+    em.y = cy;
+    em.r = R;
 
     // ── kick shockwaves, inverted per side ──
     if (!reduced && lv.beat > 0.75 && now - lastWave > 460 && waves.length < 3) {
@@ -265,8 +293,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.globalCompositeOperation = 'source-over';
 
     // Halos: blue bleeds into the dark half, orange into the light.
-    const hs = R * (3.2 + lv.beat * 0.9);
-    g.globalAlpha = 0.5 + lv.beat * 0.35;
+    const hs = R * (3.2 + lv.beat * 0.9 + hot * 0.8);
+    g.globalAlpha = Math.min(1, 0.5 + lv.beat * 0.35 + hot * 0.3);
     // Clip each halo to its own half along the live seam, so no colour crosses it.
     const darkPath = (): void => {
       g.beginPath();
@@ -341,6 +369,14 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       return new Promise((done) => {
         floodState = { color: side === 'apurba' ? '#000' : '#f4f3ef', x, y, r: 10, done };
       });
+    },
+    hit: sideAt,
+    onPeek(fn) {
+      peekFn = fn;
+    },
+    peek(side) {
+      pinned = side;
+      if (reduced) requestAnimationFrame(frame);
     },
     destroy() {
       alive = false;
