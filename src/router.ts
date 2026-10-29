@@ -17,7 +17,7 @@ export interface Route {
 }
 
 /** Static pages that open inside the shell so the mix never stops. */
-const DOC = /^(?:journal|mixes|music|legal|frequency-unity|acnd\/press)\/(?:[^?#]*\/)?$/;
+const DOC = /^(?:journal|mixes|radio|music|legal|frequency-unity|acnd\/press)\/(?:[^?#]*\/)?$/;
 
 const ROUTE = /(?:^|\/)(acnd|apurba)\/(?:(listen|sequencer|about)\/?)?(?:index\.html)?$|(?:^|\/)(acnd|apurba)$/;
 

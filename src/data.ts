@@ -72,18 +72,7 @@ export interface Artist {
   patterns: [string, string, string, string];
 }
 
-/* ─────────────────────────────── THE MIX ──────────────────────────────── */
-
-/** The set playing in the background: made for Hong Kong Community Radio. */
-export const MIX = {
-  title: 'Qbic Pulse on HKCR',
-  show: 'Qbic Pulse',
-  volume: 'Vol. 1',
-  hosts: 'ACND & অপূর্ব',
-  station: 'Hong Kong Community Radio',
-  stationUrl: 'https://hkcr.live/',
-  bpm: 125,
-};
+/* ──────────────────────────── QBIC PULSE RADIO ─────────────────────────── */
 
 export interface MixTrack {
   at: number;
@@ -93,38 +82,63 @@ export interface MixTrack {
   linkLabel: string;
 }
 
-const t = (mmss: string): number => {
-  const [m, s] = mmss.split(':').map(Number);
-  return m * 60 + s;
+/** One set in the radio library (sets/<slug>/set.json, built by scripts/mix-audio.mjs). */
+export interface RadioSet {
+  slug: string;
+  title: string;
+  show: string;
+  volume: string;
+  hosts: string;
+  station: string;
+  stationUrl: string;
+  /** Publication date, ISO; the library is sorted newest first. */
+  date: string;
+  bpm: number;
+  description: string;
+  /** Hashed, long-cached audio file. */
+  file: string;
+  /** Seconds. */
+  duration: number;
+  tracklist: MixTrack[];
+}
+
+/** Newest first. Injected at build time; empty when this module runs in Node (vite.config). */
+export const SETS: RadioSet[] = typeof __SETS__ !== 'undefined' ? __SETS__ : [];
+
+const SET_KEY = 'iry:set';
+const chosen = (): string | null => {
+  try {
+    return new URLSearchParams(location.search).get('set') ?? localStorage.getItem(SET_KEY);
+  } catch {
+    return null;
+  }
 };
 
-/** Only verified recording links belong here; never substitute a search result. */
+/** The set on air. `MIX` and `TRACKLIST` follow it (ES live bindings). */
+export let CURRENT: RadioSet = SETS.find((s) => s.slug === (typeof location !== 'undefined' ? chosen() : null)) ?? SETS[0];
+export let MIX = CURRENT;
+export let TRACKLIST: MixTrack[] = CURRENT?.tracklist ?? [];
 
-const raw: [string, string, string, string?][] = [
-  ['00:00', 'ACND x অপূর্ব', 'Initiate (unreleased ID)'],
-  ['03:37', 'Remusic', 'Ancestral Calling', 'https://music.apple.com/us/album/ancestral-calling/1859226382?i=1859226383'],
-  ['06:35', 'Acrobat, Thomas Gandey, Vakabular', 'Acid (Vakabular Remix)', 'https://soundcloud.com/soundfocuslabel/acid-vakabular-remix'],
-  ['09:41', 'Kevin de Vries, SLVR, Stella von Lingen', 'Life', 'https://music.apple.com/us/album/life/1817532708?i=1817532715'],
-  ['12:28', 'MAMI, Bound', 'Lose My Body', 'https://music.apple.com/us/album/lose-my-body/1863695815?i=1863695820'],
-  ['15:43', 'HERMEN', 'Subra', 'https://music.apple.com/us/album/subra/6800439351?i=6800439352'],
-  ['18:59', 'Solvane, Prismode', 'Mars', 'https://music.apple.com/us/album/mars/1875941684?i=1875941685'],
-  ['21:37', 'Mark Hoffen, Bittermind', 'WTF', 'https://soundcloud.com/mark-hoffen/mark-hoffen-bittermind-wtf-1'],
-  ['25:30', 'Andy Syn, Heinrich & Heine', 'I Need Every Little Piece of You (Original Mix)', 'https://soundcloud.com/andysyn-scmusic/i-need-every-little-piece-of'],
-  ['30:48', 'Rem Siman', 'Pria', 'https://music.apple.com/us/album/pria/1874878989?i=1874879266'],
-  ['33:47', '7 SKIES', 'QUENTE', 'https://music.apple.com/us/album/quente/6771727958?i=6771727959'],
-  ['35:41', 'Jules Brand', 'LOSE CONTROL', 'https://music.apple.com/us/album/lose-control/1895377568?i=6763565980'],
-  ['38:11', 'Add-us', 'Duck Duck', 'https://music.apple.com/us/album/duck-duck/1887146298?i=1887146303'],
-  ['40:57', 'Adapter', 'Nakupenda', 'https://soundcloud.com/adapterdj/nakupenda'],
-  ['43:19', 'Axl Stace', 'Mystic', 'https://music.apple.com/us/album/mystic/1872550832?i=1872550833'],
-];
-
-export const TRACKLIST: MixTrack[] = raw.map(([at, artist, title, url]) => ({
-  at: t(at),
-  artist,
-  title,
-  url,
-  linkLabel: !url ? 'Unreleased' : url.includes('music.apple.com') ? 'Apple Music' : 'SoundCloud',
-}));
+const setListeners = new Set<(set: RadioSet) => void>();
+/** Put another set on air; listeners (player, stream) rebuild around it. */
+export function selectSet(slug: string): boolean {
+  const next = SETS.find((s) => s.slug === slug);
+  if (!next || next === CURRENT) return false;
+  CURRENT = next;
+  MIX = next;
+  TRACKLIST = next.tracklist;
+  try {
+    localStorage.setItem(SET_KEY, slug);
+  } catch {
+    /* private mode */
+  }
+  setListeners.forEach((fn) => fn(next));
+  return true;
+}
+export function onSetChange(fn: (set: RadioSet) => void): () => void {
+  setListeners.add(fn);
+  return () => setListeners.delete(fn);
+}
 
 export const fmt = (sec: number): string => {
   const s = Math.max(0, Math.floor(sec));

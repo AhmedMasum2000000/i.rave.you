@@ -1,0 +1,73 @@
+# mixx-dj-mcp — TODO
+
+Ordered by value. Fork backlog lives in
+[mixxxxx `docs/TODO.md`](https://github.com/sandraschi/mixxxxx/blob/video/docs/TODO.md).
+
+---
+
+## Done (2026-07-26)
+
+| Item | Note |
+|---|---|
+| OSC bridge heartbeat | `/mixxxxx/ping` probe in `osc_bridge.py` |
+| Help page | `/help` — Overview, NDI, Video, Skins, OSC |
+| `docs/NDI.md` | Pointer to mixxxxx primer |
+| `create_video_skin` | Patch `skin.xml` from shipped MixxxxxVideo |
+| README links | NDI + Help in quick links |
+
+---
+
+## P1 — docs & UX
+
+### 1. Rebuild NSIS with Help page
+Run `web_sota` production build before next `build-native` release so installer
+includes `/help`.
+
+### 2. Expand Help tab content from mixxxxx STATUS
+When STATUS changes, sync Help.tsx NDI/Video sections (or link out).
+
+### 3. TOOLS.md — document Help route
+One line under webapp section pointing to `/help`.
+
+---
+
+## P2 — tests
+
+### 4. Bridge integration test (mixxxxx TODO 19)
+Opt-in fixture; real UDP on 11119 — partially unblocked by fork OSC server.
+
+---
+
+## P2c — Resolume fleet crossconnect
+
+Plan: [mixxxxx `docs/RESOLUME-FLEET-CROSSCONNECT.md`](https://github.com/sandraschi/mixxxxx/blob/video/docs/RESOLUME-FLEET-CROSSCONNECT.md).
+
+| # | Item |
+|---|------|
+| 8 | R1: `resolume_client.py` + resolume-mcp port 7000 fix (done); verify on Resolume |
+| 9 | R2: Cockpit “Resolume follow deck” sync loop |
+| 10 | Share OSC address constants with resolume-mcp / osc-mcp skill |
+
+---
+
+## P2b — Dani stem UX (see mixxxxx plan)
+
+Stakeholder plan: [mixxxxx `docs/PLAN-DANI-BEATGRID-STEMS.md`](https://github.com/sandraschi/mixxxxx/blob/video/docs/PLAN-DANI-BEATGRID-STEMS.md).
+
+| # | Item | Note |
+|---|------|------|
+| 5 | Help/Cockpit: offline Demucs vs realtime stems | No "Serato Stems" claim until mixxxxx STATUS says Works |
+| 6 | Document prep workflow | crate → `mixx_stems` → samplers → optional `stem_swap` |
+| 7 | After mixxxxx 2.6 merge | Expose stem-file playback in capabilities if COs land |
+
+---
+
+## P3 — features (blocked on mixxxxx)
+
+| Item | mixxxxx TODO |
+|---|---|
+| NDI sender | 27 |
+| Beat-locked video FX | 25 |
+| Video fallback chain | 26 |
+
+Implement in mixxxxx first; expose via existing `mixx_deck` / new COs as needed.
