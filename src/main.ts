@@ -9,7 +9,8 @@ import './polish.css';
 import './menu.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
-import { ARTISTS, NEXT_RELEASE, type ArtistId } from './data';
+import { ARTISTS, CURRENT, NEXT_RELEASE, type ArtistId } from './data';
+import { playSet } from './audio';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
@@ -90,6 +91,23 @@ function renderDoc(path: string): () => void {
     d.documentElement.classList.add('in-shell');
     document.title = d.title || document.title;
     f.title = d.title || 'Page';
+    // "Play this set" buttons on the radio pages put that set on air, here.
+    const mark = (): void =>
+      d.querySelectorAll<HTMLElement>('[data-play-set]').forEach((b) => {
+        const on = b.dataset.playSet === CURRENT.slug;
+        b.dataset.label ??= b.textContent ?? 'Play this set';
+        b.classList.toggle('on-air', on);
+        b.textContent = on ? 'On air · playing' : b.dataset.label;
+      });
+    d.addEventListener('click', (e) => {
+      const b = (e.target as Element | null)?.closest?.<HTMLElement>('[data-play-set]');
+      if (!b?.dataset.playSet) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      playSet(b.dataset.playSet);
+      mark();
+    }, true);
+    mark();
     interceptLinks(navigate, d);
     // A navigation the shell didn't route (a form, a typed URL): follow it.
     const at = framePath(f);

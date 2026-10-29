@@ -1,5 +1,5 @@
 import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle } from './audio';
-import { ARTISTS, MIX, NEXT_RELEASE, TRACKLIST, fmt, type MixTrack } from './data';
+import { ARTISTS, MIX, NEXT_RELEASE, TRACKLIST, fmt, onSetChange, type MixTrack } from './data';
 import { asset, esc } from './ui';
 
 /**
@@ -26,6 +26,27 @@ const icon = {
 
 const two = (n: number): string => String(n).padStart(2, '0');
 
+/** Tracklist rows for the set on air. */
+const listHtml = (): string =>
+  TRACKLIST.map(
+    (t, i) => `
+        <li data-i="${i}">
+          <button type="button" data-seek="${t.at}" aria-label="Play ${esc(t.title)} from ${fmt(t.at)}">
+            <span class="tid-at">${fmt(t.at)}</span>
+            <span class="tid-track"><b>${esc(t.title)}</b><span class="tid-artist">${esc(t.artist)}</span><em class="tid-now">Now playing</em></span>
+          </button>
+          ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(t.title)} by ${esc(t.artist)} on ${esc(t.linkLabel)}">${esc(t.linkLabel)} ↗</a>` : `<span class="tid-unavailable">Unreleased</span>`}
+        </li>`,
+  ).join('');
+
+/** The tracklist window's headline for the set on air. */
+const heroHtml = (): string => `
+      <span class="tid-hero-k"><b class="fbar-onair"><i></i>On air</b> ${esc(MIX.station)}</span>
+      <strong class="tid-hero-t">${esc(MIX.show)} <span class="tid-hero-v">${esc(MIX.volume)}</span></strong>
+      <span class="tid-hero-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
+      <span class="tid-hero-s">${esc(MIX.description)} ${Math.round(MIX.duration / 60)} minutes, ${TRACKLIST.length} tracks.</span>
+      <a class="tid-hero-link" href="${MIX.stationUrl}" target="_blank" rel="noopener">Visit ${esc(MIX.station)} ↗</a>`;
+
 export function mountPlayer(): void {
   const root = document.documentElement.dataset.root ?? '';
   const bar = document.createElement('div');
@@ -33,11 +54,12 @@ export function mountPlayer(): void {
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'Mix player');
   // The credit, said like a broadcast: who made this set, and for whom.
-  const air = `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>ACND × <span class="bn">অপূর্ব</span></strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(2743.6 / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> (HKCR) <em>—</em> ${TRACKLIST.length} tracks, opening with their unreleased “Initiate” <em>✶</em></span>`;
+  const opener = (): string => (TRACKLIST[0] ? `, opening with “${esc(TRACKLIST[0].title.replace(/\s*\(unreleased ID\)/i, ''))}”` : '');
+  const air = (): string => `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>ACND × <span class="bn">অপূর্ব</span></strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(MIX.duration / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> <em>—</em> ${TRACKLIST.length} tracks${opener()} <em>✶</em></span>`;
   const news = `<span class="fbar-air-item"><b class="fbar-new">New release</b> <strong>${esc(NEXT_RELEASE.title)}</strong> <em>—</em> ${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.genre)} on <strong>${esc(NEXT_RELEASE.label)}</strong> <em>—</em> out now <em>✶</em></span>`;
   bar.innerHTML = `
     <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}: a set for ${esc(MIX.station)}. Open the tracklist.">
-      <span class="fbar-air-run" aria-hidden="true">${(air + news).repeat(3)}</span>
+      <span class="fbar-air-run" aria-hidden="true">${(air() + news).repeat(3)}</span>
     </button>
     <div class="fbar-seek">
       <span class="fbar-mix-m">ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
@@ -46,7 +68,7 @@ export function mountPlayer(): void {
         <span class="fbar-line"></span>
         <span class="fbar-knob">${icon.eye}</span>
       </div>
-      <span class="fbar-time" data-d>45:43</span>
+      <span class="fbar-time" data-d>${fmt(MIX.duration)}</span>
     </div>
     <div class="fbar-row">
       <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
@@ -84,16 +106,10 @@ export function mountPlayer(): void {
   panel.inert = true;
   panel.innerHTML = `
     <header class="tid-bar">
-      <span>${icon.list} Tracklist · ${TRACKLIST.length} tracks</span>
+      <span class="tid-bar-t">${icon.list} Tracklist · ${TRACKLIST.length} tracks</span>
       <button type="button" data-act="close" aria-label="Close tracklist">–</button>
     </header>
-    <div class="tid-hero">
-      <span class="tid-hero-k"><b class="fbar-onair"><i></i>On air</b> Hong Kong Community Radio · HKCR</span>
-      <strong class="tid-hero-t">${esc(MIX.show)} <span class="tid-hero-v">${esc(MIX.volume)}</span></strong>
-      <span class="tid-hero-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
-      <span class="tid-hero-s">A ${Math.round(2743.6 / 60)}-minute set made for ${esc(MIX.station)}, hosted by both artists. ${TRACKLIST.length} tracks, opening with their unreleased collaboration “Initiate”.</span>
-      <a class="tid-hero-link" href="${MIX.stationUrl}" target="_blank" rel="noopener">Visit HKCR ↗</a>
-    </div>
+    <div class="tid-hero">${heroHtml()}</div>
     <div class="tid-head">
       <div class="tid-title">
         <b>Tracklist</b>
@@ -104,18 +120,7 @@ export function mountPlayer(): void {
         <button type="button" data-act="next" aria-label="Next track">${icon.next}</button>
       </div>
     </div>
-    <ol class="tid-list">
-      ${TRACKLIST.map(
-        (t, i) => `
-        <li data-i="${i}">
-          <button type="button" data-seek="${t.at}" aria-label="Play ${esc(t.title)} from ${fmt(t.at)}">
-            <span class="tid-at">${fmt(t.at)}</span>
-            <span class="tid-track"><b>${esc(t.title)}</b><span class="tid-artist">${esc(t.artist)}</span><em class="tid-now">Now playing</em></span>
-          </button>
-          ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(t.title)} by ${esc(t.artist)} on ${esc(t.linkLabel)}">${esc(t.linkLabel)} ↗</a>` : `<span class="tid-unavailable">Unreleased</span>`}
-        </li>`,
-      ).join('')}
-    </ol>`;
+    <ol class="tid-list">${listHtml()}</ol>`;
 
   // A small window names each new track as the mix moves on.
   const now = document.createElement('div');
@@ -140,7 +145,7 @@ export function mountPlayer(): void {
   const knob = bar.querySelector<HTMLElement>('.fbar-knob')!;
   const spotify = bar.querySelector<HTMLAnchorElement>('.fbar-spotify')!;
   const share = bar.querySelector<HTMLButtonElement>('.fbar-share')!;
-  const rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
+  let rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
 
   let current: { t: MixTrack; i: number } = { t: TRACKLIST[0], i: 0 };
   rows[0]?.classList.add('playing');
@@ -202,6 +207,25 @@ export function mountPlayer(): void {
   });
   title.textContent = current.t.title;
   artist.textContent = current.t.artist;
+
+  // Another set went on air: rebuild every set-specific line in place.
+  onSetChange(() => {
+    panel.querySelector('.tid-list')!.innerHTML = listHtml();
+    panel.querySelector('.tid-hero')!.innerHTML = heroHtml();
+    panel.querySelector('.tid-bar-t')!.innerHTML = `${icon.list} Tracklist · ${TRACKLIST.length} tracks`;
+    rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
+    current = { t: TRACKLIST[0], i: 0 };
+    rows[0]?.classList.add('playing');
+    firstTrack = true;
+    const label = `${MIX.show} ${MIX.volume}`;
+    bar.querySelector('.fbar-mix-t')!.textContent = `${MIX.show} · ${MIX.volume}`;
+    bar.querySelector('.fbar-mix-m')!.innerHTML = `ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(label)}`;
+    bar.querySelector('.fbar-air-run')!.innerHTML = (air() + news).repeat(3);
+    bar.querySelector('.fbar-mix')!.setAttribute('aria-label', `ACND and অপূর্ব, ${label}`);
+    title.textContent = current.t.title;
+    artist.textContent = current.t.artist;
+    tlCount.textContent = `01/${TRACKLIST.length}`;
+  });
 
   onState((playing) => {
     playBtn.innerHTML = playing ? icon.pause : icon.play;

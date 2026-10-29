@@ -181,6 +181,7 @@ export function discoveryPages(artists, next, tracks) {
     description:
       "Down In Bossa by Ash Army & ACND: Afro House via Profi Music. Find release details, official listening links and context for an Ibiza-inspired house playlist.",
     image: next.cover,
+    lastmod: "2026-10-30",
   };
   release.graph = pageGraph(release, [
     {
@@ -278,6 +279,7 @@ export function journalPages(artists, next, tracks) {
       path: `journal/${post.slug}/`,
       label: post.title,
       ogType: "article",
+      lastmod: post.date ?? PUBLICATION_DATE,
     };
     const url = `${ORIGIN}/${page.path}`;
     const article = {
@@ -411,9 +413,80 @@ function writeRoute(dir, index, path, headHtml, content) {
   writeFileSync(resolve(dir, path, "index.html"), html);
 }
 
-export function seoPlugin({ artists, next, tracks }) {
+const FIRST_SET = "qbic-pulse-vol-1";
+/** Where a set's tracklist page lives (the first set keeps its original address). */
+export const setPath = (set) => (set.slug === FIRST_SET ? "mixes/qbic-pulse/" : `mixes/${set.slug}/`);
+const clock = (s) => {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60);
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+};
+const longDay = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Qbic Pulse Radio: every set, newest first, plus a tracklist page for each new set. */
+export function radioPages(sets) {
+  const pages = [];
+  const radio = {
+    path: "radio/",
+    label: "Qbic Pulse Radio",
+    title: "Qbic Pulse Radio — DJ sets by ACND & অপূর্ব",
+    description: `Every Qbic Pulse DJ set by ACND & অপূর্ব, newest first: ${sets.length} set${sets.length === 1 ? "" : "s"} with full tracklists, play in the site player.`,
+    lastmod: sets[0]?.date,
+  };
+  radio.graph = pageGraph(radio, [
+    {
+      "@type": "ItemList",
+      "@id": `${ORIGIN}/radio/#sets`,
+      name: "Qbic Pulse Radio sets",
+      numberOfItems: sets.length,
+      itemListElement: sets.map((set, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: { "@type": "MusicPlaylist", name: `${set.show} ${set.volume}`, numTracks: set.tracklist.length, datePublished: set.date, url: `${ORIGIN}/${setPath(set)}` },
+      })),
+    },
+  ]);
+  const card = (set, i) => `<article class="radio-set"><p class="eyebrow">${i === 0 ? "Latest set · " : ""}<time datetime="${esc(set.date)}">${esc(longDay(set.date))}</time> · ${esc(set.station)}</p><h2>${esc(set.show)} ${esc(set.volume)}</h2><p>${esc(set.description)}</p><dl class="fact-list"><div><dt>Hosts</dt><dd>${esc(set.hosts)}</dd></div><div><dt>Length</dt><dd>${clock(set.duration)}</dd></div><div><dt>Tracks</dt><dd>${set.tracklist.length}</dd></div></dl><p><a class="button" href="../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set</a> <a href="../${setPath(set)}">Full tracklist →</a></p><details><summary>Tracklist</summary><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span><div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)}</span></div></li>`).join("")}</ol></details></article>`;
+  radio.html = shell(radio, `<p class="eyebrow">ACND &amp; অপূর্ব · DJ sets</p><h1>Qbic Pulse Radio</h1><p class="intro">Every Qbic Pulse set, newest first. Press play to hear it in the site player; it keeps playing as you browse.</p>${sets.map(card).join("")}<section><h2>About Qbic Pulse</h2><p>Qbic Pulse is the shared DJ series of <a href="../acnd/">ACND (Ahmed Masum)</a> and <a href="../apurba/">অপূর্ব (Opurbo / Apurba)</a>, first made for Hong Kong Community Radio. Playing a set here does not count as a stream on the linked music platforms; for rights questions see the <a href="../legal/copyright/">copyright contact page</a>.</p></section>`);
+  pages.push(radio);
+  for (const set of sets.filter((x) => x.slug !== FIRST_SET)) {
+    const page = {
+      path: setPath(set),
+      label: `${set.show} ${set.volume} tracklist`,
+      title: `${set.show} ${set.volume} Tracklist — ACND & অপূর্ব DJ Set`,
+      description: `${set.show} ${set.volume} by ${set.hosts}: ${set.tracklist.length} tracks with timestamps, ${clock(set.duration)} long, published ${longDay(set.date)}.`,
+      lastmod: set.date,
+    };
+    page.graph = pageGraph(page, [
+      {
+        "@type": "ItemList",
+        "@id": `${ORIGIN}/${page.path}#tracklist`,
+        name: `${set.show} ${set.volume} tracklist`,
+        numberOfItems: set.tracklist.length,
+        itemListElement: set.tracklist.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: `${t.artist} — ${t.title}`, url: t.url })),
+      },
+    ]);
+    page.html = shell(page, `<p class="eyebrow">${esc(set.hosts)} · ${esc(set.station)}</p><h1>${esc(set.show)} ${esc(set.volume)}: DJ set &amp; tracklist</h1><p class="intro">${esc(set.description)}</p><a class="button" href="../../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set →</a><section><h2>Tracklist</h2><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)}</span></div>`}</li>`).join("")}</ol></section><p><a href="../../radio/">All Qbic Pulse Radio sets →</a></p>`);
+    pages.push(page);
+  }
+  return pages;
+}
+
+/** Sitemap from the generated pages plus the hand-written ones, so new sets and posts are listed automatically. */
+function sitemap(pages) {
+  const fixed = ["", "frequency-unity/", "legal/terms/", "legal/privacy/", "legal/copyright/"];
+  const urls = [...fixed.map((path) => ({ path })), ...pages.map((p) => ({ path: p.path, lastmod: p.lastmod ?? p.date }))];
+  const seen = new Set();
+  const rows = urls
+    .filter((u) => !seen.has(u.path) && seen.add(u.path))
+    .map((u) => `  <url><loc>${ORIGIN}/${u.path}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows.join("\n")}\n</urlset>\n`;
+}
+
+export function seoPlugin({ artists, next, sets }) {
+  const tracks = (sets.find((x) => x.slug === FIRST_SET) ?? sets[sets.length - 1]).tracklist;
   const pages = [
     ...discoveryPages(artists, next, tracks),
+    ...radioPages(sets),
     pressPage(artists.acnd),
     ...journalPages(artists, next, tracks),
   ];
@@ -485,6 +558,7 @@ export function seoPlugin({ artists, next, tracks }) {
       }
     },
     generateBundle() {
+      this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(pages) });
       for (const page of pages.filter((p) => !p.artist))
         this.emitFile({
           type: "asset",

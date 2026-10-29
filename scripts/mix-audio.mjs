@@ -1,6 +1,7 @@
 import { createDecipheriv, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { loadSets } from './sets.mjs';
 
 const FRAGMENT_SECONDS = 2;
 
@@ -104,8 +105,8 @@ function splitFragment(fragment, target, nextSequence) {
   return out;
 }
 
-/** Authenticate and join the existing fragments at build time, not in the browser. */
-function continuousMix(root) {
+/** Authenticate and join a set's fragments at build time, not in the browser. */
+function continuousMix(root, dir) {
   const source = readFileSync(resolve(root, 'src/stream-key.ts'), 'utf8');
   const parts = ['K1', 'K2'].map((name) => {
     const match = source.match(new RegExp(`export const ${name}\\s*=\\s*['"]([a-fA-F0-9]+)['"]`));
@@ -114,7 +115,6 @@ function continuousMix(root) {
   });
   if (parts.some((part) => part.length !== 32)) throw new Error('Invalid mix key length');
   const key = Buffer.from(parts[0].map((byte, i) => byte ^ parts[1][i]));
-  const dir = resolve(root, 'public/audio/x');
   const manifest = JSON.parse(readFileSync(resolve(dir, 'm.json'), 'utf8'));
   const names = ['i.bin', ...manifest.s.map((_, i) => `${i}.bin`)];
   const decoded = names.map((name) => {
@@ -169,29 +169,38 @@ function continuousMix(root) {
 }
 
 /**
- * The mix is published under a name that carries its content hash, so browsers
- * may keep it for a year: a returning visitor plays from disk, not the network.
+ * Every set in sets/ is published under a name that carries its content hash, so
+ * browsers may keep it for a year: a returning visitor plays from disk, not the
+ * network. The pages learn the library (newest first) through __SETS__.
  */
 export function mixAudioPlugin() {
   let root = process.cwd();
-  let audio;
-  let file;
-  const getAudio = () => (audio ??= continuousMix(root));
+  let sets = [];
+  const audio = new Map();
+  const bytes = (set) => {
+    if (!audio.has(set.slug)) audio.set(set.slug, continuousMix(root, set.audioDir));
+    return audio.get(set.slug);
+  };
   return {
     name: 'continuous-mix-audio',
     config(config) {
       root = resolve(config.root ?? process.cwd());
-      file = `audio/qbic-pulse.${createHash('sha256').update(getAudio()).digest('hex').slice(0, 10)}.m4a`;
-      return { define: { __MIX_FILE__: JSON.stringify(file) } };
+      sets = loadSets(root).map((set) => ({
+        ...set,
+        file: `audio/${set.audioName ?? set.slug}.${createHash('sha256').update(bytes(set)).digest('hex').slice(0, 10)}.m4a`,
+      }));
+      if (!sets.length) throw new Error('No sets found in sets/');
+      const publicSets = sets.map(({ audioDir: _dir, audioName: _name, ...rest }) => rest);
+      return { define: { __SETS__: JSON.stringify(publicSets) } };
     },
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: file, source: getAudio() });
+      for (const set of sets) this.emitFile({ type: 'asset', fileName: set.file, source: bytes(set) });
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.split('?')[0] !== `/${file}`) return next();
-        if (req.method !== 'GET' && req.method !== 'HEAD') return next();
-        const data = getAudio();
+        const set = sets.find((s) => req.url?.split('?')[0] === `/${s.file}`);
+        if (!set || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
+        const data = bytes(set);
         let start = 0;
         let end = data.length - 1;
         res.setHeader('Content-Type', 'audio/mp4');

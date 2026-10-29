@@ -4,7 +4,8 @@ import { defineConfig } from 'vite';
 import { SECRET_PATHS } from './src/secret';
 import { mixAudioPlugin } from './scripts/mix-audio.mjs';
 import { seoPlugin } from './scripts/seo.mjs';
-import { ARTISTS, NEXT_RELEASE, TRACKLIST } from './src/data';
+import { ARTISTS, NEXT_RELEASE } from './src/data';
+import { loadSets } from './scripts/sets.mjs';
 
 // Relative base so the build works on a GitHub Pages project path and on a
 // custom domain alike.
@@ -13,7 +14,7 @@ export default defineConfig({
   // The pages learn which images exist, so a missing optional photo goes
   // straight to its fallback and WebP is offered wherever a version exists.
   define: { __IMAGES__: JSON.stringify(readdirSync(resolve(__dirname, 'public/img'))) },
-  plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, tracks: TRACKLIST })],
+  plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, sets: loadSets(__dirname) })],
   build: {
     target: 'es2020',
     // Every es2020 browser supports modulepreload natively.

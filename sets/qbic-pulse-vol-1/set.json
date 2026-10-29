@@ -1,0 +1,103 @@
+{
+  "title": "Qbic Pulse on HKCR",
+  "show": "Qbic Pulse",
+  "volume": "Vol. 1",
+  "hosts": "ACND & অপূর্ব",
+  "station": "Hong Kong Community Radio",
+  "stationUrl": "https://hkcr.live/",
+  "date": "2026-10-27",
+  "bpm": 125,
+  "audioName": "qbic-pulse",
+  "description": "A shared set by ACND and অপূর্ব for Hong Kong Community Radio, opening with their unreleased collaboration “Initiate”.",
+  "tracklist": [
+    {
+      "at": "00:00",
+      "artist": "ACND x অপূর্ব",
+      "title": "Initiate (unreleased ID)"
+    },
+    {
+      "at": "03:37",
+      "artist": "Remusic",
+      "title": "Ancestral Calling",
+      "url": "https://music.apple.com/us/album/ancestral-calling/1859226382?i=1859226383"
+    },
+    {
+      "at": "06:35",
+      "artist": "Acrobat, Thomas Gandey, Vakabular",
+      "title": "Acid (Vakabular Remix)",
+      "url": "https://soundcloud.com/soundfocuslabel/acid-vakabular-remix"
+    },
+    {
+      "at": "09:41",
+      "artist": "Kevin de Vries, SLVR, Stella von Lingen",
+      "title": "Life",
+      "url": "https://music.apple.com/us/album/life/1817532708?i=1817532715"
+    },
+    {
+      "at": "12:28",
+      "artist": "MAMI, Bound",
+      "title": "Lose My Body",
+      "url": "https://music.apple.com/us/album/lose-my-body/1863695815?i=1863695820"
+    },
+    {
+      "at": "15:43",
+      "artist": "HERMEN",
+      "title": "Subra",
+      "url": "https://music.apple.com/us/album/subra/6800439351?i=6800439352"
+    },
+    {
+      "at": "18:59",
+      "artist": "Solvane, Prismode",
+      "title": "Mars",
+      "url": "https://music.apple.com/us/album/mars/1875941684?i=1875941685"
+    },
+    {
+      "at": "21:37",
+      "artist": "Mark Hoffen, Bittermind",
+      "title": "WTF",
+      "url": "https://soundcloud.com/mark-hoffen/mark-hoffen-bittermind-wtf-1"
+    },
+    {
+      "at": "25:30",
+      "artist": "Andy Syn, Heinrich & Heine",
+      "title": "I Need Every Little Piece of You (Original Mix)",
+      "url": "https://soundcloud.com/andysyn-scmusic/i-need-every-little-piece-of"
+    },
+    {
+      "at": "30:48",
+      "artist": "Rem Siman",
+      "title": "Pria",
+      "url": "https://music.apple.com/us/album/pria/1874878989?i=1874879266"
+    },
+    {
+      "at": "33:47",
+      "artist": "7 SKIES",
+      "title": "QUENTE",
+      "url": "https://music.apple.com/us/album/quente/6771727958?i=6771727959"
+    },
+    {
+      "at": "35:41",
+      "artist": "Jules Brand",
+      "title": "LOSE CONTROL",
+      "url": "https://music.apple.com/us/album/lose-control/1895377568?i=6763565980"
+    },
+    {
+      "at": "38:11",
+      "artist": "Add-us",
+      "title": "Duck Duck",
+      "url": "https://music.apple.com/us/album/duck-duck/1887146298?i=1887146303"
+    },
+    {
+      "at": "40:57",
+      "artist": "Adapter",
+      "title": "Nakupenda",
+      "url": "https://soundcloud.com/adapterdj/nakupenda"
+    },
+    {
+      "at": "43:19",
+      "artist": "Axl Stace",
+      "title": "Mystic",
+      "url": "https://music.apple.com/us/album/mystic/1872550832?i=1872550833"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { MIX, TRACKLIST, type MixTrack } from './data';
+import { CURRENT, MIX, TRACKLIST, onSetChange, selectSet, type MixTrack } from './data';
 import { asset } from './paths';
 import { attachStream, type Stream } from './stream';
 
@@ -10,7 +10,16 @@ import { attachStream, type Stream } from './stream';
  * visitor can pause, seek and skip between tracks (see `toggle`, `seek`, `skip`).
  */
 
-const POS_KEY = 'iry:mix-pos';
+/** Where each set was left; the first set keeps the original key. */
+const posKey = (): string => (CURRENT.slug === 'qbic-pulse-vol-1' ? 'iry:mix-pos' : `iry:mix-pos:${CURRENT.slug}`);
+const savedPos = (): number => {
+  try {
+    const saved = Number(localStorage.getItem(posKey())) || 0;
+    return saved > 0 && saved < CURRENT.duration - 30 ? saved : 0;
+  } catch {
+    return 0; // storage unavailable: start from the top
+  }
+};
 
 let el: HTMLAudioElement | null = null;
 let ctx: AudioContext | null = null;
@@ -66,13 +75,7 @@ export function prepare(): void {
   el = makeDeck();
   el.preload = 'metadata';
 
-  let saved = 0;
-  try {
-    saved = Number(localStorage.getItem(POS_KEY)) || 0;
-  } catch {
-    /* storage unavailable — start from the top */
-  }
-  stream = attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
+  stream = attachStream(el, savedPos());
 
   listen(el);
 }
@@ -217,7 +220,7 @@ export function start(): void {
 function savePos(): void {
   if (!el) return;
   try {
-    localStorage.setItem(POS_KEY, String(time()));
+    localStorage.setItem(posKey(), String(time()));
   } catch {
     /* ignore */
   }
@@ -507,7 +510,7 @@ export function skip(dir: -1 | 1): void {
 }
 
 export const time = (): number => jumpTo ?? cue?.target ?? holdAt ?? el?.currentTime ?? 0;
-export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : 2743.6);
+export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : CURRENT.duration);
 
 export function trackIndexAt(sec: number): number {
   let i = 0;
@@ -639,3 +642,60 @@ export function sample(): typeof levels {
 }
 
 export const spectrum = (): Uint8Array => freq;
+
+/* ─────────── Qbic Pulse Radio: put another set on air ─────────── */
+
+/**
+ * Play a set from the library. The outgoing set fades out, its download stops,
+ * and the new one opens where the visitor last left it (or at the top).
+ */
+export function playSet(slug: string): void {
+  if (!selectSet(slug)) {
+    play();
+    return;
+  }
+  play();
+}
+
+onSetChange(() => {
+  if (!el) return;
+  const media = el;
+  const wasStarted = started;
+  savePosFor(media);
+  cancelCue();
+  jumpTo = null;
+  holdAt = null;
+  clearTimeout(holdTimer);
+  clearTimeout(pauseTimer);
+  stream?.destroy();
+  if (spare) free(spare);
+  const swap = (): void => {
+    media.pause();
+    stream = attachStream(media, savedPos());
+    if (wasStarted) stream.activate();
+    lastIndex = -1;
+    onTime();
+    if (wasStarted && !userPaused) play();
+    emitState();
+  };
+  // A short fade so the change never clicks.
+  if (ctx && focusGain && isPlaying()) {
+    const g = focusGain.gain;
+    g.cancelScheduledValues(ctx.currentTime);
+    g.setValueAtTime(g.value, ctx.currentTime);
+    g.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+    window.setTimeout(swap, 220);
+  } else swap();
+});
+
+/** Remember the outgoing set's spot under its own key before switching. */
+let lastSlug = CURRENT.slug;
+function savePosFor(media: HTMLAudioElement): void {
+  try {
+    const key = lastSlug === 'qbic-pulse-vol-1' ? 'iry:mix-pos' : `iry:mix-pos:${lastSlug}`;
+    localStorage.setItem(key, String(holdAt ?? media.currentTime));
+  } catch {
+    /* ignore */
+  }
+  lastSlug = CURRENT.slug;
+}

@@ -6,7 +6,7 @@ const origin = "https://iraveyou.online";
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 22);
+assert.equal(urls.length, 23);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {

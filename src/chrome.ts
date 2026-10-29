@@ -1,4 +1,4 @@
-import { ARTISTS, NEXT_RELEASE, type Artist } from './data';
+import { ARTISTS, NEXT_RELEASE, SETS, type Artist } from './data';
 import { asset, esc } from './ui';
 
 /** Route links resolve from the site root, so the menu works on nested pages too. */
@@ -98,13 +98,16 @@ export function mountChrome(): void {
         <ol class="m-list">
           ${row(0, 'Home', route(''), [
             ['Feature: Beyond the Capital', route('frequency-unity/')],
-            ['Qbic Pulse tracklist', route('mixes/qbic-pulse/')],
             ['Down In Bossa', route('music/down-in-bossa/')],
           ])}
-          ${row(1, `<span class="bn">${esc(ARTISTS.apurba.name)}</span>`, route('apurba/'), artistSubs(ARTISTS.apurba), 'm-apurba')}
-          ${row(2, esc(ARTISTS.acnd.name), route('acnd/'), artistSubs(ARTISTS.acnd), 'm-acnd')}
-          ${row(3, 'Journal', route('journal/'), [])}
-          ${row(4, 'Legal', route('legal/terms/'), [
+          ${row(1, 'Qbic Pulse Radio', route('radio/'), [
+            ['All sets · newest first', route('radio/')],
+            ...SETS.map((set, i): [string, string] => [`${i === 0 ? 'Latest · ' : ''}${set.show} ${set.volume}`, route(set.slug === 'qbic-pulse-vol-1' ? 'mixes/qbic-pulse/' : `mixes/${set.slug}/`)]),
+          ], 'm-radio')}
+          ${row(2, `<span class="bn">${esc(ARTISTS.apurba.name)}</span>`, route('apurba/'), artistSubs(ARTISTS.apurba), 'm-apurba')}
+          ${row(3, esc(ARTISTS.acnd.name), route('acnd/'), artistSubs(ARTISTS.acnd), 'm-acnd')}
+          ${row(4, 'Journal', route('journal/'), [])}
+          ${row(5, 'Legal', route('legal/terms/'), [
             ['Terms of use', route('legal/terms/')],
             ['Privacy notice', route('legal/privacy/')],
             ['Copyright contact', route('legal/copyright/')],

@@ -1,4 +1,4 @@
-import { TRACKLIST } from './data';
+import { CURRENT, TRACKLIST } from './data';
 import { asset } from './paths';
 
 /**
@@ -22,6 +22,8 @@ export interface Stream {
    * the player, or false when a newer request replaced this one.
    */
   ensure(sec: number): Promise<boolean>;
+  /** Stop downloading and detach every listener (another set is taking over). */
+  destroy(): void;
 }
 
 interface Frag { o: number; n: number; t: number; d: number }
@@ -44,7 +46,7 @@ type MSCtor = typeof MediaSource;
 const MS: MSCtor | undefined = (window as unknown as { ManagedMediaSource?: MSCtor }).ManagedMediaSource ?? window.MediaSource;
 
 export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
-  const url = asset(__MIX_FILE__);
+  const url = asset(CURRENT.file);
   if (!MS || !MS.isTypeSupported(MIME)) return nativeStream(el, url, startAt);
 
   let frags: Frag[] = [];
@@ -55,6 +57,9 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   let target: number | null = null;
   let waiter: { sec: number; done: (ok: boolean) => void } | null = null;
   let fellBack = false;
+  /** Set when another set takes over: nothing may fetch, append or listen after that. */
+  let dead = false;
+  const life = new AbortController();
   let job: Job | null = null;
   /**
    * File offset just past the last byte handed to the player. Inside a piece,
@@ -323,7 +328,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   };
 
   const pump = async (): Promise<void> => {
-    if (busy || !sb) return;
+    if (dead || busy || !sb) return;
     const r = next();
     if (!r) {
       finish();
@@ -364,6 +369,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
 
   /** Fetch the audio at `sec` first, cancelling a download that won't reach it soon. */
   const hurry = (sec: number): void => {
+    if (dead) return;
     target = sec;
     settle();
     if (target === null) return;
@@ -377,7 +383,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   };
 
   // A request that stops delivering (a dropped connection) is retried from where it stopped.
-  setInterval(() => {
+  const stallTimer = setInterval(() => {
     if (job && performance.now() - lastByte > STALL) {
       job.stalled = true;
       job.ctl.abort();
@@ -390,7 +396,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
     }
     wake?.();
     void pump();
-  });
+  }, { signal: life.signal });
 
   /** Read the header and index, then keep feeding the same response as the opening audio. */
   const open = async (): Promise<void> => {
@@ -444,10 +450,11 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
     await append(head.subarray(0, sidx));
     ms.duration = t / scale;
     if (startAt > 0) el.currentTime = Math.min(startAt, ms.duration - 0.5);
+    if (dead) return;
     el.addEventListener('seeking', () => {
       if (!covered(el.currentTime)) hurry(el.currentTime);
-    });
-    el.addEventListener('timeupdate', () => void pump());
+    }, { signal: life.signal });
+    el.addEventListener('timeupdate', () => void pump(), { signal: life.signal });
 
     // Starting at the top: the rest of this response is the opening audio.
     const first = frags[0].o;
@@ -489,6 +496,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
 
   ms.addEventListener('sourceopen', () => {
     open().catch(() => {
+      if (dead) return;
       // Index unreadable: let the browser stream the file instead, and from now
       // on report plain playback so seeks take the native path.
       if (!sb) {
@@ -511,7 +519,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
     },
     ready: (sec) => fellBack || covered(sec),
     ensure(sec) {
-      if (fellBack) return Promise.resolve(true);
+      if (fellBack || dead) return Promise.resolve(!dead);
       if (waiter) {
         waiter.done(false);
         waiter = null;
@@ -521,6 +529,15 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
         waiter = { sec, done };
         hurry(sec);
       });
+    },
+    destroy() {
+      dead = true;
+      life.abort();
+      clearInterval(stallTimer);
+      job?.ctl.abort();
+      waiter?.done(false);
+      waiter = null;
+      wake?.();
     },
   };
 }
@@ -535,5 +552,5 @@ function nativeStream(el: HTMLAudioElement, url: string, startAt: number): Strea
     }, { once: true });
   }
   el.load();
-  return { mse: false, activate() {}, ready: () => true, ensure: () => Promise.resolve(true) };
+  return { mse: false, activate() {}, ready: () => true, ensure: () => Promise.resolve(true), destroy() {} };
 }
