@@ -54,6 +54,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   /** A spot wanted now (a jump or a seek), fetched before anything else. */
   let target: number | null = null;
   let waiter: { sec: number; done: (ok: boolean) => void } | null = null;
+  let fellBack = false;
   let job: Job | null = null;
   /**
    * File offset just past the last byte handed to the player. Inside a piece,
@@ -488,20 +489,29 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
 
   ms.addEventListener('sourceopen', () => {
     open().catch(() => {
-      // Index unreadable: let the browser stream the file instead.
-      if (!sb) nativeStream(el, url, startAt);
-      else void pump();
+      // Index unreadable: let the browser stream the file instead, and from now
+      // on report plain playback so seeks take the native path.
+      if (!sb) {
+        fellBack = true;
+        nativeStream(el, url, startAt);
+        waiter?.done(true);
+        waiter = null;
+      } else void pump();
     });
   }, { once: true });
 
   return {
-    mse: true,
+    get mse() {
+      return !fellBack;
+    },
     activate() {
+      if (fellBack) return;
       active = true;
       void pump();
     },
-    ready: (sec) => covered(sec),
+    ready: (sec) => fellBack || covered(sec),
     ensure(sec) {
+      if (fellBack) return Promise.resolve(true);
       if (waiter) {
         waiter.done(false);
         waiter = null;

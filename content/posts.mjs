@@ -11,9 +11,9 @@ export function createPosts({ internal: link, external: ext, next }) {
     {
       slug: "down-in-bossa-out-now-profi-music",
       date: "2026-10-30",
-      title: "Down In Bossa out now: Ash Army & ACND’s Afro House release on Profi Music",
+      title: "Down In Bossa out now: Ash Army & ACND, Afro House on Profi Music",
       description:
-        "Down In Bossa by Ash Army & ACND is out now on Profi Music. Stream the Afro House release, check the credits and add it to your summer, beach and Ibiza-inspired playlists.",
+        "Down In Bossa by Ash Army & ACND is out now on Profi Music. Stream the Afro House single, see the credits and add it to a summer or Ibiza-inspired playlist.",
       category: "New release",
       image: "img/down-in-bossa.jpg",
       imageAlt: "Down In Bossa cover artwork by Ash Army and ACND, released on Profi Music",
@@ -29,7 +29,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <p><strong>“Down In Bossa”</strong>, the collaboration between <strong>Ash Army &amp; ACND</strong>, is out now on <strong>Profi Music</strong>. The release date is 30 October 2026, and the genre given in the release information is Afro House.</p>
         <p>The quickest way to listen is the ${ext(next.presave, "official Down In Bossa smart link")}, which lets you choose your streaming service. The ${ext(next.page, "Profi Music release page")} is the label’s own reference for the track, and the ${release("Down In Bossa release page")} on this site collects the credits and facts in one place.</p>
         <dl class="fact-list"><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Genre</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Released</dt><dd><time datetime="2026-10-30">30 October 2026</time></dd></div><div><dt>Format</dt><dd>Digital single, two tracks</dd></div><div><dt>Catalogue ref.</dt><dd>1200220291328</dd></div></dl>
-        <h3>Tracklist</h3><ol class="tracks"><li><strong>Down In Bossa</strong> · 2:26</li><li><strong>Down In Bossa (Extended Edit)</strong> · 3:24</li></ol>
+        <h3>Tracklist</h3><ol class="release-tracks"><li><strong>Down In Bossa</strong> · 2:26</li><li><strong>Down In Bossa (Extended Edit)</strong> · 3:24</li></ol>
         <p>The Extended Edit is the longer 3:24 version, handy in a DJ set; the original runs 2:26. You can also open the single directly on ${ext("https://music.apple.com/us/album/down-in-bossa-single/6822243986", "Apple Music")}.</p></section>
         <section><h2>Who made Down In Bossa?</h2>
         <p>The track is credited to Ash Army &amp; ACND. ACND, pronounced “Ascend”, is the artist name of <strong>Ahmed Masum</strong>, a producer, DJ and composer based in Dhaka, Bangladesh. Ahmed Masum and ACND are one artist, not two collaborators. Ash Army is the separately credited partner on the record.</p>
@@ -134,7 +134,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <p>This exercise is a listening method, not a technical checklist every Afro House producer must follow. It also avoids assuming that a title, artwork or genre label reveals which instruments, samples or production tools were used.</p></section>
         <section><h2>Where Down In Bossa fits</h2>
         <p>“Down In Bossa” is credited to Ash Army &amp; ACND and described as Afro House in the release information supplied for this site. It was released on 30 October 2026 via Profi Music. The ${ext(next.page, "Profi Music release page")} is the reference for current availability, and the ${ext(next.presave, "label’s smart link")} opens the listening destinations.</p>
-        <p>This guide does not claim to be a review of an advance recording. It does not infer a bossa nova sample, a particular tempo or an instrument from the title. Once the recording is available, use the listening exercise above to form your own impression. Find the factual summary on the ${release("dedicated release page")}.</p></section>
+        <p>This guide is not a review. It does not infer a bossa nova sample, a particular tempo or an instrument from the title. Now that the recording is out, use the listening exercise above to form your own impression. Find the factual summary on the ${release("dedicated release page")}.</p></section>
         <section><h2>Explore the collaborators without losing the track credit</h2>
         <p>ACND is Ahmed Masum, a producer and DJ based in Dhaka. “Down In Bossa” is a collaboration with Ash Army; it should not be reduced to a solo credit. The ${post("down-in-bossa-collaboration-credits", "collaboration and credits guide")} explains the difference between artists, label and listening links.</p>
         <p>If you are arriving from ACND’s techno-oriented portfolio, a different genre label is an invitation to hear another side of the work. Read the ${post("acnd-techno-melodic-acid-progressive", "guide to his broader musical directions")} for that context.</p></section>`,

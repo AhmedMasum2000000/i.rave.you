@@ -482,7 +482,7 @@ function crossfade(next: HTMLAudioElement): void {
   el = next;
   spare = prev;
   window.setTimeout(() => {
-    if (spare === prev) free(prev);
+    if (spare === prev && !cue) free(prev);
   }, 300);
   onTime();
   savePos();

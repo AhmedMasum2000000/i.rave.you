@@ -257,7 +257,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     bio: [
       'ACND — read it “Ascend” — is the recording name of Ahmed Masum, a producer, DJ and composer working out of Dhaka, Bangladesh.',
       'Nothing here will tell you what the next record sounds like. That is the point. What holds the work together is not a category but a feeling: a room, a late hour, and a sound that will not leave.',
-      'Next up: “Down In Bossa” with Ash Army, landing 30 October 2026 on Profi Music.',
+      'Out now: “Down In Bossa” with Ash Army, on Profi Music since 30 October 2026.',
     ],
     about: {
       summary: 'Ahmed Masum, known as ACND, is a producer, DJ and composer based in Dhaka, Bangladesh.',
@@ -287,7 +287,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       blocks: [
         { label: '01', text: 'Their HKCR set opens on Initiate^1, the first thing ACND and অপূর্ব finished together. Still unreleased, and the reason this site exists.' },
         { label: '02', text: 'From there it climbs through melodic techno, acid and progressive, the corners ACND keeps coming back to.' },
-        { label: '03', text: 'Next comes Down In Bossa^2: Afro House with Ash Army, out 30 October on Profi Music.' },
+        { label: '03', text: 'Then Down In Bossa^2: Afro House with Ash Army, out now on Profi Music.' },
       ],
     },
     footnotes: [

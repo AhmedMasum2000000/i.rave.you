@@ -154,7 +154,7 @@ function homePage(a: Artist): string {
       ${footnotes(a)}
       <div class="a-ab">
         <div data-reveal><span class="mono">A:</span><b>Where it starts.</b><p>${esc(a.bio[0])}</p></div>
-        <div data-reveal><span class="mono">B:</span><b>What comes next.</b><p>${esc(a.bio[2])}</p></div>
+        <div data-reveal><span class="mono">B:</span><b>${a.id === 'acnd' ? 'Out now.' : 'What comes next.'}</b><p>${esc(a.bio[2])}</p></div>
         <a class="a-more" href="${href(a, 'about')}">More about ${esc(a.latin)} <span>→</span></a>
       </div>
     </section>

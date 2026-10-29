@@ -86,7 +86,8 @@ body[data-view='home'] .vu { background: linear-gradient(90deg, var(--blue), var
 .side-light .side-cta { color: #1a0c04; opacity: 0.85; }
 html.fx .home-top, html.fx .side { animation: home-in 0.9s var(--ease-out) backwards; }
 html.fx .side-light { animation-delay: 0.12s; }
-@keyframes home-in { from { opacity: 0; transform: translateY(10px); } }
+/* Only a rise: fading from 0 opacity held back the logos' first paint (LCP). */
+@keyframes home-in { from { transform: translateY(10px); } }
 body.flooding .side { animation: none; }
 
 /* ── Artist hero: the doorway is lit by the low end ── */

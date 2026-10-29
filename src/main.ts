@@ -222,12 +222,11 @@ function peekCard(id: ArtistId): HTMLElement {
   el.innerHTML = `
     <header class="peek-bar"><span class="${id === 'apurba' ? 'bn' : ''}">${esc(a.name)}</span><span>Sneak peek</span></header>
     <div class="peek-body">
-      <img src="${asset(next ? NEXT_RELEASE.cover : r.cover ?? a.hero)}" alt="" width="84" height="84" />
+      <img src="${asset(next ? NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp') : r.cover ?? a.hero)}" alt="" width="84" height="84" />
       <div>
-        <span class="peek-k">${next ? `Next release · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
+        <span class="peek-k">${next ? `Out now · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
         <b>${esc(next ? NEXT_RELEASE.title : r.title)}</b>
         <span class="peek-sub">${esc(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
-        ${next ? '<span class="peek-cd"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m <b data-cd="s">00</b>s</span>' : ''}
       </div>
     </div>
     <p class="peek-summary">${esc(a.about?.summary ?? a.bio[0])}</p>
