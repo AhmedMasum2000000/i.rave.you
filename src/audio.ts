@@ -1,6 +1,6 @@
 import { MIX, TRACKLIST, type MixTrack } from './data';
 import { asset } from './paths';
-import { attachStream } from './stream';
+import { attachStream, type Stream } from './stream';
 
 /**
  * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
@@ -39,6 +39,9 @@ let stallTimer = 0;
  * media pipeline to restart.
  */
 let holdAt: number | null = null;
+let stream: Stream | null = null;
+/** A jump waiting for its audio to arrive; the set plays on meanwhile. */
+let jumpTo: number | null = null;
 let holdTimer = 0;
 
 export const audioCtx = (): AudioContext | null => ctx;
@@ -69,7 +72,7 @@ export function prepare(): void {
   } catch {
     /* storage unavailable — start from the top */
   }
-  attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
+  stream = attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
 
   listen(el);
 }
@@ -153,6 +156,7 @@ export function start(): void {
   prepare();
   const media = el!;
   media.preload = 'auto';
+  stream?.activate();
 
   // 'interactive' asks for the smallest output buffers the device allows, so
   // sound follows a click at once and stays in step with the visuals.
@@ -328,11 +332,44 @@ export function seek(sec: number): void {
     savePos();
     return;
   }
-  // Not loaded yet: fetch it on the other deck while this one plays on.
-  if (cue || !isBuffered(target)) {
+  // Streaming: fetch the piece it lands in while the set plays on, then jump.
+  if (stream?.mse) {
+    if (jumpTo !== null || !isBuffered(target)) {
+      const first = jumpTo === null;
+      jumpTo = target;
+      onTime();
+      if (first) void stream.ensure(target).then(() => landJump());
+      return;
+    }
+  } else if (cue || !isBuffered(target)) {
+    // Not loaded yet: fetch it on the other deck while this one plays on.
     cueDeck(target);
     return;
   }
+  dipSeek(target);
+}
+
+/** Land the newest requested jump once its audio is here (newer jumps fetch again). */
+function landJump(): void {
+  if (jumpTo === null || !stream) return;
+  const target = jumpTo;
+  void stream.ensure(target).then(() => {
+    if (jumpTo !== target) return landJump();
+    jumpTo = null;
+    if (isPlaying()) dipSeek(target);
+    else if (el) {
+      if (holdAt !== null) holdAt = target;
+      else el.currentTime = target;
+      onTime();
+      savePos();
+    }
+  });
+}
+
+/** Jump on the playing deck, dipping the output around it so it lands without a click. */
+function dipSeek(target: number): void {
+  if (!el || !ctx || !focusGain) return;
+  const media = el;
   const pending = seekTarget !== null;
   seekTarget = target;
   if (pending) return;
@@ -467,7 +504,7 @@ export function skip(dir: -1 | 1): void {
   seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
-export const time = (): number => cue?.target ?? holdAt ?? el?.currentTime ?? 0;
+export const time = (): number => jumpTo ?? cue?.target ?? holdAt ?? el?.currentTime ?? 0;
 export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : 2743.6);
 
 export function trackIndexAt(sec: number): number {
