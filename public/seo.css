@@ -379,3 +379,8 @@ figcaption {
   font-size: 14px;
   color: #b4b4b4;
 }
+
+/* Release tracklist inside articles: title left, length right. */
+.release-tracks { list-style: none; padding: 0; margin: 12px 0 20px; }
+.release-tracks li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #333; }
+.release-tracks li:last-child { border-bottom: 1px solid #333; }

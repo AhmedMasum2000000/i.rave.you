@@ -1,6 +1,6 @@
 import { ARTISTS, type ArtistId } from "./data";
 
-const ORIGIN = "https://iraveyou.com";
+const ORIGIN = "https://iraveyou.online";
 /** Hash views remain interactive; their clean, static profiles are canonical. */
 export function syncSearchMetadata(artist?: ArtistId): void {
   const a = artist ? ARTISTS[artist] : undefined;

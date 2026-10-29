@@ -1,6 +1,6 @@
 # Ahmed Masum / ACND: global artist discovery
 
-28 October 2026. Primary website: https://iraveyou.com/. This extends the first publication wave; it does not assert achieved rankings.
+28 October 2026. Primary website: https://iraveyou.online/. This extends the first publication wave; it does not assert achieved rankings.
 
 ## Implemented in this update
 
@@ -33,10 +33,10 @@ These updates have **not** been sent or applied to external accounts. There is n
 **Display-name option:** ACND · Ahmed Masum
 
 **Compact bio:**
-Ahmed Masum / ACND. Producer, DJ & composer based in Dhaka, Bangladesh. Music, credits & artist information: https://iraveyou.com/acnd/
+Ahmed Masum / ACND. Producer, DJ & composer based in Dhaka, Bangladesh. Music, credits & artist information: https://iraveyou.online/acnd/
 
 **Longer bio:**
-Ahmed Masum, known as ACND (pronounced “Ascend”), is a producer, DJ and composer based in Dhaka, Bangladesh. His work moves through techno, melodic techno, acid and progressive sounds. Explore his music, collaborations and artist information at https://iraveyou.com/acnd/.
+Ahmed Masum, known as ACND (pronounced “Ascend”), is a producer, DJ and composer based in Dhaka, Bangladesh. His work moves through techno, melodic techno, acid and progressive sounds. Explore his music, collaborations and artist information at https://iraveyou.online/acnd/.
 
 **Release credit:**
 Down In Bossa — Ash Army & ACND. Afro House via Profi Music, scheduled for 30 October 2026. Follow the label page for availability: https://www.profimusic.com/release/down-in-bossa/
@@ -44,7 +44,7 @@ Down In Bossa — Ash Army & ACND. Afro House via Profi Music, scheduled for 30 
 **Remix credit:**
 Nitol Paye Electric — remix by ACND (Ahmed Masum).
 
-Set the official website field to `https://iraveyou.com/acnd/` where supported. Keep stable artist handles and IDs. Do not claim verified status, change legal names or remove collaborators to strengthen a keyword.
+Set the official website field to `https://iraveyou.online/acnd/` where supported. Keep stable artist handles and IDs. Do not claim verified status, change legal names or remove collaborators to strengthen a keyword.
 
 ## Independent references: next execution step
 
@@ -52,7 +52,7 @@ The most useful next references are accurate artist credits from organisations g
 
 Prepared request wording for the owner to review and send, where a relationship exists:
 
-> Could you include the artist website alongside the ACND credit on the relevant release or programme page? ACND is Ahmed Masum; the artist profile is https://iraveyou.com/acnd/ and the press kit is https://iraveyou.com/acnd/press/. Please preserve the existing collaborator credits. The kit contains the biography and reference links if useful.
+> Could you include the artist website alongside the ACND credit on the relevant release or programme page? ACND is Ahmed Masum; the artist profile is https://iraveyou.online/acnd/ and the press kit is https://iraveyou.online/acnd/press/. Please preserve the existing collaborator credits. The kit contains the biography and reference links if useful.
 
 No messages have been sent. Do not buy links, invent coverage, publish fake reviews or create unsupported encyclopedia entries. Original coverage should come from an editor's actual assessment and evidence.
 

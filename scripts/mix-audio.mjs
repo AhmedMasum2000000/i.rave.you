@@ -2,6 +2,108 @@ import { createDecipheriv, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+const FRAGMENT_SECONDS = 2;
+
+const box = (type, ...parts) => {
+  const body = Buffer.concat(parts);
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(body.length + 8, 0);
+  head.write(type, 4, 'latin1');
+  return Buffer.concat([head, body]);
+};
+
+/** Child boxes of a container: [{ type, at, size }] with `at` the box start. */
+function children(buf, start, end) {
+  const list = [];
+  for (let at = start; at + 8 <= end;) {
+    const size = buf.readUInt32BE(at);
+    if (size < 8 || at + size > end) break;
+    list.push({ type: buf.toString('latin1', at + 4, at + 8), at, size });
+    at += size;
+  }
+  return list;
+}
+
+/**
+ * Cut one movie fragment (moof + mdat, one audio track) into pieces of about
+ * `target` timescale units. Every AAC frame is a sync sample, so any frame can
+ * start a piece. Returns the fragment untouched if its layout is unexpected.
+ */
+function splitFragment(fragment, target, nextSequence) {
+  const top = children(fragment, 0, fragment.length);
+  const moof = top.find((b) => b.type === 'moof');
+  const mdat = top.find((b) => b.type === 'mdat');
+  const traf = moof && children(fragment, moof.at + 8, moof.at + moof.size).find((b) => b.type === 'traf');
+  if (!moof || !mdat || !traf || top.length !== 2) return [fragment];
+  const inner = children(fragment, traf.at + 8, traf.at + traf.size);
+  const tfhd = inner.find((b) => b.type === 'tfhd');
+  const tfdt = inner.find((b) => b.type === 'tfdt');
+  const truns = inner.filter((b) => b.type === 'trun');
+  if (!tfhd || !tfdt || truns.length !== 1 || inner.length !== 3) return [fragment];
+  const tfFlags = fragment.readUInt32BE(tfhd.at + 8) & 0xffffff;
+  // Only moof-relative data offsets (no explicit base offset) are rewritten.
+  if (tfFlags & 0x1 || !(tfFlags & 0x20000)) return [fragment];
+  let at = tfhd.at + 16;
+  if (tfFlags & 0x2) at += 4;
+  const defDuration = tfFlags & 0x8 ? fragment.readUInt32BE(at) : 0;
+  if (tfFlags & 0x8) at += 4;
+  const defSize = tfFlags & 0x10 ? fragment.readUInt32BE(at) : 0;
+  const trun = truns[0];
+  const flags = fragment.readUInt32BE(trun.at + 8) & 0xffffff;
+  const count = fragment.readUInt32BE(trun.at + 12);
+  // Per-sample composition offsets or a first-sample flag override: leave alone.
+  if (!(flags & 0x1) || flags & 0x804) return [fragment];
+  const dataOffset = fragment.readInt32BE(trun.at + 16);
+  at = trun.at + 20;
+  const samples = [];
+  for (let k = 0; k < count; k++) {
+    const s = { duration: defDuration, size: defSize, flags: 0 };
+    if (flags & 0x100) { s.duration = fragment.readUInt32BE(at); at += 4; }
+    if (flags & 0x200) { s.size = fragment.readUInt32BE(at); at += 4; }
+    if (flags & 0x400) { s.flags = fragment.readUInt32BE(at); at += 4; }
+    samples.push(s);
+  }
+  const total = samples.reduce((sum, s) => sum + s.duration, 0);
+  const bytes = samples.reduce((sum, s) => sum + s.size, 0);
+  if (!total || moof.at + dataOffset + bytes > fragment.length) return [fragment];
+  const pieces = Math.max(1, Math.round(total / target));
+  if (pieces === 1) return [fragment];
+  const v1 = fragment[tfdt.at + 8] === 1;
+  let base = v1 ? fragment.readBigUInt64BE(tfdt.at + 12) : BigInt(fragment.readUInt32BE(tfdt.at + 12));
+  const tfhdBox = fragment.subarray(tfhd.at, tfhd.at + tfhd.size);
+  const out = [];
+  let first = 0;
+  let data = moof.at + dataOffset;
+  for (let p = 0; p < pieces; p++) {
+    const last = Math.round(((p + 1) * count) / pieces);
+    const part = samples.slice(first, last);
+    first = last;
+    const runHead = Buffer.alloc(12);
+    runHead.writeUInt32BE(flags, 0);
+    runHead.writeUInt32BE(part.length, 4);
+    const fields = Buffer.alloc(part.length * 4 * [0x100, 0x200, 0x400].filter((f) => flags & f).length);
+    let w = 0;
+    for (const s of part) {
+      if (flags & 0x100) { fields.writeUInt32BE(s.duration, w); w += 4; }
+      if (flags & 0x200) { fields.writeUInt32BE(s.size, w); w += 4; }
+      if (flags & 0x400) { fields.writeUInt32BE(s.flags, w); w += 4; }
+    }
+    const time = Buffer.alloc(12);
+    time.writeUInt32BE(0x01000000, 0);
+    time.writeBigUInt64BE(base, 4);
+    const seq = Buffer.alloc(8);
+    seq.writeUInt32BE(nextSequence(), 4);
+    const build = () => box('moof', box('mfhd', seq), box('traf', tfhdBox, box('tfdt', time), box('trun', runHead, fields)));
+    // The data offset counts from the moof's first byte to the first sample.
+    runHead.writeInt32BE(build().length + 8, 8);
+    const size = part.reduce((sum, s) => sum + s.size, 0);
+    out.push(Buffer.concat([build(), box('mdat', fragment.subarray(data, data + size))]));
+    data += size;
+    base += BigInt(part.reduce((sum, s) => sum + s.duration, 0));
+  }
+  return out;
+}
+
 /** Authenticate and join the existing fragments at build time, not in the browser. */
 function continuousMix(root) {
   const source = readFileSync(resolve(root, 'src/stream-key.ts'), 'utf8');
@@ -42,7 +144,10 @@ function continuousMix(root) {
   patchDuration('mdhd', scale, 20, 28);
   const tkhd = init.indexOf(Buffer.from('tkhd'));
   const trackId = init.readUInt32BE(tkhd + (init[tkhd + 4] === 1 ? 24 : 16));
-  const fragments = decoded.slice(1);
+  // ~2 s pieces: a jump only waits for the audio between a piece's start and
+  // the spot it lands on, so smaller pieces make jumps land sooner.
+  let sequence = 0;
+  const fragments = decoded.slice(1).flatMap((fragment) => splitFragment(fragment, scale * FRAGMENT_SECONDS, () => ++sequence));
   const starts = fragments.map((fragment) => {
     const at = fragment.indexOf(Buffer.from('tfdt'));
     return fragment[at + 4] === 1 ? Number(fragment.readBigUInt64BE(at + 8)) : fragment.readUInt32BE(at + 8);

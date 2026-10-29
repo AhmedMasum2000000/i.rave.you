@@ -129,7 +129,7 @@ function renderHome(): void {
       <a class="news" href="${link('music/down-in-bossa/')}">
         <b class="news-k">New</b>
         <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong> · ${esc(NEXT_RELEASE.artist)}</span>
-        <span class="news-d">Out <span data-days></span></span>
+        <span class="news-d">Out now</span>
         <span class="news-go">Details →</span>
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Out on</span> Profi Music</p>
@@ -222,12 +222,11 @@ function peekCard(id: ArtistId): HTMLElement {
   el.innerHTML = `
     <header class="peek-bar"><span class="${id === 'apurba' ? 'bn' : ''}">${esc(a.name)}</span><span>Sneak peek</span></header>
     <div class="peek-body">
-      <img src="${asset(next ? NEXT_RELEASE.cover : r.cover ?? a.hero)}" alt="" width="84" height="84" />
+      <img src="${asset(next ? NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp') : r.cover ?? a.hero)}" alt="" width="84" height="84" />
       <div>
-        <span class="peek-k">${next ? `Next release · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
+        <span class="peek-k">${next ? `Out now · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
         <b>${esc(next ? NEXT_RELEASE.title : r.title)}</b>
         <span class="peek-sub">${esc(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
-        ${next ? '<span class="peek-cd"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m <b data-cd="s">00</b>s</span>' : ''}
       </div>
     </div>
     <p class="peek-summary">${esc(a.about?.summary ?? a.bio[0])}</p>

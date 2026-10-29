@@ -2,11 +2,11 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-const origin = "https://iraveyou.com";
+const origin = "https://iraveyou.online";
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 21);
+assert.equal(urls.length, 22);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -88,7 +88,7 @@ for (const path of ["acnd-7q4x2k", "apurba-9m1v8t", "ash-army-3k8w5n"]) {
 }
 assert.match(
   readFileSync(resolve(root, "robots.txt"), "utf8"),
-  /Sitemap: https:\/\/iraveyou.com\/sitemap.xml/,
+  /Sitemap: https:\/\/iraveyou\.online\/sitemap\.xml/,
 );
 console.log(
   "PASS identity credits, 15-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
@@ -98,7 +98,7 @@ console.log(
 const journalUrls = urls.filter((url) =>
   new URL(url).pathname.startsWith("/journal/"),
 );
-assert.equal(journalUrls.length, 11);
+assert.equal(journalUrls.length, 12);
 const articleUrls = journalUrls.filter(
   (url) => new URL(url).pathname !== "/journal/",
 );
@@ -119,7 +119,7 @@ for (const url of articleUrls) {
   );
   assert.equal(article.url, url);
   assert.equal(article.about["@id"], origin + "/acnd/#artist");
-  assert.equal(article.datePublished, "2026-10-28");
+  assert.ok(["2026-10-28", "2026-10-30"].includes(article.datePublished));
   for (const match of html.matchAll(/href="#([^"]+)"/g)) {
     assert.ok(
       html.includes(`id="${match[1]}"`),
@@ -136,7 +136,7 @@ for (const url of articleUrls) {
   assert.ok(!targets.includes(url));
   graph.set(url, targets);
   assert.doesNotMatch(html, /<audio|<script(?! type="application\/ld\+json")/);
-  assert.doesNotMatch(html, /iraveyou\.online/);
+  assert.doesNotMatch(html, /iraveyou\.com/);
 }
 for (const start of articleUrls) {
   const visited = new Set();
@@ -149,7 +149,7 @@ for (const start of articleUrls) {
   }
   assert.equal(
     visited.size,
-    10,
+    11,
     `disconnected related-reading cluster from ${start}`,
   );
 }
@@ -161,7 +161,7 @@ assert.match(identity, /Ahmed Al Masum/);
 assert.match(identity, /alternate search spelling/);
 assert.match(acnd, /Ahmed Al Masum/);
 console.log(
-  "PASS ten articles: schema, answer summaries, anchors, 30 related links, connected reading cluster and name variant",
+  "PASS eleven articles: schema, answer summaries, anchors, 33 related links, connected reading cluster and name variant",
 );
 
 // All public and private HTML shares the same locally served brand typography.

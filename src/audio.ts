@@ -1,6 +1,6 @@
 import { MIX, TRACKLIST, type MixTrack } from './data';
 import { asset } from './paths';
-import { attachStream } from './stream';
+import { attachStream, type Stream } from './stream';
 
 /**
  * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
@@ -39,6 +39,9 @@ let stallTimer = 0;
  * media pipeline to restart.
  */
 let holdAt: number | null = null;
+let stream: Stream | null = null;
+/** A jump waiting for its audio to arrive; the set plays on meanwhile. */
+let jumpTo: number | null = null;
 let holdTimer = 0;
 
 export const audioCtx = (): AudioContext | null => ctx;
@@ -69,7 +72,7 @@ export function prepare(): void {
   } catch {
     /* storage unavailable — start from the top */
   }
-  attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
+  stream = attachStream(el, saved > 0 && saved < 2700 ? saved : 0);
 
   listen(el);
 }
@@ -119,6 +122,8 @@ document.addEventListener('progress', () => { lastProgress = performance.now(); 
  */
 function watchStall(): void {
   clearTimeout(stallTimer);
+  // The streaming loader retries its own requests; a nudge would only restart them.
+  if (stream?.mse) return;
   stallTimer = window.setTimeout(() => {
     if (!el || userPaused || el.paused || el.readyState >= 3 || !navigator.onLine) return;
     if (performance.now() - lastProgress > 8000) el.currentTime = el.currentTime;
@@ -153,6 +158,7 @@ export function start(): void {
   prepare();
   const media = el!;
   media.preload = 'auto';
+  stream?.activate();
 
   // 'interactive' asks for the smallest output buffers the device allows, so
   // sound follows a click at once and stays in step with the visuals.
@@ -198,7 +204,7 @@ export function start(): void {
   // Back online: pick the set up again without waiting for the stall timer.
   window.addEventListener('online', () => {
     if (!el || userPaused) return;
-    if (el.readyState < 3) el.currentTime = el.currentTime;
+    if (el.readyState < 3 && !stream?.mse) el.currentTime = el.currentTime;
     play();
   });
   play();
@@ -318,21 +324,54 @@ export function seek(sec: number): void {
   const target = Math.max(0, Math.min(sec, duration() - 0.5));
   if (holdAt !== null) {
     holdAt = target;
+    jumpTo = null;
+    // Fetch it now, so play sounds there at once.
+    if (stream?.mse) void stream.ensure(target);
     onTime();
     savePos();
     return;
   }
   if (!ctx || !focusGain || !isPlaying()) {
+    jumpTo = null;
     media.currentTime = target;
     onTime();
     savePos();
     return;
   }
-  // Not loaded yet: fetch it on the other deck while this one plays on.
-  if (cue || !isBuffered(target)) {
+  // Streaming: fetch the spot it lands on while the set plays on, then jump.
+  if (stream?.mse) {
+    if (jumpTo !== null || !stream.ready(target)) {
+      jumpTo = target;
+      onTime();
+      void stream.ensure(target).then((ok) => {
+        if (ok && jumpTo === target) landJump(target);
+      });
+      return;
+    }
+  } else if (cue || !isBuffered(target)) {
+    // Not loaded yet: fetch it on the other deck while this one plays on.
     cueDeck(target);
     return;
   }
+  dipSeek(target);
+}
+
+/** Land the newest requested jump: its audio has arrived. */
+function landJump(target: number): void {
+  jumpTo = null;
+  if (isPlaying()) dipSeek(target);
+  else if (el) {
+    if (holdAt !== null) holdAt = target;
+    else el.currentTime = target;
+    onTime();
+    savePos();
+  }
+}
+
+/** Jump on the playing deck, dipping the output around it so it lands without a click. */
+function dipSeek(target: number): void {
+  if (!el || !ctx || !focusGain) return;
+  const media = el;
   const pending = seekTarget !== null;
   seekTarget = target;
   if (pending) return;
@@ -443,7 +482,7 @@ function crossfade(next: HTMLAudioElement): void {
   el = next;
   spare = prev;
   window.setTimeout(() => {
-    if (spare === prev) free(prev);
+    if (spare === prev && !cue) free(prev);
   }, 300);
   onTime();
   savePos();
@@ -467,7 +506,7 @@ export function skip(dir: -1 | 1): void {
   seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
-export const time = (): number => cue?.target ?? holdAt ?? el?.currentTime ?? 0;
+export const time = (): number => jumpTo ?? cue?.target ?? holdAt ?? el?.currentTime ?? 0;
 export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : 2743.6);
 
 export function trackIndexAt(sec: number): number {

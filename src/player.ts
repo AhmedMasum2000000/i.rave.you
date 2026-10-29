@@ -7,7 +7,7 @@ import { asset, esc } from './ui';
  * two rows. Above, a hairline seek track across the whole set with the time
  * on either side and an eye for a knob. Below, the mix artwork, play and the
  * playing track, the I RAVE YOU wordmark (home), the artist's Spotify, and
- * two pills: share, and pre-save the next release with its countdown.
+ * two pills: share, and listen to the new release.
  *
  * The artwork or the track title opens the tracklist window above the bar.
  */
@@ -34,7 +34,7 @@ export function mountPlayer(): void {
   bar.setAttribute('aria-label', 'Mix player');
   // The credit, said like a broadcast: who made this set, and for whom.
   const air = `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>ACND × <span class="bn">অপূর্ব</span></strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(2743.6 / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> (HKCR) <em>—</em> ${TRACKLIST.length} tracks, opening with their unreleased “Initiate” <em>✶</em></span>`;
-  const news = `<span class="fbar-air-item"><b class="fbar-new">New release</b> <strong>${esc(NEXT_RELEASE.title)}</strong> <em>—</em> ${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.genre)} on <strong>${esc(NEXT_RELEASE.label)}</strong> <em>—</em> out 30 Oct, <span data-days></span> <em>✶</em></span>`;
+  const news = `<span class="fbar-air-item"><b class="fbar-new">New release</b> <strong>${esc(NEXT_RELEASE.title)}</strong> <em>—</em> ${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.genre)} on <strong>${esc(NEXT_RELEASE.label)}</strong> <em>—</em> out now <em>✶</em></span>`;
   bar.innerHTML = `
     <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}: a set for ${esc(MIX.station)}. Open the tracklist.">
       <span class="fbar-air-run" aria-hidden="true">${(air + news).repeat(3)}</span>
@@ -71,7 +71,7 @@ export function mountPlayer(): void {
       <div class="fbar-actions">
         <button type="button" class="fbar-pill fbar-share">Share</button>
         <a class="fbar-pill fbar-cta" href="${esc(NEXT_RELEASE.presave)}" target="_blank" rel="noopener" title="${esc(NEXT_RELEASE.title)} — ${esc(NEXT_RELEASE.artist)}">
-          <span data-presave-label>Pre-save</span>
+          <span data-presave-label>Listen now</span>
           <span class="fbar-cd" aria-hidden="true"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m</span>
         </a>
       </div>

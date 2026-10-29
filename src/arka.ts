@@ -151,7 +151,7 @@ const META: Record<PitchId, Meta> = {
     number: '0001',
     mix: true,
     profile: asset('acnd/'),
-    exhibit: { kicker: 'EXHIBIT A · ASH ARMY & ACND · OUT 30.10 · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — pre-save ↗`, url: NEXT_RELEASE.presave },
+    exhibit: { kicker: 'EXHIBIT A · ASH ARMY & ACND · OUT NOW · PROFI MUSIC', label: `“${NEXT_RELEASE.title}” — listen ↗`, url: NEXT_RELEASE.presave },
   },
   apurba: {
     name: 'অপূর্ব',

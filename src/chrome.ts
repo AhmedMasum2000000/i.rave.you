@@ -7,7 +7,7 @@ const route = (path: string): string => `${document.documentElement.dataset.root
 /**
  * Site-wide chrome: a "MENU" button that opens a full-screen index, and the
  * live countdown to "Down In Bossa" wherever `[data-cd]` digits appear (the
- * menu and the player bar's pre-save pill).
+ * menu and the player bar's listen pill).
  */
 
 const RELEASE_AT = new Date(NEXT_RELEASE.date).getTime();
@@ -40,14 +40,6 @@ export function releaseIn(): string {
   const days = Math.ceil(ms / 864e5);
   return days > 1 ? `in ${days} days` : ms < 864e5 && new Date(RELEASE_AT).getDate() === new Date().getDate() ? 'today' : 'tomorrow';
 }
-
-const clock = (): string => `
-  <span class="cd" aria-live="off">
-    <span><b data-cd="d">00</b><i>D</i></span>
-    <span><b data-cd="h">00</b><i>H</i></span>
-    <span><b data-cd="m">00</b><i>M</i></span>
-    <span><b data-cd="s">00</b><i>S</i></span>
-  </span>`;
 
 function tick(): void {
   const r = remaining();
@@ -120,12 +112,11 @@ export function mountChrome(): void {
         </ol>
       </nav>
       <aside class="m-release">
-        <span class="m-k mono">Next release · ${esc(NEXT_RELEASE.genre)}</span>
+        <span class="m-k mono">Out now · ${esc(NEXT_RELEASE.genre)}</span>
         <img src="${asset(NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp'))}" alt="${esc(NEXT_RELEASE.title)} cover art" loading="lazy" width="120" height="120" />
         <b>${esc(NEXT_RELEASE.title)}</b>
         <span class="m-r-sub">${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.label)}</span>
-        ${clock()}
-        <a class="m-r-link mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save</span> ↗</a>
+        <a class="m-r-link mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Listen now</span> ↗</a>
         <p class="m-credit mono">Site by <a href="${route('acnd/')}" data-close>ACND</a></p>
       </aside>
     </div>`;
