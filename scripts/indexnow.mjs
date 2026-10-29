@@ -7,7 +7,8 @@ const host = "iraveyou.online";
 const pub = resolve(import.meta.dirname, "../public");
 const key = readdirSync(pub).find((f) => /^[0-9a-f]{32}\.txt$/.test(f))?.slice(0, -4);
 if (!key) throw new Error("IndexNow key file missing from public/");
-const urls = [...readFileSync(resolve(pub, "sitemap.xml"), "utf8").matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+const sitemap = await (await fetch(`https://${host}/sitemap.xml`)).text();
+const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
 const res = await fetch("https://api.indexnow.org/indexnow", {
   method: "POST",
   headers: { "Content-Type": "application/json; charset=utf-8" },
