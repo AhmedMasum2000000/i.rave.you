@@ -1,9 +1,24 @@
+# One address for search engines: send www to https://iraveyou.online (HTTPS itself is enforced by the host).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.iraveyou\.online$ [NC]
+  RewriteRule ^(.*)$ https://iraveyou.online/$1 [R=301,L]
+</IfModule>
+
 # The mix's file name carries its content hash, so it can be cached for a
 # year: repeat visits play the set from disk instead of the network.
 <IfModule mod_mime.c>
   AddType audio/mp4 .m4a
 </IfModule>
 <IfModule mod_headers.c>
+  # Pages always revalidate, so a deploy never serves old HTML pointing at removed assets.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Fonts and images change rarely: a month, refreshed quietly in the background.
+  <FilesMatch "\.(woff2|webp|avif|jpg|png|svg)$">
+    Header set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400"
+  </FilesMatch>
   <FilesMatch "\.m4a$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>

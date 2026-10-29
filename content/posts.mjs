@@ -9,6 +9,42 @@ export function createPosts({ internal: link, external: ext, next }) {
   const post = (slug, label) => link(`journal/${slug}/`, label);
   return [
     {
+      slug: "down-in-bossa-out-now-profi-music",
+      date: "2026-10-30",
+      title: "Down In Bossa out now: Ash Army & ACND’s Afro House release on Profi Music",
+      description:
+        "Down In Bossa by Ash Army & ACND is out now on Profi Music. Stream the Afro House release, check the credits and add it to your summer, beach and Ibiza-inspired playlists.",
+      category: "New release",
+      image: "img/down-in-bossa.jpg",
+      imageAlt: "Down In Bossa cover artwork by Ash Army and ACND, released on Profi Music",
+      answer:
+        "“Down In Bossa” by Ash Army & ACND is out now on Profi Music. Released on 30 October 2026, it is an Afro House collaboration between Ash Army and ACND, the Dhaka-based producer and DJ Ahmed Masum. Stream it through the label’s official smart link.",
+      related: [
+        "down-in-bossa-collaboration-credits",
+        "afro-house-listening-guide",
+        "where-to-listen-acnd",
+      ],
+      body: `
+        <section><h2>Down In Bossa is out now</h2>
+        <p><strong>“Down In Bossa”</strong>, the collaboration between <strong>Ash Army &amp; ACND</strong>, is out now on <strong>Profi Music</strong>. The release date is 30 October 2026, and the genre given in the release information is Afro House.</p>
+        <p>The quickest way to listen is the ${ext(next.presave, "official Down In Bossa smart link")}, which lets you choose your streaming service. The ${ext(next.page, "Profi Music release page")} is the label’s own reference for the track, and the ${release("Down In Bossa release page")} on this site collects the credits and facts in one place.</p>
+        <dl class="fact-list"><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Genre</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Released</dt><dd><time datetime="2026-10-30">30 October 2026</time></dd></div><div><dt>Format</dt><dd>Digital single, two tracks</dd></div><div><dt>Catalogue ref.</dt><dd>1200220291328</dd></div></dl>
+        <h3>Tracklist</h3><ol class="tracks"><li><strong>Down In Bossa</strong> · 2:26</li><li><strong>Down In Bossa (Extended Edit)</strong> · 3:24</li></ol>
+        <p>The Extended Edit is the longer 3:24 version, handy in a DJ set; the original runs 2:26. You can also open the single directly on ${ext("https://music.apple.com/us/album/down-in-bossa-single/6822243986", "Apple Music")}.</p></section>
+        <section><h2>Who made Down In Bossa?</h2>
+        <p>The track is credited to Ash Army &amp; ACND. ACND, pronounced “Ascend”, is the artist name of <strong>Ahmed Masum</strong>, a producer, DJ and composer based in Dhaka, Bangladesh. Ahmed Masum and ACND are one artist, not two collaborators. Ash Army is the separately credited partner on the record.</p>
+        <p>When you share the release, keep the full artist line: “Down In Bossa — Ash Army &amp; ACND, out now on Profi Music”. The ${post("down-in-bossa-collaboration-credits", "Down In Bossa credits guide")} explains each field in more detail, and ${acnd("Ahmed Masum’s ACND artist profile")} covers the rest of his work.</p></section>
+        <section><h2>The sound: Afro House with a bossa title</h2>
+        <p>The release information describes “Down In Bossa” as Afro House: a style built on rolling percussion, deep bass and space in the groove. “Bossa” is part of the title; the title alone does not tell you whether a bossa nova sample or instrument is used, so listen to the full track and judge for yourself.</p>
+        <p>New to the genre? The ${post("afro-house-listening-guide", "Afro House listening guide")} gives a short exercise for hearing how percussion, bass and space work together, which is a useful way into this track.</p></section>
+        <section><h2>Down In Bossa for summer, beach and Ibiza-inspired playlists</h2>
+        <p>Afro House is a regular choice for sunset sets, beach bars and summer playlists, and many listeners build Ibiza-inspired selections around that warm, percussive sound. If that is the playlist you are making, “Down In Bossa” is a fresh Profi Music release to try. For a DJ set, reach for the Extended Edit; for a playlist, the 2:26 original keeps things moving.</p>
+        <ol><li><strong>Save it from the official link.</strong> Use the ${ext(next.presave, "smart link")} so the track lands in your library with the correct credits.</li><li><strong>Hear it in full.</strong> Judge the energy and the build from the complete track, not a short preview.</li><li><strong>Place it in the flow.</strong> Compare it with the tracks either side so the transition feels natural.</li><li><strong>Keep the credit.</strong> List it as Ash Army &amp; ACND so both artists are found.</li></ol>
+        <p>This is a listening suggestion. It does not claim Ibiza airplay, a club booking or a venue endorsement.</p></section>
+        <section><h2>More from ACND</h2>
+        <p>“Down In Bossa” is one side of ACND’s work; his own productions also move through techno, melodic techno, acid and progressive sounds. Find his profiles in the ${post("where-to-listen-acnd", "where to listen to ACND guide")}, and hear him with অপূর্ব on the ${mix("Qbic Pulse DJ mix and tracklist")} made for Hong Kong Community Radio.</p></section>`,
+    },
+    {
       slug: "ahmed-masum-acnd-name-guide",
       title: "Ahmed Masum and ACND: one artist, two names",
       description:
@@ -34,7 +70,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <section><h2>Searching for Masum, the musician?</h2><p>“Masum” on its own can refer to many different people. To identify the musician presented on this site, use the full name Ahmed Masum alongside the artist name ACND. Match the biography and linked music profiles rather than assuming that every result containing Masum refers to this artist.</p><p>For a concise reference you can cite, use the ${acnd()}. Publications and radio listings can also use the ${link("acnd/press/", "ACND press kit")} for biographies and credits.</p></section>
         <section><h2>Which credits connect these names?</h2>
         <p>The “Nitol Paye Electric” remix is credited here to ACND (Ahmed Masum). It is not an অপূর্ব remix credit. For the video destination and a clear explanation of the credit, read the ${post("nitol-paye-electric-acnd-remix-credit", "Nitol Paye Electric remix guide")}.</p>
-        <p>“Down In Bossa” is a separate collaboration credited to Ash Army &amp; ACND, scheduled for 30 October 2026 via Profi Music. The label’s page is the reference for release availability. ACND also shares the Qbic Pulse DJ set with অপূর্ব, the electronic project of Khalid Bin Alam. These are distinct collaborations, rather than additional names for ACND.</p></section>
+        <p>“Down In Bossa” is a separate collaboration credited to Ash Army &amp; ACND, released 30 October 2026 via Profi Music. The label’s page is the reference for release availability. ACND also shares the Qbic Pulse DJ set with অপূর্ব, the electronic project of Khalid Bin Alam. These are distinct collaborations, rather than additional names for ACND.</p></section>
         <section><h2>How to find the right artist profile</h2>
         <p>Start from this site’s ${post("where-to-listen-acnd", "ACND listening directory")} and follow its Spotify, SoundCloud or Instagram links. When sharing an artist credit, “ACND (Ahmed Masum)” gives readers both names without suggesting two contributors. For a shorter music credit, “ACND” is the artist name used throughout this portfolio.</p>
         <p>For the full biography, return to ${acnd()}. For the broader musical context, explore the ${post("acnd-techno-melodic-acid-progressive", "guide to ACND’s musical directions")}.</p></section>`,
@@ -97,7 +133,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <ol><li><strong>Rhythm first.</strong> Listen for the pulse and the placement of percussion around it. Resist the temptation to judge the whole track from the opening seconds.</li><li><strong>Bass and space next.</strong> Notice how bass phrases fit between the drums, and where parts stop to make room for something else.</li><li><strong>Structure last.</strong> Follow how the arrangement grows, releases tension and returns. A full recording often makes those decisions clearer than a short social clip.</li></ol>
         <p>This exercise is a listening method, not a technical checklist every Afro House producer must follow. It also avoids assuming that a title, artwork or genre label reveals which instruments, samples or production tools were used.</p></section>
         <section><h2>Where Down In Bossa fits</h2>
-        <p>“Down In Bossa” is credited to Ash Army &amp; ACND and described as Afro House in the release information supplied for this site. It is scheduled for 30 October 2026 via Profi Music. The ${ext(next.page, "Profi Music release page")} is the reference for current availability, and the ${ext(next.presave, "label’s smart link")} provides the pre-save or listening destination.</p>
+        <p>“Down In Bossa” is credited to Ash Army &amp; ACND and described as Afro House in the release information supplied for this site. It was released on 30 October 2026 via Profi Music. The ${ext(next.page, "Profi Music release page")} is the reference for current availability, and the ${ext(next.presave, "label’s smart link")} opens the listening destinations.</p>
         <p>This guide does not claim to be a review of an advance recording. It does not infer a bossa nova sample, a particular tempo or an instrument from the title. Once the recording is available, use the listening exercise above to form your own impression. Find the factual summary on the ${release("dedicated release page")}.</p></section>
         <section><h2>Explore the collaborators without losing the track credit</h2>
         <p>ACND is Ahmed Masum, a producer and DJ based in Dhaka. “Down In Bossa” is a collaboration with Ash Army; it should not be reduced to a solo credit. The ${post("down-in-bossa-collaboration-credits", "collaboration and credits guide")} explains the difference between artists, label and listening links.</p>
@@ -112,24 +148,24 @@ export function createPosts({ internal: link, external: ext, next }) {
       image: "img/down-in-bossa.jpg",
       imageAlt: "Official cover used for Down In Bossa by Ash Army and ACND",
       answer:
-        "“Down In Bossa” is credited to Ash Army & ACND, with Profi Music as the label and a scheduled release date of 30 October 2026. ACND is Ahmed Masum; Ash Army is the separately credited collaborator.",
+        "“Down In Bossa” is credited to Ash Army & ACND, with Profi Music as the label, released on 30 October 2026. ACND is Ahmed Masum; Ash Army is the separately credited collaborator.",
       related: [
+        "down-in-bossa-out-now-profi-music",
         "afro-house-listening-guide",
         "ahmed-masum-acnd-name-guide",
-        "where-to-listen-acnd",
       ],
       body: `
         <section><h2>Read the artist line as a collaboration</h2>
         <p>The artist pairing is <strong>Ash Army &amp; ACND</strong>. ACND is Ahmed Masum’s artist identity, while Ash Army is the separately named collaborator. That makes “Ahmed Masum and ACND” an incorrect way to describe two contributors to this recording: those names identify the same person.</p>
-        <p>The ${release()} collect the title, genre, scheduled date and official destinations in one place. This article explains how to interpret those fields when sharing the release or finding it on another service.</p></section>
+        <p>The ${release()} collect the title, genre, release date and official destinations in one place. This article explains how to interpret those fields when sharing the release or finding it on another service.</p></section>
         <section><h2>What each field tells you</h2>
-        <dl class="fact-list"><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Credited artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Genre supplied for this site</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Scheduled release</dt><dd>30 October 2026</dd></div></dl>
+        <dl class="fact-list"><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Credited artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Genre supplied for this site</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Released</dt><dd>30 October 2026</dd></div></dl>
         <p>The artist line identifies the release’s credited performers or creators at the public-facing level. The label name identifies the release organisation. Neither field, by itself, supplies a full breakdown of songwriting shares, production tasks, publishing, distribution contracts or ownership of any underlying material.</p></section>
         <section><h2>Where to check availability and detailed metadata</h2>
-        <p>Use the ${ext(next.page, "label’s release page")} and ${ext(next.presave, "official smart link")} to check the available destinations. A pre-save page may exist before a recording can be streamed. A scheduled date is therefore different from confirmed availability on every platform and in every territory.</p>
+        <p>Use the ${ext(next.page, "label’s release page")} and ${ext(next.presave, "official smart link")} to check the available destinations. Availability can still differ by platform and territory.</p>
         <p>If you need detailed credits for a publication or a rights enquiry, consult the label’s published metadata and the relevant service’s credits view. This portfolio does not invent a split between the collaborators or claim an unlisted contributor. Do not infer a sample source or musical quotation from the words “Bossa” or “Afro House”.</p></section>
         <section><h2>How to share the release accurately</h2>
-        <p>A clear reference is “Down In Bossa — Ash Army &amp; ACND, via Profi Music”. Before the scheduled date, add “scheduled for 30 October 2026” rather than announcing that the recording is already out. Follow the official destination when availability changes.</p>
+        <p>A clear reference is “Down In Bossa — Ash Army &amp; ACND, via Profi Music”. Since 30 October 2026 the recording is out; link the official smart link so listeners land on the right platform.</p>
         <p>For the artist behind the alias, read ${post("ahmed-masum-acnd-name-guide", "Ahmed Masum and ACND: one artist, two names")}. For a way into the genre, try the ${post("afro-house-listening-guide", "Afro House listening guide")}. Keep those artist and listening explanations connected to the factual release page rather than treating them as replacement credits.</p></section>`,
     },
     {
@@ -284,7 +320,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <p>Qbic Pulse brings ACND together with অপূর্ব, the project of Khalid Bin Alam from Cumilla. The set is presented for Hong Kong Community Radio and begins with their unreleased collaboration “Initiate”. A shared programme is a way to explore how artists connect their own work with music by other producers.</p>
         <p>The ${mix()} identifies fifteen selections. Use the ${post("qbic-pulse-listening-route", "listening route")} to move through the sequence, or open the full player and follow the timestamps. The list credits featured tracks to their original artists; inclusion does not make them ACND productions.</p></section>
         <section><h2>Third stop: follow a release collaboration</h2>
-        <p>“Down In Bossa” is credited to Ash Army &amp; ACND and presented as Afro House via Profi Music, scheduled for 30 October 2026. The ${release()} point to the label’s current information and smart link.</p>
+        <p>“Down In Bossa” is credited to Ash Army &amp; ACND and presented as Afro House via Profi Music, released 30 October 2026. The ${release()} point to the label’s current information and smart link.</p>
         <p>Comparing a continuous DJ set with a specifically credited release gives you two different views of a musician’s work. One foregrounds selection and sequencing; the other provides a recording to explore on its own terms. Neither requires a sweeping claim that one artist represents all Bangladeshi electronic music.</p></section>
         <section><h2>Keep exploring through identifiable sources</h2>
         <p>The ${post("where-to-listen-acnd", "ACND listening directory")} lists the linked artist destinations in one place. Check those profiles and the label’s page when sharing music or looking for updates. A booking date, award or festival appearance should be supported by a current announcement, not inferred from a location or a music genre.</p></section>`,
@@ -312,8 +348,8 @@ export function createPosts({ internal: link, external: ext, next }) {
         <ul><li>${ext("https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY", "ACND on Spotify")} — the artist profile linked by this portfolio.</li><li>${ext("https://soundcloud.com/acndlovestoes", "ACND on SoundCloud")} — another artist destination supplied for ACND.</li><li>${ext("https://www.instagram.com/acnd_music/", "ACND on Instagram")} — the social profile linked here for the artist.</li></ul>
         <p>Services control their own account requirements, regional availability and profile presentation. If a page changes, compare its identity and linked music with this portfolio rather than assuming every result named ACND belongs to the same musician.</p></section>
         <section><h2>For Down In Bossa, use the label’s links</h2>
-        <p>“Down In Bossa” is the Ash Army &amp; ACND collaboration presented here via Profi Music. Use ${ext(next.page, "the label release page")} for the factual release reference and ${ext(next.presave, "the official smart link")} for the available pre-save or listening destinations. The scheduled date supplied for this site is 30 October 2026.</p>
-        <p>The ${release()} bring those details together, while the ${post("down-in-bossa-collaboration-credits", "collaboration guide")} explains the artist line. A pre-save destination can exist before full playback becomes available, so check the page’s current status.</p></section>
+        <p>“Down In Bossa” is the Ash Army &amp; ACND collaboration presented here via Profi Music. Use ${ext(next.page, "the label release page")} for the factual release reference and ${ext(next.presave, "the official smart link")} for the streaming and store destinations. It was released on 30 October 2026.</p>
+        <p>The ${release()} bring those details together, while the ${post("down-in-bossa-collaboration-credits", "collaboration guide")} explains the artist line. Availability can differ by platform and territory, so the smart link is the safest route.</p></section>
         <section><h2>For the remix and shared set</h2>
         <p>The listed “Nitol Paye Electric” remix video is ${ext("https://youtu.be/om5QGreRaYg", "on YouTube")}. The remix credit used on this site is ACND (Ahmed Masum). Read the ${post("nitol-paye-electric-acnd-remix-credit", "remix-credit guide")} if you are citing or identifying that version.</p>
         <p>For ACND and অপূর্ব together, open ${mix("Qbic Pulse’s timestamped tracklist")} and follow its link to the continuous player. The list includes the opening unreleased ID “Initiate” and fourteen further selections, with original-recording destinations.</p></section>

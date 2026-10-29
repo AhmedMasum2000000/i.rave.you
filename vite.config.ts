@@ -16,6 +16,8 @@ export default defineConfig({
   plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, tracks: TRACKLIST })],
   build: {
     target: 'es2020',
+    // Every es2020 browser supports modulepreload natively.
+    modulePreload: { polyfill: false },
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),

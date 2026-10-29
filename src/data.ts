@@ -266,15 +266,15 @@ export const ARTISTS: Record<ArtistId, Artist> = {
         'His work moves through techno, melodic techno, acid and progressive sounds, with an emphasis on atmosphere, physical energy and the feeling of a dance floor.',
         'His remix credits include “Nitol Paye Electric”, credited to ACND (Ahmed Masum).',
         'Alongside অপূর্ব, he hosts Qbic Pulse on Hong Kong Community Radio. Their shared set opens with “Initiate”, an unreleased collaboration between the two artists.',
-        'His upcoming release, “Down In Bossa”, is an Afro House collaboration with Ash Army, arriving on 30 October 2026 via Profi Music.',
+        'His latest release, “Down In Bossa”, is an Afro House collaboration with Ash Army, out now via Profi Music since 30 October 2026.',
       ],
     },
     notes: [
-      { label: 'A', text: '“Down In Bossa” with Ash Army: out 30.10.2026 on Profi Music. Pre-save now.', url: NEXT_RELEASE.presave },
+      { label: 'A', text: '“Down In Bossa” with Ash Army: out now on Profi Music. Listen now.', url: NEXT_RELEASE.presave },
       { label: 'B', text: '“Initiate” — ACND x অপূর্ব. Unreleased. Opens their Qbic Pulse set for HKCR.' },
     ],
     releases: [
-      { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Upcoming · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
+      { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Out now · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
     ],
     extras: {
       heading: 'Remix credits',
@@ -292,7 +292,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     },
     footnotes: [
       { text: 'Initiate, ACND x অপূর্ব. Unreleased. It opens their Qbic Pulse set for HKCR.' },
-      { text: 'Down In Bossa, Ash Army & ACND. Afro House, out 30.10.2026 on Profi Music.', link: { label: 'Pre-save', url: NEXT_RELEASE.presave } },
+      { text: 'Down In Bossa, Ash Army & ACND. Afro House, out now on Profi Music.', link: { label: 'Listen', url: NEXT_RELEASE.presave } },
     ],
     media: [
       { src: 'img/acnd-portrait.webp', caption: 'ACND', sub: 'DHAKA (BD)' },
@@ -301,7 +301,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     ],
     patterns: ['Initiate', 'Down In Bossa', 'Qbic Pulse', 'Ascend'],
     links: [
-      { label: 'Pre-save “Down In Bossa”', url: NEXT_RELEASE.presave },
+      { label: 'Listen to “Down In Bossa”', url: NEXT_RELEASE.presave },
       { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
       { label: 'SoundCloud', url: 'https://soundcloud.com/acndlovestoes' },
       { label: 'Instagram', url: 'https://www.instagram.com/acnd_music/' },

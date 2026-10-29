@@ -713,3 +713,7 @@ body:not([data-view='home']) .discovery-home { display: none; }
 .discovery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; margin: 32px 0; }
 .discovery-home a:focus-visible { outline: 3px solid #acd0ff; outline-offset: 4px; }
 @media(max-width:600px) { .discovery-grid { grid-template-columns: 1fr; gap: 12px; } }
+
+/* Hold the hero's space from the first paint, so the script-free summary below it
+   does not jump down when the app renders (was CLS 0.6-1.0 on home). */
+body[data-view='home'] #app { min-height: 100vh; min-height: 100svh; }

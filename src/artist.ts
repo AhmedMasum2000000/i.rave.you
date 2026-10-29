@@ -16,7 +16,7 @@ export type Page = 'home' | 'listen' | 'sequencer' | 'about';
 
 /** Logo image with a typeset fallback while the artwork file is absent. */
 export const logo = (a: Artist, cls: string): string =>
-  `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${asset(a.logo.replace(/\.png$/, '.webp'))}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text">${esc(a.name)}</span></span>`;
+  `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${asset(a.logo.replace(/\.png$/, '.webp'))}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" fetchpriority="high" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text">${esc(a.name)}</span></span>`;
 
 /** `^n` in copy becomes a superscript footnote marker. */
 const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
@@ -168,14 +168,14 @@ function listenPage(a: Artist): string {
       <header class="release-heading">
         <span class="a-label mono" data-type>● ${esc(a.latin)} · ${a.releases.length} ${a.releases.length === 1 ? 'release' : 'releases'}</span>
         <h1 id="release-heading" data-type>${a.id === 'acnd' ? 'Coming next.' : 'Selected releases.'}</h1>
-        <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Upcoming on Profi Music, 30 October 2026.' : esc(a.bio[1])}</p>
+        <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Out now on Profi Music since 30 October 2026.' : esc(a.bio[1])}</p>
       </header>
       <div class="release-grid">
         ${a.releases.map((r, i) => `
           <article class="release-card">
-            <a class="release-art" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" aria-label="${a.id === 'acnd' ? 'Pre-save' : 'Listen to'} ${esc(r.title)} by ${esc(r.artists)}">
+            <a class="release-art" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" aria-label="Listen to ${esc(r.title)} by ${esc(r.artists)}">
               ${r.cover ? img(r.cover, `${r.title} cover art`, 'release-cover', '', i < 3) : logo(a, 'release-cover')}
-              <span>${a.id === 'acnd' ? 'Pre-save' : 'Listen'} ↗</span>
+              <span>Listen ↗</span>
             </a>
             <div class="release-meta"><span class="mono">${esc(r.tag)}</span><h2>${esc(r.title)}</h2><p>${esc(r.artists)}</p></div>
           </article>`).join('')}

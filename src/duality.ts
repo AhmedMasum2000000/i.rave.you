@@ -154,7 +154,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
 
   const frame = (now: number): void => {
     if (!alive) return;
-    if (document.hidden || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
+    // Nothing to draw while the page is hidden or the opaque entry gate covers it.
+    if (document.hidden || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
       raf = requestAnimationFrame(frame);
       return;
     }

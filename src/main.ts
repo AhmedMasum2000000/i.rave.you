@@ -129,7 +129,7 @@ function renderHome(): void {
       <a class="news" href="${link('music/down-in-bossa/')}">
         <b class="news-k">New</b>
         <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong> · ${esc(NEXT_RELEASE.artist)}</span>
-        <span class="news-d">Out <span data-days></span></span>
+        <span class="news-d">Out now</span>
         <span class="news-go">Details →</span>
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Out on</span> Profi Music</p>

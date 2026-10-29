@@ -122,6 +122,8 @@ document.addEventListener('progress', () => { lastProgress = performance.now(); 
  */
 function watchStall(): void {
   clearTimeout(stallTimer);
+  // The streaming loader retries its own requests; a nudge would only restart them.
+  if (stream?.mse) return;
   stallTimer = window.setTimeout(() => {
     if (!el || userPaused || el.paused || el.readyState >= 3 || !navigator.onLine) return;
     if (performance.now() - lastProgress > 8000) el.currentTime = el.currentTime;
@@ -202,7 +204,7 @@ export function start(): void {
   // Back online: pick the set up again without waiting for the stall timer.
   window.addEventListener('online', () => {
     if (!el || userPaused) return;
-    if (el.readyState < 3) el.currentTime = el.currentTime;
+    if (el.readyState < 3 && !stream?.mse) el.currentTime = el.currentTime;
     play();
   });
   play();
@@ -322,23 +324,28 @@ export function seek(sec: number): void {
   const target = Math.max(0, Math.min(sec, duration() - 0.5));
   if (holdAt !== null) {
     holdAt = target;
+    jumpTo = null;
+    // Fetch it now, so play sounds there at once.
+    if (stream?.mse) void stream.ensure(target);
     onTime();
     savePos();
     return;
   }
   if (!ctx || !focusGain || !isPlaying()) {
+    jumpTo = null;
     media.currentTime = target;
     onTime();
     savePos();
     return;
   }
-  // Streaming: fetch the piece it lands in while the set plays on, then jump.
+  // Streaming: fetch the spot it lands on while the set plays on, then jump.
   if (stream?.mse) {
-    if (jumpTo !== null || !isBuffered(target)) {
-      const first = jumpTo === null;
+    if (jumpTo !== null || !stream.ready(target)) {
       jumpTo = target;
       onTime();
-      if (first) void stream.ensure(target).then(() => landJump());
+      void stream.ensure(target).then((ok) => {
+        if (ok && jumpTo === target) landJump(target);
+      });
       return;
     }
   } else if (cue || !isBuffered(target)) {
@@ -349,21 +356,16 @@ export function seek(sec: number): void {
   dipSeek(target);
 }
 
-/** Land the newest requested jump once its audio is here (newer jumps fetch again). */
-function landJump(): void {
-  if (jumpTo === null || !stream) return;
-  const target = jumpTo;
-  void stream.ensure(target).then(() => {
-    if (jumpTo !== target) return landJump();
-    jumpTo = null;
-    if (isPlaying()) dipSeek(target);
-    else if (el) {
-      if (holdAt !== null) holdAt = target;
-      else el.currentTime = target;
-      onTime();
-      savePos();
-    }
-  });
+/** Land the newest requested jump: its audio has arrived. */
+function landJump(target: number): void {
+  jumpTo = null;
+  if (isPlaying()) dipSeek(target);
+  else if (el) {
+    if (holdAt !== null) holdAt = target;
+    else el.currentTime = target;
+    onTime();
+    savePos();
+  }
 }
 
 /** Jump on the playing deck, dipping the output around it so it lands without a click. */

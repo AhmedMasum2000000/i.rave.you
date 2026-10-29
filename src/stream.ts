@@ -4,27 +4,40 @@ import { asset } from './paths';
 /**
  * How the set reaches the player. Where Media Source Extensions exist (every
  * desktop browser, Android, iOS 17.1+), it streams like a music platform: the
- * file's fragment index (sidx) says where every ~10 s piece lives, and the
- * loader fetches exactly the pieces needed, nearest first. A jump fetches the
- * one piece it lands in, and the opening of every track is fetched ahead of
- * time, so tracklist jumps start at once. Elsewhere the browser streams the
- * file itself.
+ * file's fragment index (sidx) says where every ~2 s piece lives, and the
+ * loader fetches exactly the pieces needed, nearest first, several pieces per
+ * request. A jump fetches from the piece it lands in, and the opening of every
+ * track is fetched ahead of time, so tracklist jumps start at once. Elsewhere
+ * the browser streams the file itself.
  */
 export interface Stream {
   /** True when this loader controls the download (MSE). */
   mse: boolean;
   /** Start downloading beyond the opening (after the first play attempt). */
   activate(): void;
-  /** Resolves once the audio at `sec` is in the player. */
-  ensure(sec: number): Promise<void>;
+  /** Whether the audio at `sec` is already in the player. */
+  ready(sec: number): boolean;
+  /**
+   * Fetch the audio at `sec` before anything else. Resolves true once it is in
+   * the player, or false when a newer request replaced this one.
+   */
+  ensure(sec: number): Promise<boolean>;
 }
 
 interface Frag { o: number; n: number; t: number; d: number }
+/** One range request: pieces `from`..`to`, written to the player as it lands. */
+interface Job { ctl: AbortController; from: number; to: number; at: number; stalled: boolean }
 
-const AHEAD = 60; // seconds kept downloaded in front of the playhead
+const NEED = 1; // seconds that must be in the player before a jump lands there
+const RUN = 10; // seconds fetched per request
+const PRE = 10; // seconds fetched before the visitor asks for sound
 const SAFE = 20; // seconds secured ahead before anything else is fetched
+const OPENING = 4; // seconds of each track's opening fetched ahead of time
+const AHEAD = 60; // seconds kept downloaded in front of the playhead
 const BEHIND = 30; // seconds kept behind it when space runs short
 const MAX_BYTES = 10.5e6; // stay under the browser's audio buffer quota (~12 MB)
+const HEAD = 262143; // first request: header, index and the opening seconds
+const STALL = 6000; // ms without a byte before a request is retried
 const MIME = 'audio/mp4; codecs="mp4a.40.2"';
 
 type MSCtor = typeof MediaSource;
@@ -38,22 +51,24 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   let sb: SourceBuffer | null = null;
   let active = false;
   let busy = false;
-  let urgent = -1;
-  /** The download in flight, and whether it serves a jump. */
-  let inflight: { ctl: AbortController; i: number } | null = null;
-  const waiters: { sec: number; done: () => void }[] = [];
+  /** A spot wanted now (a jump or a seek), fetched before anything else. */
+  let target: number | null = null;
+  let waiter: { sec: number; done: (ok: boolean) => void } | null = null;
+  let job: Job | null = null;
+  /**
+   * File offset just past the last byte handed to the player. Inside a piece,
+   * the player's parser waits for exactly the bytes from here on; any other
+   * data needs a parser reset first.
+   */
+  let tail = 0;
+  let lastByte = 0;
+  let wake: (() => void) | null = null;
   const ms = new MS();
   // iOS's ManagedMediaSource only streams to elements that can't be cast.
   (el as HTMLAudioElement & { disableRemotePlayback: boolean }).disableRemotePlayback = true;
   el.src = URL.createObjectURL(ms);
 
-  const range = (from: number, to: number, signal?: AbortSignal): Promise<ArrayBuffer> =>
-    fetch(url, { headers: { Range: `bytes=${from}-${to}` }, signal }).then((r) => {
-      if (!r.ok) throw new Error(`mix ${r.status}`);
-      return r.arrayBuffer();
-    });
-
-  const append = (data: ArrayBuffer): Promise<void> =>
+  const append = (data: Uint8Array): Promise<void> =>
     new Promise((resolve, reject) => {
       const buf = sb!;
       const done = (): void => {
@@ -68,198 +83,415 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
       };
       buf.addEventListener('updateend', done);
       buf.addEventListener('error', fail);
-      buf.appendBuffer(data);
+      try {
+        buf.appendBuffer(data as Uint8Array<ArrayBuffer>);
+      } catch (e) {
+        buf.removeEventListener('updateend', done);
+        buf.removeEventListener('error', fail);
+        reject(e);
+      }
     });
 
   const remove = (from: number, to: number): Promise<void> =>
     new Promise((resolve) => {
       if (!sb || to <= from) return resolve();
       sb.addEventListener('updateend', () => resolve(), { once: true });
-      sb.remove(from, to);
+      try {
+        sb.remove(from, to);
+      } catch {
+        resolve();
+      }
     });
 
+  /** The piece playing at `sec`. */
   const indexAt = (sec: number): number => {
-    let i = 0;
-    for (let k = 0; k < frags.length; k++) if (frags[k].t <= sec + 0.01) i = k;
-    return i;
+    let lo = 0;
+    let hi = frags.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (frags[mid].t <= sec + 0.01) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
   };
 
-  /** Whether all of fragment `i` is in the player (a cancelled download can leave part of one). */
-  const has = (i: number): boolean => {
+  /** The piece holding file byte `at`. */
+  const pieceAt = (at: number): number => {
+    let lo = 0;
+    let hi = frags.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (frags[mid].o <= at) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  };
+
+  /** Whether the parser is halfway through a piece. */
+  const midPiece = (): boolean => {
+    if (!frags.length || tail <= frags[0].o) return false;
+    const f = frags[pieceAt(tail)];
+    return tail > f.o && tail < f.o + f.n;
+  };
+
+  const end = (): number => ms.duration || frags.reduce((s, f) => s + f.d, 0) || 1e9;
+
+  /** Whether everything from `from` to `to` (seconds) is in the player. */
+  const spans = (from: number, to: number): boolean => {
     if (!sb) return false;
-    const from = frags[i].t + 0.1;
-    const to = frags[i].t + frags[i].d - 0.1;
     const b = sb.buffered;
-    for (let k = 0; k < b.length; k++) if (b.start(k) <= from && b.end(k) >= to) return true;
+    const until = Math.min(to, end() - 0.05);
+    for (let k = 0; k < b.length; k++) if (b.start(k) <= from + 0.05 && b.end(k) >= until) return true;
     return false;
   };
 
-  /** Whether playback can start at `sec`: a couple of seconds there are in the player. */
-  const covered = (sec: number): boolean => {
-    if (!sb) return false;
-    const b = sb.buffered;
-    const end = Math.min(sec + 2, (ms.duration || 1e9) - 0.1);
-    for (let k = 0; k < b.length; k++) if (b.start(k) <= sec + 0.05 && b.end(k) >= end) return true;
-    return false;
+  /** Whether all of piece `i` is in the player (a cancelled download can leave part of one). */
+  const has = (i: number): boolean => spans(frags[i].t + 0.05, frags[i].t + frags[i].d - 0.05);
+
+  /** Whether playback can start at `sec`. */
+  const covered = (sec: number): boolean => spans(sec, sec + NEED);
+
+  /** The first piece missing between two times, or -1. */
+  const missing = (from: number, to: number): number => {
+    for (let i = indexAt(from); i < frags.length && frags[i].t < to; i++) if (!has(i)) return i;
+    return -1;
+  };
+
+  /** Missing pieces from `i` on, until `until` seconds: one request. */
+  const run = (i: number, until: number): [number, number] => {
+    let j = i;
+    while (j + 1 < frags.length && !has(j + 1) && frags[j + 1].t < until) j++;
+    return [i, j];
+  };
+
+  /** Pieces holding track openings, which are kept when space runs short. */
+  let openings: Set<number> | null = null;
+  const keep = (): Set<number> => {
+    if (!openings) {
+      openings = new Set();
+      for (const t of TRACKLIST) for (let i = indexAt(t.at); i < frags.length && frags[i].t < t.at + OPENING; i++) openings.add(i);
+    }
+    return openings;
+  };
+
+  /** Whether everything from the playhead to the end of the set is in the player. */
+  const finalStretch = (): boolean => el.currentTime > end() - AHEAD && spans(el.currentTime, end());
+
+  const next = (): [number, number] | null => {
+    if (!frags.length) return null;
+    if (target !== null) {
+      const i = missing(target, target + NEED);
+      if (i >= 0) return run(i, target + RUN);
+    }
+    const now = el.currentTime;
+    const soon = missing(now, now + (active ? SAFE : PRE));
+    if (soon >= 0) return run(soon, frags[soon].t + RUN);
+    if (!active) return null;
+    // The final stretch is all here: have the start ready for the loop, then
+    // nothing more, so the stream can be ended (any later append reopens it
+    // and the player would wait at the end instead of looping).
+    if (finalStretch()) {
+      const wrap = missing(0, PRE);
+      return wrap >= 0 ? run(wrap, PRE) : null;
+    }
+    // Every track's opening, the coming tracks first, so tracklist jumps land at once.
+    const from = TRACKLIST.findIndex((t) => t.at > now);
+    for (let k = 0; k < TRACKLIST.length; k++) {
+      const at = TRACKLIST[((from < 0 ? 0 : from) + k) % TRACKLIST.length].at;
+      const i = missing(at, at + OPENING);
+      if (i >= 0) return run(i, at + OPENING);
+    }
+    const later = missing(now, now + AHEAD);
+    if (later >= 0) return run(later, frags[later].t + RUN);
+    return null;
+  };
+
+  const settle = (): void => {
+    if (target !== null && covered(target)) target = null;
+    if (waiter && covered(waiter.sec)) {
+      const w = waiter;
+      waiter = null;
+      w.done(true);
+    }
   };
 
   const heldBytes = (): number => frags.reduce((sum, f, i) => (has(i) ? sum + f.n : sum), 0);
 
-  /** Track openings, so a tracklist jump finds its audio already here. */
-  const starts = (): number[] => [...new Set(TRACKLIST.flatMap((t) => {
-    const i = indexAt(t.at);
-    // A track that opens near the end of a piece needs the following piece too.
-    return i + 1 < frags.length && frags[i].t + frags[i].d - t.at < 4 ? [i, i + 1] : [i];
-  }))];
-
-  const next = (): number => {
-    if (urgent >= 0 && !has(urgent)) return urgent;
-    urgent = -1;
-    const now = indexAt(el.currentTime);
-    if (!has(now)) return now;
-    if (!active) return -1;
-    // 20 s of safety ahead, then every track's opening, then the rest of the minute ahead.
-    const gap = (until: number): number => {
-      for (let i = now + 1; i < frags.length && frags[i].t < el.currentTime + until; i++) if (!has(i)) return i;
-      return -1;
-    };
-    const soon = gap(SAFE);
-    if (soon >= 0) return soon;
-    for (const i of starts()) if (!has(i)) return i;
-    return gap(AHEAD);
-  };
-
-  /** Fetch piece `i` next, cancelling a background download in the way. */
-  const hurry = (i: number): void => {
-    if (has(i)) return;
-    urgent = i;
-    if (inflight && inflight.i !== i) inflight.ctl.abort();
-    void pump();
-  };
-
-  const settle = (): void => {
-    for (let k = waiters.length - 1; k >= 0; k--) {
-      if (covered(waiters[k].sec)) {
-        waiters[k].done();
-        waiters.splice(k, 1);
-      }
-    }
-  };
-
   /**
-   * Free space piece by piece: first what is well behind the playhead, then
-   * what is far ahead. Track openings are kept, or they'd be fetched again.
+   * Free space: first what is well behind the playhead, then what is far
+   * ahead. Track openings are kept, or they'd be fetched again.
    */
   const makeRoom = async (need: number): Promise<void> => {
-    const keep = new Set(starts());
+    let excess = heldBytes() + need - MAX_BYTES;
+    if (excess <= 0) return;
+    const kept = keep();
     const now = el.currentTime;
+    const wanted = target ?? now;
+    const near = (i: number): boolean => frags[i].t + frags[i].d >= wanted - 2 && frags[i].t <= wanted + SAFE;
     const behind = frags.map((_, i) => i).filter((i) => frags[i].t + frags[i].d < now - BEHIND);
     const ahead = frags.map((_, i) => i).filter((i) => frags[i].t > now + AHEAD).reverse();
+    const drop: number[] = [];
     for (const i of [...behind, ...ahead]) {
-      if (heldBytes() + need <= MAX_BYTES) return;
-      if (keep.has(i) || !has(i)) continue;
-      await remove(frags[i].t, frags[i].t + frags[i].d);
+      if (excess <= 0) break;
+      if (kept.has(i) || near(i) || !has(i)) continue;
+      drop.push(i);
+      excess -= frags[i].n;
     }
+    drop.sort((a, b) => a - b);
+    for (let k = 0; k < drop.length;) {
+      let j = k;
+      while (j + 1 < drop.length && drop[j + 1] === drop[j] + 1) j++;
+      await remove(frags[drop[k]].t, frags[drop[j]].t + frags[drop[j]].d);
+      k = j + 1;
+    }
+  };
+
+  /** Forget a half-read piece so the next data parses from a clean start. */
+  const reset = (): void => {
+    try {
+      if (sb && !sb.updating && ms.readyState === 'open') sb.abort();
+    } catch {
+      /* nothing pending */
+    }
+    tail = 0;
+  };
+
+  /** At the very end, say so, or the player waits there instead of looping. */
+  const finish = (): void => {
+    if (!sb || sb.updating || ms.readyState !== 'open' || midPiece() || !finalStretch()) return;
+    try {
+      ms.endOfStream();
+    } catch {
+      /* busy; the next pump retries */
+    }
+  };
+
+  /** Hand the bytes of a range response to the player as they land. */
+  const feed = async (res: Response, from: number, j: Job, skip = 0): Promise<void> => {
+    const reader = res.body!.getReader();
+    const abort = (): void => void reader.cancel().catch(() => {});
+    j.ctl.signal.addEventListener('abort', abort);
+    let parts: Uint8Array[] = [];
+    let size = 0;
+    let at = from;
+    const flush = async (): Promise<void> => {
+      if (!size) return;
+      const chunk = new Uint8Array(size);
+      let w = 0;
+      for (const p of parts) {
+        chunk.set(p, w);
+        w += p.length;
+      }
+      parts = [];
+      size = 0;
+      try {
+        await append(chunk);
+      } catch {
+        // Over quota: drop what is far behind and try once more.
+        await remove(0, Math.max(0, el.currentTime - 10));
+        await append(chunk);
+      }
+      at += chunk.length;
+      tail = at;
+      j.at = at;
+      settle();
+    };
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        lastByte = performance.now();
+        let v = value;
+        if (skip > 0) {
+          const cut = Math.min(skip, v.length);
+          skip -= cut;
+          v = v.subarray(cut);
+          if (!v.length) continue;
+        }
+        parts.push(v);
+        size += v.length;
+        if (size >= 4096) await flush();
+        if (j.ctl.signal.aborted) break;
+      }
+    } finally {
+      j.ctl.signal.removeEventListener('abort', abort);
+      // Whatever arrived is valid continuous data: keep it.
+      await flush();
+    }
+    if (j.ctl.signal.aborted) throw new Error('aborted');
   };
 
   const pump = async (): Promise<void> => {
     if (busy || !sb) return;
-    const i = next();
-    if (i < 0) return;
+    const r = next();
+    if (!r) {
+      finish();
+      return;
+    }
     busy = true;
-    const ctl = new AbortController();
-    inflight = { ctl, i };
+    const [from, to] = r;
+    const j: Job = { ctl: new AbortController(), from, to, at: frags[from].o, stalled: false };
+    job = j;
     try {
-      const f = frags[i];
-      if (heldBytes() + f.n > MAX_BYTES) await makeRoom(f.n);
-      const res = await fetch(url, { headers: { Range: `bytes=${f.o}-${f.o + f.n - 1}` }, signal: ctl.signal });
-      if (!res.ok || !res.body) throw new Error(`mix ${res.status}`);
-      // Hand the player each chunk as it lands, so sound starts before the piece finishes.
-      const reader = res.body.getReader();
-      let parts: Uint8Array[] = [];
-      let size = 0;
-      const flush = async (): Promise<void> => {
-        if (!size) return;
-        const chunk = new Uint8Array(size);
-        let at = 0;
-        for (const p of parts) {
-          chunk.set(p, at);
-          at += p.length;
-        }
-        parts = [];
-        size = 0;
-        try {
-          await append(chunk.buffer);
-        } catch {
-          await remove(0, Math.max(0, el.currentTime - 5));
-          await append(chunk.buffer);
-        }
-        settle();
-      };
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        parts.push(value);
-        size += value.length;
-        if (size >= 24576) await flush();
-      }
-      await flush();
-      if (i === frags.length - 1 && ms.readyState === 'open' && !sb.updating) {
-        try {
-          ms.endOfStream();
-        } catch {
-          /* still updating; the next pump retries */
-        }
-      }
+      const last = frags[to].o + frags[to].n - 1;
+      if (heldBytes() + (last - frags[from].o) > MAX_BYTES) await makeRoom(last - frags[from].o);
+      let start = frags[from].o;
+      // An interrupted request stopped inside this very piece: carry on from there.
+      if (midPiece() && pieceAt(tail) === from) start = tail;
+      else if (midPiece()) reset();
+      j.at = start;
+      lastByte = performance.now();
+      const res = await fetch(url, { headers: { Range: `bytes=${start}-${last}` }, signal: j.ctl.signal });
+      if (res.status !== 206 || !res.body) throw new Error(`mix ${res.status}`);
+      await feed(res, start, j);
     } catch {
-      // Drop the half-read piece so the next one parses cleanly.
-      try {
-        sb.abort();
-      } catch {
-        /* nothing pending */
+      // A failed request (not one cancelled for a jump): wait a moment first.
+      if (!j.ctl.signal.aborted || j.stalled) {
+        await new Promise<void>((resolve) => {
+          wake = resolve;
+          setTimeout(resolve, j.stalled ? 300 : 1500);
+        });
+        wake = null;
       }
-      // Cancelled for a jump: go straight on. A failed request: wait a moment first.
-      if (!ctl.signal.aborted) await new Promise((r) => setTimeout(r, 1500));
     } finally {
-      inflight = null;
+      job = null;
       busy = false;
       settle();
     }
     void pump();
   };
 
-  ms.addEventListener('sourceopen', async () => {
-    try {
-      const head = await range(0, 65535);
-      const view = new DataView(head);
-      // Walk the top-level boxes to the fragment index.
-      let at = 0;
-      while (at + 8 <= view.byteLength && String.fromCharCode(...new Uint8Array(head, at + 4, 4)) !== 'sidx') at += view.getUint32(at);
-      const scale = view.getUint32(at + 16);
-      let t = view.getUint32(at + 20);
-      let o = at + view.getUint32(at) + view.getUint32(at + 24);
-      const count = view.getUint16(at + 30);
-      frags = [];
-      for (let k = 0; k < count; k++) {
-        const e = at + 32 + k * 12;
-        const n = view.getUint32(e) & 0x7fffffff;
-        const d = view.getUint32(e + 4);
-        frags.push({ o, n, t: t / scale, d: d / scale });
-        o += n;
-        t += d;
-      }
-      sb = ms.addSourceBuffer(MIME);
-      sb.mode = 'segments';
-      await append(head.slice(0, at));
-      ms.duration = t / scale;
-      if (startAt > 0) el.currentTime = Math.min(startAt, ms.duration - 0.5);
-      el.addEventListener('seeking', () => hurry(indexAt(el.currentTime)));
-      el.addEventListener('timeupdate', () => void pump());
-      void pump();
-    } catch {
-      // Index unreadable: let the browser stream the file instead.
-      nativeStream(el, url, startAt);
+  /** Fetch the audio at `sec` first, cancelling a download that won't reach it soon. */
+  const hurry = (sec: number): void => {
+    target = sec;
+    settle();
+    if (target === null) return;
+    if (job && frags.length) {
+      const want = indexAt(sec);
+      const at = pieceAt(job.at);
+      // Keep a request that is about to deliver this spot anyway.
+      if (want < job.from || want > job.to || want > at + 1) job.ctl.abort();
     }
+    void pump();
+  };
+
+  // A request that stops delivering (a dropped connection) is retried from where it stopped.
+  setInterval(() => {
+    if (job && performance.now() - lastByte > STALL) {
+      job.stalled = true;
+      job.ctl.abort();
+    }
+  }, 1000);
+  window.addEventListener('online', () => {
+    if (job) {
+      job.stalled = true;
+      job.ctl.abort();
+    }
+    wake?.();
+    void pump();
+  });
+
+  /** Read the header and index, then keep feeding the same response as the opening audio. */
+  const open = async (): Promise<void> => {
+    const ctl = new AbortController();
+    const res = await fetch(url, { headers: { Range: `bytes=0-${HEAD}` }, signal: ctl.signal });
+    if (res.status !== 206 || !res.body) throw new Error(`mix ${res.status}`);
+    const reader = res.body.getReader();
+    let head = new Uint8Array(0);
+    let sidx = -1;
+    let sidxEnd = 0;
+    // Read until the index has fully arrived.
+    for (;;) {
+      if (sidx < 0) {
+        const view = new DataView(head.buffer);
+        for (let at = 0; at + 8 <= head.length;) {
+          const size = view.getUint32(at);
+          if (String.fromCharCode(...head.subarray(at + 4, at + 8)) === 'sidx') {
+            sidx = at;
+            sidxEnd = at + size;
+            break;
+          }
+          if (size < 8) throw new Error('mix header');
+          at += size;
+        }
+      }
+      if (sidx >= 0 && head.length >= sidxEnd) break;
+      const { done, value } = await reader.read();
+      if (done) throw new Error('mix header');
+      const grown = new Uint8Array(head.length + value.length);
+      grown.set(head);
+      grown.set(value, head.length);
+      head = grown;
+    }
+    const view = new DataView(head.buffer);
+    const scale = view.getUint32(sidx + 16);
+    let t = view.getUint32(sidx + 20);
+    let o = sidxEnd + view.getUint32(sidx + 24);
+    const count = view.getUint16(sidx + 30);
+    const list: Frag[] = [];
+    for (let k = 0; k < count; k++) {
+      const e = sidx + 32 + k * 12;
+      const n = view.getUint32(e) & 0x7fffffff;
+      const d = view.getUint32(e + 4);
+      list.push({ o, n, t: t / scale, d: d / scale });
+      o += n;
+      t += d;
+    }
+    frags = list;
+    sb = ms.addSourceBuffer(MIME);
+    sb.mode = 'segments';
+    await append(head.subarray(0, sidx));
+    ms.duration = t / scale;
+    if (startAt > 0) el.currentTime = Math.min(startAt, ms.duration - 0.5);
+    el.addEventListener('seeking', () => {
+      if (!covered(el.currentTime)) hurry(el.currentTime);
+    });
+    el.addEventListener('timeupdate', () => void pump());
+
+    // Starting at the top: the rest of this response is the opening audio.
+    const first = frags[0].o;
+    const wanted = target ?? el.currentTime;
+    if (indexAt(wanted) === 0 || frags[indexAt(wanted)].o <= HEAD) {
+      busy = true;
+      const j: Job = { ctl, from: 0, to: pieceAt(HEAD), at: head.length, stalled: false };
+      job = j;
+      tail = sidxEnd;
+      const rest = head.subarray(Math.min(first, head.length));
+      try {
+        if (head.length > first) {
+          await append(rest);
+          tail = head.length;
+        }
+        const tailRes = new Response(new ReadableStream({
+          async pull(c) {
+            const { done, value } = await reader.read();
+            if (done) c.close();
+            else c.enqueue(value);
+          },
+          cancel() {
+            void reader.cancel();
+          },
+        }));
+        await feed(tailRes, Math.max(first, head.length), j, Math.max(0, first - head.length));
+      } catch {
+        /* the loader picks up from wherever this stopped */
+      } finally {
+        job = null;
+        busy = false;
+        settle();
+      }
+    } else {
+      void reader.cancel().catch(() => {});
+    }
+    void pump();
+  };
+
+  ms.addEventListener('sourceopen', () => {
+    open().catch(() => {
+      // Index unreadable: let the browser stream the file instead.
+      if (!sb) nativeStream(el, url, startAt);
+      else void pump();
+    });
   }, { once: true });
 
   return {
@@ -268,11 +500,17 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
       active = true;
       void pump();
     },
+    ready: (sec) => covered(sec),
     ensure(sec) {
-      if (!frags.length) return new Promise((r) => setTimeout(r, 300)).then(() => this.ensure(sec));
-      if (covered(sec)) return Promise.resolve();
-      hurry(indexAt(sec));
-      return new Promise((done) => waiters.push({ sec, done }));
+      if (waiter) {
+        waiter.done(false);
+        waiter = null;
+      }
+      if (covered(sec)) return Promise.resolve(true);
+      return new Promise<boolean>((done) => {
+        waiter = { sec, done };
+        hurry(sec);
+      });
     },
   };
 }
@@ -287,5 +525,5 @@ function nativeStream(el: HTMLAudioElement, url: string, startAt: number): Strea
     }, { once: true });
   }
   el.load();
-  return { mse: false, activate() {}, ensure: () => Promise.resolve() };
+  return { mse: false, activate() {}, ready: () => true, ensure: () => Promise.resolve(true) };
 }

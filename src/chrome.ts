@@ -7,7 +7,7 @@ const route = (path: string): string => `${document.documentElement.dataset.root
 /**
  * Site-wide chrome: a "MENU" button that opens a full-screen index, and the
  * live countdown to "Down In Bossa" wherever `[data-cd]` digits appear (the
- * menu and the player bar's pre-save pill).
+ * menu and the player bar's listen pill).
  */
 
 const RELEASE_AT = new Date(NEXT_RELEASE.date).getTime();
@@ -125,7 +125,7 @@ export function mountChrome(): void {
         <b>${esc(NEXT_RELEASE.title)}</b>
         <span class="m-r-sub">${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.label)}</span>
         ${clock()}
-        <a class="m-r-link mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Pre-save</span> ↗</a>
+        <a class="m-r-link mono" href="${NEXT_RELEASE.presave}" target="_blank" rel="noopener"><span data-presave-label>Listen now</span> ↗</a>
         <p class="m-credit mono">Site by <a href="${route('acnd/')}" data-close>ACND</a></p>
       </aside>
     </div>`;

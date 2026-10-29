@@ -96,6 +96,7 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       ${prompt()}
       <p class="gate-credit">Site by ACND</p>`;
     document.body.append(gate);
+    document.body.classList.add('gated');
     const stop = meter(gate);
     let done = false;
     const enter = (quiet = false): void => {
@@ -110,6 +111,7 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       if (quiet) pause();
       else start();
       gate.classList.add('gate-out');
+      document.body.classList.remove('gated');
       setTimeout(() => gate.remove(), 1100);
       resolve();
     };
@@ -205,7 +207,7 @@ export const imgSrc = (src: string, fallback = ''): string => (exists(src) || !f
 export const img = (src: string, alt: string, cls = '', fallback = '', eager = false): string => {
   const file = imgSrc(src, fallback);
   const webp = file.replace(/\.(jpe?g|png)$/i, '.webp');
-  const load = eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+  const load = eager ? 'loading="eager"' : 'loading="lazy"';
   const tag = `<img class="${cls}" src="${asset(file)}" alt="${esc(alt)}" ${load} decoding="async" />`;
   return webp !== file && exists(webp) ? `<picture class="pic"><source srcset="${asset(webp)}" type="image/webp" />${tag}</picture>` : tag;
 };

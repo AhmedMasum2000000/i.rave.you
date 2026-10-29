@@ -1,6 +1,6 @@
 # I Rave You: search visibility audit and growth plan
 
-Audit date: 28 October 2026 (Asia/Dhaka). Primary domain: https://iraveyou.com/.
+Audit date: 28 October 2026 (Asia/Dhaka). Primary domain: https://iraveyou.online/.
 
 ## Scope and evidence limits
 
@@ -57,12 +57,12 @@ Record observations in `serp-research.csv`. Leave metrics blank until measured; 
 
 ## Next 7 days: ownership and indexing
 
-- Verify a **Domain property** for `iraveyou.com` in [Google Search Console](https://search.google.com/search-console/). Google will supply a unique TXT record; add that exact record at the active DNS provider. Preserve existing A/www, email and verification records. Do not invent a verification token.
-- Submit `https://iraveyou.com/sitemap.xml`. Inspect `/`, `/acnd/`, `/apurba/`, `/music/down-in-bossa/` and `/mixes/qbic-pulse/`; request indexing where appropriate. Check rendered content, Google-selected canonical and discovery errors. Submission does not guarantee indexing.
+- Verify a **Domain property** for `iraveyou.online` in [Google Search Console](https://search.google.com/search-console/). Google will supply a unique TXT record; add that exact record at the active DNS provider. Preserve existing A/www, email and verification records. Do not invent a verification token.
+- Submit `https://iraveyou.online/sitemap.xml`. Inspect `/`, `/acnd/`, `/apurba/`, `/music/down-in-bossa/` and `/mixes/qbic-pulse/`; request indexing where appropriate. Check rendered content, Google-selected canonical and discovery errors. Submission does not guarantee indexing.
 - Verify [Bing Webmaster Tools](https://www.bing.com/webmasters/) and submit the same sitemap; import Search Console ownership if supported by the account.
 - Align artist bios and official website links on Spotify for Artists, SoundCloud, YouTube, Instagram and the label's release metadata. ACND = Ahmed Masum; অপূর্ব = Khalid Bin Alam. No new claims or unapproved alias changes.
 - Ask existing collaborators, the label and radio programme for an accurate contextual website credit where they normally publish artist information. This report does not authorise sending messages. Do not buy links, automate comments or use reciprocal link schemes.
-- Canonical tags consolidate the GitHub mirror as a preference; they are not redirects. Where Hostinger supports it, confirm HTTP and www redirect with 301/308 to `https://iraveyou.com/`, preserving path and query. Check existing redirects before adding any rules. A GitHub project cannot set root `github.io/robots.txt`; its HTML canonicals are the relevant mirror signal.
+- Canonical tags consolidate the GitHub mirror as a preference; they are not redirects. Where Hostinger supports it, confirm HTTP and www redirect with 301/308 to `https://iraveyou.online/`, preserving path and query. Check existing redirects before adding any rules. A GitHub project cannot set root `github.io/robots.txt`; its HTML canonicals are the relevant mirror signal.
 - Around 30 October, confirm the release is actually available through the label before changing scheduled/pre-save wording. A calendar date alone does not establish availability.
 
 ## Days 8–30: evidence and listener experience

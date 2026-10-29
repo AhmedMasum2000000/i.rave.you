@@ -1,6 +1,6 @@
 # First journal publication wave
 
-Publication date: 28 October 2026 (Asia/Dhaka). Preferred domain: **https://iraveyou.com/**, as directed by the owner. Google Search Console work is on hold at the owner's request. No Google account was connected, property verified or sitemap submitted.
+Publication date: 28 October 2026 (Asia/Dhaka). Preferred domain: **https://iraveyou.online/**, as directed by the owner. Google Search Console work is on hold at the owner's request. No Google account was connected, property verified or sitemap submitted.
 
 Ten original first-party articles are published together in the build. Each has a separate reader task, a direct-answer introduction, descriptive headings, a table of contents, Article and breadcrumb structured data, publication date, editorial attribution, existing portfolio imagery, three related-reading links and links to the relevant established artist/music pages. Content works without JavaScript. This is not independent press coverage.
 
