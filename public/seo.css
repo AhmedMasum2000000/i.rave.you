@@ -384,3 +384,27 @@ figcaption {
 .release-tracks { list-style: none; padding: 0; margin: 12px 0 20px; }
 .release-tracks li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #333; }
 .release-tracks li:last-child { border-bottom: 1px solid #333; }
+
+/* Inside the site shell, Back (top left) and Menu (top right) sit over the
+   header's corners; on narrower screens the header starts below them. */
+html.in-shell body > header { padding-top: 64px; }
+@media (min-width: 1240px) { html.in-shell body > header { padding-top: 28px; } }
+
+/* ── Type, in line with the rest of the site: Hind Siliguri for reading,
+   Doto only for the page title and the wordmark, mono for small labels. ── */
+:root { font-family: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body { font-family: inherit; font-weight: 500; }
+strong, b, th, .button, h2, h3, dt { font-weight: 700; }
+h1, .brand { font-family: 'Doto', 'Hind Siliguri', sans-serif; font-weight: 800; letter-spacing: 0.01em; }
+h1 { line-height: 1.02; }
+.eyebrow, .breadcrumb, time {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.breadcrumb { letter-spacing: 0.02em; }
+.button { border-radius: 2px; }
+.journal-card { border-radius: 0; }
+/* An odd card out spans the row instead of leaving a hole beside it. */
+.journal-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }

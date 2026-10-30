@@ -19,7 +19,6 @@
 .cta,
 .side-cta,
 .a-hero-listen,
-.release-art > span,
 .a-more {
   display: inline-flex;
   align-items: center;
@@ -40,7 +39,6 @@
 .side-cta:hover,
 .side:hover .side-cta,
 .a-hero-listen:hover,
-.release-art:hover > span,
 .a-more:hover {
   background: var(--red) !important;
   border-color: var(--red) !important;
@@ -51,7 +49,6 @@
 html.fx .cta,
 html.fx .side-cta,
 html.fx .a-hero-listen,
-html.fx .release-art > span,
 html.fx .fbar-cta,
 html.fx .news {
   animation: btn-ping 1.6s ease-out 1.2s 2 both;
@@ -68,9 +65,8 @@ html.fx .news {
 .side-light .side-cta { color: #000; border-color: #000; background: rgba(0, 0, 0, 0.03); }
 .side:hover .side-cta { transform: translateY(-1px); }
 
-/* Artist hero and releases */
+/* Artist hero (the release covers use .k-btn, styled in artist.css) */
 .a-hero-listen { color: #fff; background: rgba(0, 0, 0, 0.6); }
-.release-art > span { background: #fff; color: #000; border-color: #fff; padding: 10px 18px; font-size: 12px; }
 .a-more { color: var(--fg); }
 .a-more span { transition: transform 0.2s; }
 .a-more:hover span { transform: translateX(3px); }
@@ -154,43 +150,35 @@ body.flooding .news, body.peeking .news { opacity: 0; pointer-events: none; tran
 .a-credits {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  gap: 0;
   padding: 64px var(--gutter) 72px;
   border-top: 1px solid var(--line);
 }
 .a-credits > .a-label { grid-column: 1 / -1; }
-.cred-list { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); column-gap: 48px; }
+.cred-list { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); }
 .cred-list li {
+  position: relative;
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: 140px minmax(0, 1fr);
   gap: 4px 16px;
   padding: 18px 0;
   border-bottom: 1px solid var(--line);
 }
-.cred-k { grid-row: span 2; color: var(--red-hi); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding-top: 4px; }
-.cred-list b { font-size: clamp(18px, 2vw, 24px); font-weight: 800; line-height: 1.25; }
-.cred-list b.bn { font-family: 'Hind Siliguri', sans-serif; }
-.cred-s { font-family: var(--text, sans-serif); font-weight: 500; font-size: 14px; color: var(--muted); }
-/* ── Typewriter caret ── */
-.tw-caret {
-  display: inline-block;
-  width: 0.08em;
-  min-width: 2px;
-  height: 0.95em;
-  margin-left: 0.06em;
-  vertical-align: -0.1em;
-  background: var(--red-hi);
-  animation: caret 0.8s steps(2) infinite;
-}
-@keyframes caret { 50% { opacity: 0; } }
-
-/* Small accents */
+/* The row label is grey: red stays for the one primary action. */
+.cred-k { grid-row: span 2; padding-top: 5px; color: var(--k-mute); }
+.cred-list b { font: 700 clamp(18px, 1.8vw, 22px)/1.3 var(--k-text); }
+.cred-list b a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.cred-list b a:hover { text-decoration-color: currentColor; }
+/* A linked credit is one ruled row: its title link covers the whole row. */
+.cred-list b a::after { content: ''; position: absolute; inset: 0; }
+.cred-list li:hover b a { text-decoration-color: currentColor; }
+.cred-s { font-family: var(--text, sans-serif); font-weight: 500; font-size: 15px; color: var(--muted); }
+/* Small accents: the label dot keeps the artist's colour from artist.css. */
 .a-label { color: var(--fg); }
-.a-label::first-letter { color: var(--red-hi); }
 
 @media (max-width: 900px) {
   .a-credits { padding: 48px var(--gutter) 56px; }
-  .cred-list li { grid-template-columns: 92px minmax(0, 1fr); }
+  .cred-list li { grid-template-columns: 96px minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
   .news { top: calc(296px + var(--safe-top, 0px)); left: 16px; right: 16px; translate: none; justify-content: space-between; gap: 8px; font-size: 11px; }
@@ -200,5 +188,5 @@ body.flooding .news, body.peeking .news { opacity: 0; pointer-events: none; tran
   .side-cta { padding: 11px 18px; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cta, .side-cta, .a-hero-listen, .release-art > span, .fbar-cta, .news, .release-cover, .a-media-img, .a-door-img { animation: none !important; }
+  .cta, .side-cta, .a-hero-listen, .fbar-cta, .news, .release-cover, .a-media-img, .a-door-img { animation: none !important; }
 }

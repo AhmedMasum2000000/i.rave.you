@@ -94,12 +94,16 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
 
   const resize = (): void => {
     dpr = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.25) * (quality < 1 ? 0.8 : 1);
-    W = window.innerWidth;
-    H = window.innerHeight;
+    // Measure the box the canvas fills; never give it a pixel width of its own.
+    // A fixed width taken from innerWidth while a phone's layout viewport was
+    // briefly wider (content still unstyled) kept the page that wide for good.
+    const box = (canvas.parentElement ?? canvas).getBoundingClientRect();
+    W = Math.round(box.width) || window.innerWidth;
+    H = Math.round(box.height) || window.innerHeight;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
-    canvas.style.width = `${W}px`;
-    canvas.style.height = `${H}px`;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     const n = Math.round(Math.min(compact ? 80 : 300, (W * H) / (compact ? 5000 : 4000)) * quality);
     ps.length = 0;
     for (let i = 0; i < n; i++) ps.push(spawn(true));

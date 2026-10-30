@@ -1,0 +1,45 @@
+/* ── Back: top left on every page but home, opposite the menu ── */
+.back-btn {
+  position: fixed;
+  top: calc(10px + var(--safe-top, 0px));
+  left: var(--gutter);
+  z-index: 85;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 1px solid rgba(244, 242, 236, 0.22);
+  border-radius: 2px;
+  background: rgba(8, 8, 8, 0.78);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #f4f2ec;
+  font: 600 14px/1 'Hind Siliguri', var(--text, system-ui), sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.back-btn[hidden] { display: none; }
+.back-btn:hover { background: #f4f2ec; color: #050505; border-color: #f4f2ec; }
+.back-btn:focus-visible { outline: 2px solid #f4f2ec; outline-offset: 3px; }
+.back-btn svg { transition: transform 0.2s; }
+.back-btn:hover svg { transform: translateX(-2px); }
+body.menu-open .back-btn { visibility: hidden; }
+
+/* The artist bar starts after the button. */
+body[data-view='artist'] .a-nav { padding-left: calc(var(--gutter) + 100px); }
+@media (max-width: 900px) {
+  body[data-view='artist'] .a-nav { padding-left: var(--gutter); }
+  body[data-view='artist'] .a-brand { left: calc(var(--gutter) + 96px); }
+}
+
+/* While a position is being restored, nothing skips layout. */
+html.restoring #home-feed section,
+html.restoring #home-feed footer { content-visibility: visible !important; }
+
+/* Focus and in-page jumps stop clear of the player bar. */
+html { scroll-padding-bottom: calc(var(--bar-h, 132px) + 16px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .back-btn, .back-btn svg { transition: none; }
+}
