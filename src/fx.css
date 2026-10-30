@@ -17,7 +17,7 @@ html { scroll-behavior: smooth; }
 /* ── Type system ──
    Running text in Hind Siliguri (already self-hosted for Bangla, with Latin);
    the dot face stays on headings, labels, numbers and the large essay lines. */
-.a-main p:not(.a-big):not(.mono):not(.a-label),
+.a-main p:not(.a-big):not(.mono):not(.a-label):not(.k-label):not(.ah-q),
 .a-notes li > span:last-child,
 .vibe-body,
 .gate-line,
@@ -27,7 +27,7 @@ html { scroll-behavior: smooth; }
   letter-spacing: 0;
   line-height: 1.65;
 }
-.a-main p:not(.a-big):not(.mono):not(.a-label) { max-width: 64ch; }
+.a-main p:not(.a-big):not(.mono):not(.a-label):not(.k-label):not(.ah-q) { max-width: 64ch; }
 .a-main p b, .a-main p strong { font-weight: 700; }
 body .release-heading p, body .release-meta p, body .b-para, body .a-ab p, body .vibe-body, body .gate-line { font-family: var(--text); font-weight: 500; }
 
@@ -36,7 +36,6 @@ body .release-heading p, body .release-meta p, body .b-para, body .a-ab p, body 
 /* Kept to a few short labels: re-weighting long text every frame costs layout. */
 html.fx .brand,
 html.fx .side-name:not(.bn),
-html.fx .a-brand > span,
 html.fx .cd b,
 html.fx .np-now-t {
   font-variation-settings: 'wght' calc(520 + var(--lv-low) * 380);
@@ -117,10 +116,6 @@ body[data-artist='apurba'] .a-door-img { filter: brightness(calc(1 + var(--beat,
 }
 [data-reveal].in { opacity: 1; transform: none; }
 
-/* ── Media: slow light, quick feedback ── */
-.a-media { overflow: hidden; }
-.a-media-img { transition: transform 1.2s var(--ease-out); }
-.a-media:hover .a-media-img { transform: scale(1.03); }
 
 /* ── Readability and the sequencer ── */
 body[data-view='artist'] { --dim: #a8a8a8; }
@@ -132,10 +127,11 @@ body[data-view='artist'] { --dim: #a8a8a8; }
 
 /* ── Phones ── */
 @media (max-width: 900px), (max-height: 500px) and (pointer: coarse) {
-  /* Section tabs: a plain segmented bar, the active page underlined in the artist's colour. */
+  /* Section tabs: a plain segmented bar, the active page underlined in the
+     artist's colour. Full opacity and 15px, so they read as live controls. */
   body .a-links { gap: 0; border-bottom: 1px solid #262626; }
-  body .a-links a { border: 0; border-radius: 0; color: #b8b8b8; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  body .a-links a.on { background: none; color: #fff; border-bottom-color: var(--glow); }
+  body .a-links a { border: 0; border-radius: 0; font-size: 15px; opacity: 1; color: var(--k-mute); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  body .a-links a.on { background: none; color: var(--k-paper); border-bottom-color: var(--glow); }
   body .a-links a.on::before { content: none; }
   body .a-nav { border-bottom: 0; padding-bottom: 0; }
   /* The fixed hero mark clears the stacked mobile nav. */
@@ -160,5 +156,4 @@ body[data-view='artist'] { --dim: #a8a8a8; }
   scale: calc(1 + var(--beat, 0) * 0.025);
 }
 .a-sheen { display: none; }
-body[data-view='artist']::after { animation: none; }
 .a-hero::before, .a-floor::after { will-change: opacity; }

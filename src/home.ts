@@ -1,12 +1,12 @@
 import { isPlaying, onState, playSet } from './audio';
 import { CURRENT, onSetChange } from './data';
 import { ROOT } from './router';
-import { reducedMotion } from './ui';
 
 /**
  * The home feed is static HTML built into index.html (scripts/home.mjs). This
- * module only brings it to life: filters, play buttons, the live "On air"
- * strip, reveals, tilt, the calendar countdown and the phone call to action.
+ * module only adds what needs script: one fade per block, the catalogue tabs,
+ * the play buttons, the bar behind MENU and the broadcast countdown. Nothing here loops on its own;
+ * the only motion while idle is the countdown text.
  * Arriving on the home page from another route, the feed is fetched once from
  * index.html, so there is one source for it.
  */
@@ -21,6 +21,8 @@ async function ensureFeed(): Promise<HTMLElement | null> {
     .then((html) => {
       const el = new DOMParser().parseFromString(html, 'text/html').getElementById('home-feed');
       if (!el) return null;
+      // DOMParser runs without scripting, so the no-JS <style> would come alive.
+      el.querySelector('noscript')?.remove();
       const node = document.importNode(el, true);
       document.getElementById('app')!.after(node);
       return node;
@@ -32,11 +34,13 @@ async function ensureFeed(): Promise<HTMLElement | null> {
 export function mountFeed(): () => void {
   const cleanup: (() => void)[] = [];
   let alive = true;
-  // The markup is wanted at once (Back may be restoring a spot inside it);
-  // its behaviour waits for an idle moment so the hero paints first.
+  // The markup is wanted at once (Back may be restoring a spot inside it), and
+  // so are the reveals, or a restored spot would sit faded; the rest waits for
+  // an idle moment so the hero paints first.
   const idle = (fn: () => void): void => void ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
   void ensureFeed().then((feed) => {
     if (!feed || !alive) return;
+    cleanup.push(reveal(feed));
     window.dispatchEvent(new Event('feedready'));
     idle(() => {
       if (alive) cleanup.push(enhance(feed));
@@ -48,66 +52,41 @@ export function mountFeed(): () => void {
   };
 }
 
-function enhance(feed: HTMLElement): () => void {
-  const off: (() => void)[] = [];
-  const still = reducedMotion();
-  const root = document.documentElement;
-  if (CSS.supports?.('animation-timeline: view()')) root.classList.add('sdt');
-
-  /* ── reveals (fallback for browsers without view timelines) + live sections ── */
-  const reveal = new IntersectionObserver(
+/** One fade per block (.k-fade in system.css): mark it in once it comes near. */
+function reveal(feed: HTMLElement): () => void {
+  const io = new IntersectionObserver(
     (entries) => {
       for (const e of entries)
         if (e.isIntersecting) {
           e.target.classList.add('in');
-          reveal.unobserve(e.target);
+          io.unobserve(e.target);
         }
     },
     { rootMargin: '0px 0px 10% 0px' },
   );
-  feed.querySelectorAll('[data-reveal]').forEach((el) => reveal.observe(el));
-  const live = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) e.target.classList.toggle('live', e.isIntersecting);
-    },
-    { rootMargin: '15% 0px' },
-  );
-  feed.querySelectorAll(':scope > section, :scope > .mq').forEach((el) => live.observe(el));
-  off.push(() => {
-    reveal.disconnect();
-    live.disconnect();
-  });
+  feed.querySelectorAll('[data-reveal]:not(.in)').forEach((el) => io.observe(el));
+  return () => io.disconnect();
+}
 
-  const onVis = (): void => void root.classList.toggle('tab-hidden', document.hidden);
-  document.addEventListener('visibilitychange', onVis);
-  off.push(() => document.removeEventListener('visibilitychange', onVis));
+function enhance(feed: HTMLElement): () => void {
+  const off: (() => void)[] = [];
 
-  /* ── catalogue filters ── */
-  const chips = [...feed.querySelectorAll<HTMLButtonElement>('.chip')];
+  /* ── catalogue tabs: one axis at a time, the grid itself never changes order ── */
+  const tabs = [...feed.querySelectorAll<HTMLButtonElement>('[data-filter]')];
   const cards = [...feed.querySelectorAll<HTMLElement>('.f-grid .fc')];
   const filter = (key: string): void => {
-    chips.forEach((c) => {
-      const on = c.dataset.filter === key;
-      c.classList.toggle('on', on);
-      c.setAttribute('aria-pressed', String(on));
+    tabs.forEach((t) => {
+      const on = t.dataset.filter === key;
+      t.classList.toggle('on', on);
+      t.setAttribute('aria-pressed', String(on));
     });
-    let n = 0;
-    for (const card of cards) {
-      const show = key === 'all' || card.dataset.artist!.split(' ').includes(key) || card.dataset.type === key;
-      card.hidden = !show;
-      card.classList.remove('pop');
-      if (show && !still) {
-        card.style.setProperty('--i', String(n++ % 8));
-        void card.offsetWidth;
-        card.classList.add('pop', 'in');
-      }
-    }
+    for (const card of cards) card.hidden = !(key === 'all' || card.dataset.artist!.split(' ').includes(key) || card.dataset.type === key);
   };
-  chips.forEach((c) => c.addEventListener('click', () => filter(c.dataset.filter!)));
+  const onTab = (e: Event): void => filter((e.currentTarget as HTMLElement).dataset.filter!);
+  tabs.forEach((t) => t.addEventListener('click', onTab));
+  off.push(() => tabs.forEach((t) => t.removeEventListener('click', onTab)));
 
-  /* ── play buttons: put a set on air, here ── */
-  const nowTitle = feed.querySelector<HTMLElement>('[data-now-title]');
-  const nowSub = feed.querySelector<HTMLElement>('[data-now-sub]');
+  /* ── play buttons: put a set on air, here; the EQ beside the intro button shows while it plays ── */
   const mark = (): void => {
     const playing = isPlaying();
     feed.querySelectorAll<HTMLElement>('[data-play-set]').forEach((b) => {
@@ -115,8 +94,6 @@ function enhance(feed: HTMLElement): () => void {
       b.classList.toggle('on-air', on);
       b.setAttribute('aria-pressed', String(on));
     });
-    if (nowTitle) nowTitle.textContent = CURRENT.title;
-    if (nowSub) nowSub.textContent = `${CURRENT.hosts} · ${CURRENT.station}${playing ? ' · playing' : ''}`;
   };
   const onClick = (e: Event): void => {
     const b = (e.target as Element).closest<HTMLElement>('[data-play-set]');
@@ -135,106 +112,34 @@ function enhance(feed: HTMLElement): () => void {
   });
   mark();
 
-  /* ── calendar countdown ── */
+  /* ── MENU backing: once the hero has scrolled past, the fixed MENU gets the
+     solid bar the artist pages have (body.feed-on, home.css), so feed content
+     passes under a visible edge rather than under a floating, tap-catching word ── */
+  const hero = document.querySelector('#app .home');
+  if (hero) {
+    const bar = new IntersectionObserver(([e]) => document.body.classList.toggle('feed-on', !e.isIntersecting), { rootMargin: '-64px 0px 0px 0px' });
+    bar.observe(hero);
+    off.push(() => {
+      bar.disconnect();
+      document.body.classList.remove('feed-on');
+    });
+  }
+
+  /* ── broadcast countdown: days, hours and minutes are enough for a weekly slot ── */
   const cd = feed.querySelector<HTMLElement>('[data-countdown]');
   const cdText = cd?.querySelector<HTMLElement>('[data-cd-text]');
   if (cd && cdText) {
     const at = Date.parse(cd.dataset.countdown!);
     const tick = (): void => {
       const s = Math.floor((at - Date.now()) / 1000);
-      if (s <= 0) return void (cdText.textContent = 'on air now or just aired');
-      const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-      cdText.textContent = `in ${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
+      if (s <= 0) return void (cdText.textContent = ' · on air now or just aired');
+      const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+      cdText.textContent = ` · in ${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
     };
     tick();
-    const id = window.setInterval(() => !document.hidden && tick(), 1000);
+    const id = window.setInterval(() => !document.hidden && tick(), 15000);
     off.push(() => clearInterval(id));
   }
-
-  /* ── sticky call to action: after the hero, until the closing block ── */
-  const sticky = feed.querySelector<HTMLElement>('.sticky-cta');
-  const close = feed.querySelector<HTMLElement>('[data-close]');
-  let closeIn = false;
-  const closeIo = new IntersectionObserver(([e]) => {
-    closeIn = e.isIntersecting;
-    place();
-  });
-  if (close) closeIo.observe(close);
-  off.push(() => closeIo.disconnect());
-
-  /* ── one rAF loop: scroll velocity skews the marquees, pointer tilts cards ── */
-  let lastY = window.scrollY;
-  let skew = 0;
-  let raf = 0;
-  let tiltEl: HTMLElement | null = null;
-  let tx = 0;
-  let ty = 0;
-  const marquees = [...feed.querySelectorAll<HTMLElement>('.mq')];
-  function place(): void {
-    if (sticky) sticky.hidden = closeIn || window.scrollY < innerHeight * 0.85;
-  }
-  const frame = (): void => {
-    raf = 0;
-    const y = window.scrollY;
-    const v = y - lastY;
-    lastY = y;
-    skew += (Math.max(-6, Math.min(6, v * 0.08)) - skew) * 0.2;
-    if (Math.abs(skew) < 0.02) skew = 0;
-    for (const m of marquees) m.style.setProperty('--skew', skew.toFixed(2));
-    if (tiltEl) {
-      tiltEl.style.setProperty('--rx', tx.toFixed(2));
-      tiltEl.style.setProperty('--ry', ty.toFixed(2));
-    }
-    if (skew !== 0) raf = requestAnimationFrame(frame);
-  };
-  const kick = (): void => {
-    raf ||= requestAnimationFrame(frame);
-  };
-  const onScroll = (): void => {
-    place();
-    if (!still) kick();
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  off.push(() => window.removeEventListener('scroll', onScroll));
-  place();
-
-  if (!still && matchMedia('(hover: hover)').matches) {
-    const onMove = (e: PointerEvent): void => {
-      const el = (e.target as Element).closest<HTMLElement>('.tilt');
-      if (tiltEl && tiltEl !== el) {
-        tiltEl.style.setProperty('--rx', '0');
-        tiltEl.style.setProperty('--ry', '0');
-      }
-      tiltEl = el;
-      if (el) {
-        const r = el.getBoundingClientRect();
-        tx = ((e.clientX - r.left) / r.width - 0.5) * 10;
-        ty = -((e.clientY - r.top) / r.height - 0.5) * 10;
-      }
-      // Magnetic buttons lean a few pixels towards the pointer.
-      const btn = (e.target as Element).closest<HTMLElement>('.btn, .fc-play');
-      if (btn) {
-        const r = btn.getBoundingClientRect();
-        btn.style.setProperty('--mx', (((e.clientX - r.left) / r.width - 0.5) * 6).toFixed(1));
-        btn.style.setProperty('--my', (((e.clientY - r.top) / r.height - 0.5) * 6).toFixed(1));
-      }
-      kick();
-    };
-    const onLeave = (e: PointerEvent): void => {
-      const btn = (e.target as Element).closest?.<HTMLElement>('.btn, .fc-play');
-      if (btn) {
-        btn.style.removeProperty('--mx');
-        btn.style.removeProperty('--my');
-      }
-    };
-    feed.addEventListener('pointermove', onMove, { passive: true });
-    feed.addEventListener('pointerout', onLeave, { passive: true });
-    off.push(() => {
-      feed.removeEventListener('pointermove', onMove);
-      feed.removeEventListener('pointerout', onLeave);
-    });
-  }
-  off.push(() => cancelAnimationFrame(raf));
 
   return () => off.forEach((fn) => fn());
 }

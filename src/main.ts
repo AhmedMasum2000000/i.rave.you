@@ -234,6 +234,10 @@ function renderHome(): void {
       card.dataset.at = at.wide ? (id === 'apurba' ? 'left' : 'right') : id === 'apurba' ? 'above' : 'below';
       card.style.left = `${at.wide ? at.x + (id === 'apurba' ? -gap : gap) : at.x}px`;
       card.style.top = `${at.wide ? at.y : at.y + (id === 'apurba' ? -gap : gap)}px`;
+      // Keep the whole card on screen (on a tablet it could hang off the edge).
+      const r = card.getBoundingClientRect();
+      const dx = Math.max(0, 12 - r.left) + Math.min(0, innerWidth - 12 - r.right);
+      if (dx) card.style.left = `${parseFloat(card.style.left) + dx}px`;
     }
     document.body.classList.toggle('peeking', !!side);
   });

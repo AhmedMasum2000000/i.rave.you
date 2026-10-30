@@ -242,6 +242,8 @@ body[data-artist='acnd'] .logo img {
   display: grid;
   grid-template-columns: 1fr 1fr;
   user-select: none;
+  /* The peek cards stay inside the screen; nothing here may widen the page. */
+  overflow: clip;
 }
 .home-canvas {
   position: absolute;
