@@ -31,6 +31,7 @@ const FAQ = [
   ["How do you pronounce ACND?", "“Ascend”. ACND is the recording name of Ahmed Masum, a producer, DJ and composer based in Dhaka, Bangladesh."],
   ["Who is অপূর্ব (Opurbo / Apurba)?", "অপূর্ব is the independent electronic music project of Khalid Bin Alam, a self-taught producer and DJ from Cumilla, Bangladesh, making music since 2016."],
   ["What is Qbic Pulse?", "Qbic Pulse is the show ACND and অপূর্ব host on Hong Kong Community Radio. Their shared set opens with “Initiate”, an unreleased collaboration between the two artists, and plays in full on this site."],
+  ["Is ACND signed to a label?", "No. ACND (Ahmed Masum) is independent and not signed to a label. “Down In Bossa”, his collaboration with Ash Army, is one release on Profi Music."],
   ["Where can I listen to Down In Bossa?", "“Down In Bossa” by Ash Army & ACND is out now on Profi Music, released on 30 October 2026 and distributed by ADA Central Europe, Warner Music Group’s distribution arm. The official smart link opens it on your streaming service."],
 ];
 

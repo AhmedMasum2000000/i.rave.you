@@ -91,7 +91,7 @@ function credits(a: Artist): string {
     { k: 'Radio', b: MIX.station, sub: `${MIX.show} — a set with ${other.name}` },
     ...(a.id === 'acnd'
       ? [
-          { k: 'Label', b: 'Profi Music', sub: 'Down In Bossa with Ash Army · 30.10.2026 · dist. ADA Central Europe (Warner Music Group)' },
+          { k: 'Release', b: 'Down In Bossa', sub: 'with Ash Army · out on Profi Music, 30.10.2026 · dist. ADA Central Europe (Warner Music Group)' },
           { k: 'Remix', b: 'Nitol Paye Electric', sub: 'ACND (Ahmed Masum) Remix', url: remix?.url },
         ]
       : []),
@@ -121,6 +121,7 @@ const FACTS: Record<Artist['id'], [string, string][]> = {
     ['Name', 'Ahmed Masum'],
     ['Based in', 'Dhaka, Bangladesh'],
     ['Role', 'Producer · DJ · Composer'],
+    ['Label', 'Independent, not signed to a label'],
     ['Sound', 'Techno, melodic techno, acid, progressive, Afro House'],
   ],
   apurba: [

@@ -50,6 +50,9 @@ assert.match(home, /href="acnd\/"/);
 assert.match(home, /distributed by ADA Central Europe/);
 assert.match(readFileSync(resolve(root, "music/down-in-bossa/index.html"), "utf8"), /ADA Central Europe \(Warner Music Group\)/);
 assert.doesNotMatch(home, /Warner Records/);
+// ACND is independent: one release on Profi Music, no label deal.
+assert.match(home, /not signed to a label/);
+for (const page of [home, readFileSync(resolve(root, "acnd/index.html"), "utf8")]) assert.doesNotMatch(page, /signed (?:to|with) (?:Profi|ADA|Warner)/i);
 const acnd = readFileSync(resolve(root, "acnd/index.html"), "utf8");
 assert.match(acnd, /Ahmed Masum/);
 assert.match(acnd, /Dhaka/);
