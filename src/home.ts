@@ -1,4 +1,3 @@
-import './home.css';
 import { isPlaying, onState, playSet } from './audio';
 import { CURRENT, onSetChange } from './data';
 import { ROOT } from './router';
@@ -33,13 +32,16 @@ async function ensureFeed(): Promise<HTMLElement | null> {
 export function mountFeed(): () => void {
   const cleanup: (() => void)[] = [];
   let alive = true;
-  // The hero paints first; the feed's behaviour waits for an idle moment.
+  // The markup is wanted at once (Back may be restoring a spot inside it);
+  // its behaviour waits for an idle moment so the hero paints first.
   const idle = (fn: () => void): void => void ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
-  idle(() =>
-    void ensureFeed().then((feed) => {
-      if (feed && alive) cleanup.push(enhance(feed));
-    }),
-  );
+  void ensureFeed().then((feed) => {
+    if (!feed || !alive) return;
+    window.dispatchEvent(new Event('feedready'));
+    idle(() => {
+      if (alive) cleanup.push(enhance(feed));
+    });
+  });
   return () => {
     alive = false;
     cleanup.forEach((fn) => fn());

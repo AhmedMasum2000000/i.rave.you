@@ -1,4 +1,5 @@
 import './style.css';
+import './system.css';
 import { syncSearchMetadata } from './seo';
 import { installGuard } from './guard';
 import './artist.css';
@@ -7,6 +8,8 @@ import './fx.css';
 import './bar.css';
 import './polish.css';
 import './menu.css';
+import './home.css';
+import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, CURRENT, NEXT_RELEASE, type ArtistId } from './data';
@@ -16,10 +19,14 @@ import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
 import { ROOT, interceptLinks, link, parse, routeHref, upgradeLegacyHash } from './router';
+import { entry, initHistory, push, rememberScroll, restoreScroll, stamp } from './history';
+import { mountBack } from './back';
 
 // Assets resolve from the site root whatever route the visitor landed on.
 document.documentElement.dataset.root = ROOT;
+document.documentElement.classList.add('k-js');
 upgradeLegacyHash();
+initHistory();
 
 installGuard();
 
@@ -33,29 +40,46 @@ const teardown = (): void => {
 
 /* ─────────────────────────────── ROUTER ─────────────────────────────── */
 
-/** `/acnd/`, `/acnd/listen/`, `/apurba/about/`… anything else is the duality home. */
-const route = (): void => {
+/**
+ * `/acnd/`, `/acnd/listen/`, `/apurba/about/`… anything else is the duality
+ * home. A new page opens at the top; Back and Forward (`restore`) reopen a
+ * page where the visitor left it.
+ */
+const route = (restore = false): void => {
   const { artist, page, doc } = parse();
+  const { y, fy } = restore ? entry() : { y: 0, fy: 0 };
   // Moving between content pages reuses the open frame.
-  if (doc && showDoc(doc)) return void window.dispatchEvent(new Event('routechange'));
+  if (doc && showDoc(doc, fy)) return void window.dispatchEvent(new Event('routechange'));
   teardown();
   window.scrollTo({ top: 0, behavior: 'instant' });
-  if (doc) cleanup.push(renderDoc(doc));
+  if (doc) cleanup.push(renderDoc(doc, fy));
   else if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
   else renderHome();
   if (!doc) syncSearchMetadata(artist as ArtistId | undefined);
+  if (y) restoreScroll(y);
   window.dispatchEvent(new Event('routechange'));
 };
+
+/** The content frame's own scroll position, when one is open. */
+const frameY = (): number => {
+  try {
+    return Math.round(frame?.contentWindow?.scrollY ?? 0);
+  } catch {
+    return 0;
+  }
+};
+const saveSoon = rememberScroll(() => ({ y: Math.round(scrollY), fy: frameY() }));
 
 /** Move to another view without reloading, so the mix plays on uninterrupted. */
 export function navigate(path: string): void {
   if (path === location.pathname + location.hash) return;
-  history.pushState(null, '', path);
-  transition(route);
+  stamp({ y: Math.round(scrollY), fy: frameY() });
+  push(path);
+  transition(() => route());
 }
 
 // Later navigations dissolve between pages; the first render is immediate.
-window.addEventListener('popstate', () => transition(route));
+window.addEventListener('popstate', () => transition(() => route(true)));
 interceptLinks(navigate);
 
 /* ─────────────────────────── CONTENT PAGES ──────────────────────────── */
@@ -68,6 +92,8 @@ interceptLinks(navigate);
  * the page are routed back here.
  */
 let frame: HTMLIFrameElement | null = null;
+/** Where to put the frame's next page, when it reopens one the visitor came back to. */
+let pendingFrameY = 0;
 
 const framePath = (f: HTMLIFrameElement): string => {
   try {
@@ -78,7 +104,8 @@ const framePath = (f: HTMLIFrameElement): string => {
   }
 };
 
-function renderDoc(path: string): () => void {
+function renderDoc(path: string, y = 0): () => void {
+  pendingFrameY = y;
   document.body.dataset.view = 'doc';
   delete document.body.dataset.artist;
   delete document.body.dataset.lean;
@@ -109,9 +136,14 @@ function renderDoc(path: string): () => void {
     }, true);
     mark();
     interceptLinks(navigate, d);
+    // Back into a page read earlier: pick up where it was left.
+    const win = f.contentWindow!;
+    if (pendingFrameY) restoreScroll(pendingFrameY, win);
+    pendingFrameY = 0;
+    win.addEventListener('scroll', saveSoon, { passive: true });
     // A navigation the shell didn't route (a form, a typed URL): follow it.
     const at = framePath(f);
-    if (at && at !== location.pathname + location.hash) history.replaceState(null, '', at);
+    if (at && at !== location.pathname + location.hash) stamp({}, at);
     window.dispatchEvent(new Event('routechange'));
   });
   return () => {
@@ -120,9 +152,12 @@ function renderDoc(path: string): () => void {
 }
 
 /** Point the open frame at another page without adding a history entry. */
-function showDoc(path: string): boolean {
+function showDoc(path: string, y = 0): boolean {
   if (!frame?.contentWindow) return false;
-  if (framePath(frame) !== path) frame.contentWindow.location.replace(path);
+  if (framePath(frame) !== path) {
+    pendingFrameY = y;
+    frame.contentWindow.location.replace(path);
+  } else restoreScroll(y, frame.contentWindow);
   return true;
 }
 
@@ -169,7 +204,7 @@ function renderHome(): void {
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
-  // The feed below the hero (and its stylesheet) loads after the hero has painted.
+  // The feed's behaviour loads after the hero has painted.
   let stopFeed = (): void => {};
   let left = false;
   void import('./home').then((m) => {
@@ -264,8 +299,10 @@ function peekCard(id: ArtistId): HTMLElement {
 
 /* ─────────────────────────────── BOOT ───────────────────────────────── */
 
-route();
+// A reload reopens the page where it was.
+route(true);
 mountChrome();
+mountBack(navigate);
 mountPlayer();
 mountFx();
 // Only a first visit to the home page asks about sound; every other page

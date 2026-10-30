@@ -384,3 +384,8 @@ figcaption {
 .release-tracks { list-style: none; padding: 0; margin: 12px 0 20px; }
 .release-tracks li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #333; }
 .release-tracks li:last-child { border-bottom: 1px solid #333; }
+
+/* Inside the site shell, Back (top left) and Menu (top right) sit over the
+   header's corners; on narrower screens the header starts below them. */
+html.in-shell body > header { padding-top: 64px; }
+@media (min-width: 1240px) { html.in-shell body > header { padding-top: 28px; } }

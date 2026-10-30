@@ -49,7 +49,7 @@ export function parse(pathname = location.pathname): Route {
 export function upgradeLegacyHash(): void {
   const m = /^#\/?(acnd|apurba)?(?:\/(listen|sequencer|about))?\/?$/.exec(location.hash);
   if (!m) return;
-  history.replaceState(null, '', routeHref(m[1] as ArtistRoute | undefined, (m[2] as SubRoute) ?? 'home'));
+  history.replaceState(history.state, '', routeHref(m[1] as ArtistRoute | undefined, (m[2] as SubRoute) ?? 'home'));
 }
 
 /** Is this a same-site URL the interactive router can render without a reload? */

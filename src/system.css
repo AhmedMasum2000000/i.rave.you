@@ -1,0 +1,131 @@
+/* ─────────────────────────────── SYSTEM ───────────────────────────────────
+   One small kit shared by the home feed and the artist pages, so both read
+   as one site. Rules of the kit:
+
+   - Type: Hind Siliguri (500 / 700, the weights shipped) for everything
+     people read; Doto only for display (the record title, an artist's name)
+     at 40px and up; system mono only for dates, times and short labels.
+   - Colour carries meaning: red is the one primary action / live, orange is
+     ACND, blue is অপূর্ব. Everything else is ink, paper and grey.
+   - Square: covers have no radius, controls 2px. No pills, glows, gradients
+     on text, or shadows.
+   - Motion only where something is happening (playing, hover, focus) plus
+     one fade as a section arrives. */
+
+:root {
+  --k-ink: #060606;
+  --k-paper: #f4f2ec;
+  --k-mute: #a19d94;
+  --k-line: rgba(244, 242, 236, 0.14);
+  --k-red: #d4202b;
+  --k-acnd: #ff6a1a;
+  --k-apurba: #2f7bff;
+  --k-text: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --k-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --k-display: 'Doto', 'Hind Siliguri', sans-serif;
+  --k-gut: clamp(16px, 4vw, 56px);
+  --k-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Small label: one style, at most one per block. */
+.k-label {
+  display: block;
+  margin: 0;
+  font: 500 12px/1.4 var(--k-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--k-mute);
+}
+.k-label .bn, .k-label:lang(bn) { text-transform: none; letter-spacing: 0; font-family: var(--k-text); font-size: 1.12em; }
+
+/* Section title: quiet, sentence case. */
+.k-h2 {
+  margin: 0;
+  font: 700 clamp(26px, 2.8vw, 38px)/1.1 var(--k-text);
+  letter-spacing: -0.015em;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+/* Display: Doto, big or not at all. */
+.k-display {
+  font-family: var(--k-display);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+/* Buttons: rectangular. .k-primary is filled and used once per screen. */
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  font: 700 15px/1 var(--k-text);
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.k-btn:hover { background: var(--k-paper); border-color: var(--k-paper); color: var(--k-ink); }
+.k-primary { background: var(--k-red); border-color: var(--k-red); color: #fff; }
+.k-primary:hover { background: #fff; border-color: #fff; color: var(--k-ink); }
+.k-btn svg { flex: none; }
+
+/* Secondary actions are text links. */
+.k-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: inherit;
+  font: 700 15px/1.2 var(--k-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  transition: text-decoration-color 0.15s;
+}
+.k-link:hover { text-decoration-color: currentColor; }
+
+/* Tabs (filters): text with an underline when on. */
+.k-tabs { display: flex; gap: 4px 20px; flex-wrap: wrap; margin: 0; padding: 0; }
+.k-tab {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--k-mute);
+  font: 700 15px/1 var(--k-text);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.k-tab:hover { color: var(--k-paper); }
+.k-tab.on, .k-tab[aria-pressed='true'] { color: var(--k-paper); border-bottom-color: currentColor; }
+.k-tab sup { font: 500 11px/1 var(--k-mono); margin-left: 4px; color: var(--k-mute); vertical-align: 0.4em; }
+
+/* Ruled list rows (calendar, timeline, journal, credits, facts). */
+.k-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--k-line); }
+.k-rows > * { border-bottom: 1px solid var(--k-line); }
+
+/* One fade as a block arrives: mark it `class="k-fade" data-reveal`; the
+   site's IntersectionObserver adds .in. Without script (html lacks .k-js)
+   everything simply shows. */
+.k-fade { transition: opacity 0.5s var(--k-ease), transform 0.5s var(--k-ease); }
+html.k-js .k-fade:not(.in) { opacity: 0; transform: translateY(12px); }
+
+@media (prefers-reduced-motion: reduce) {
+  html.k-js .k-fade:not(.in) { opacity: 1; transform: none; }
+  .k-fade { transition: none; }
+  .k-btn, .k-link, .k-tab { transition: none; }
+}

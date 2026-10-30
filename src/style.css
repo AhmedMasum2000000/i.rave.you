@@ -717,3 +717,6 @@ body:not([data-view='home']) .discovery-home { display: none; }
 /* Hold the hero's space from the first paint, so the script-free summary below it
    does not jump down when the app renders (was CLS 0.6-1.0 on home). */
 body[data-view='home'] #app { min-height: 100vh; min-height: 100svh; }
+
+/* The home feed is static in index.html; it shows on the home view only. */
+body:not([data-view='home']) #home-feed { display: none; }
