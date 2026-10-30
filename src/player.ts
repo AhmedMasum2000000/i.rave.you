@@ -85,7 +85,7 @@ export function mountPlayer(): void {
           <span class="fbar-artist"></span>
         </button>
       </div>
-      <button type="button" class="fbar-tl" aria-controls="track-id" aria-expanded="false">
+      <button type="button" class="fbar-tl" aria-label="Tracklist" aria-controls="track-id" aria-expanded="false">
         ${icon.list}<span class="fbar-tl-k">Tracklist</span><span class="fbar-tl-n">01/${TRACKLIST.length}</span>
       </button>
       <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>

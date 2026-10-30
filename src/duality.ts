@@ -151,11 +151,15 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   window.addEventListener('pointermove', onMove);
   window.addEventListener('resize', resize);
   resize();
+  // Scrolled down into the home feed, the emblem is out of sight: stop drawing it.
+  let offscreen = false;
+  const sight = new IntersectionObserver(([e]) => (offscreen = !e.isIntersecting));
+  sight.observe(canvas);
 
   const frame = (now: number): void => {
     if (!alive) return;
-    // Nothing to draw while the page is hidden or the opaque entry gate covers it.
-    if (document.hidden || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
+    // Nothing to draw while the page is hidden, scrolled away, or under the opaque entry gate.
+    if (document.hidden || offscreen || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
       raf = requestAnimationFrame(frame);
       return;
     }
@@ -382,6 +386,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     destroy() {
       alive = false;
       cancelAnimationFrame(raf);
+      sight.disconnect();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('resize', resize);
     },
