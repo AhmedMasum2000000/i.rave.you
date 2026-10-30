@@ -170,6 +170,7 @@ export interface CalendarEvent {
   start: string;
   /** How the date reads on the page. */
   when: string;
+  /** Ignored by the build, which works out upcoming or past from `start`. */
   status: 'scheduled' | 'done';
   detail: string;
   href: string;
@@ -179,6 +180,7 @@ export interface CalendarEvent {
 /** Confirmed dates only; each set's broadcast is added from the radio library. */
 export const EVENTS: CalendarEvent[] = [
   {
+    // Source: the artists' HKCR resident dashboard (slot booked for Fri 6 Nov, 01:00 HKT).
     title: 'Qbic Pulse on Hong Kong Community Radio',
     start: '2026-11-06T01:00:00+08:00',
     when: 'Fri 6 Nov 2026 · 01:00 HKT',

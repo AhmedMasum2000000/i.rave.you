@@ -40,15 +40,17 @@ export const calendar = (events, sets) =>
   [
     ...events,
     ...sets.map((s) => ({
-      title: `${s.show} ${s.volume} on ${s.station}`.replace(/\s+/g, " "),
+      title: `${s.show} ${s.volume} published on I Rave You`.replace(/\s+/g, " "),
       start: `${s.date}T12:00:00Z`,
       when: day(s.date),
-      status: "done",
       detail: `${s.hosts}. ${s.description}`,
       href: setPath(s),
       cta: "Tracklist & player",
     })),
-  ].sort((a, b) => (a.status === b.status ? (a.status === "scheduled" ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)) : a.status === "scheduled" ? -1 : 1));
+  ]
+    // Upcoming or past is worked out from the date at build time, never hand-set.
+    .map((e) => ({ ...e, status: Date.parse(e.start) > Date.now() ? "scheduled" : "done" }))
+    .sort((a, b) => (a.status === b.status ? (a.status === "scheduled" ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)) : a.status === "scheduled" ? -1 : 1));
 
 const setPath = (set) => (set.slug === "qbic-pulse-vol-1" ? "mixes/qbic-pulse/" : `mixes/${set.slug}/`);
 
@@ -65,7 +67,7 @@ export function catalogue({ artists, next, sets }) {
       cover: "img/mix-art.jpg", play: s.slug, page: setPath(s), tag: s.station,
     })),
     {
-      title: "Nitol Paye Electric", by: "ACND (Ahmed Masum) Remix", year: 2026, artist: ["acnd"], type: "remix",
+      title: "Nitol Paye Electric", by: "ACND (Ahmed Masum) Remix", when: "YouTube", artist: ["acnd"], type: "remix",
       logo: "img/logo-acnd.webp", href: "https://youtu.be/om5QGreRaYg", tag: "Remix · YouTube",
     },
     ...A.releases.map((r) => ({
@@ -73,8 +75,8 @@ export function catalogue({ artists, next, sets }) {
       type: "release", cover: r.cover, href: r.url, tag: r.tag === "Comp" ? "Compilation · Spotify" : "Spotify",
     })),
     { title: "SunSet Chill House Mix 2026", by: "Luminous Lullabies · Set 01", year: 2026, artist: ["apurba"], type: "set", cover: "img/sunset-mix.jpg", href: "https://youtu.be/cCP5bHLnfHw", tag: "Set · YouTube" },
-    { title: "Festival Vibe Melodic Bass House Mix", by: "Mixtape01 by ZALVIX", year: 2025, artist: ["apurba"], type: "set", cover: "img/festival-mix.jpg", href: "https://youtu.be/207WAnS77z0", tag: "Set · YouTube" },
-    { title: "Hypnotic (ZALVIX & FAMIN Unofficial Remix)", by: "Varski x Abi Flynn", year: 2025, artist: ["apurba"], type: "remix", cover: "img/hypnotic-remix.jpg", href: "https://youtu.be/p_JortMUAI0", tag: "Remix · YouTube" },
+    { title: "Festival Vibe Melodic Bass House Mix", by: "Mixtape01 by ZALVIX", when: "YouTube", artist: ["apurba"], type: "set", cover: "img/festival-mix.jpg", href: "https://youtu.be/207WAnS77z0", tag: "Set · YouTube" },
+    { title: "Hypnotic (ZALVIX & FAMIN Unofficial Remix)", by: "ZALVIX & FAMIN · original by Varski x Abi Flynn", when: "YouTube", artist: ["apurba"], type: "remix", cover: "img/hypnotic-remix.jpg", href: "https://youtu.be/p_JortMUAI0", tag: "Remix · YouTube" },
   ];
   return items;
 }
@@ -125,7 +127,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
     { y: "2018–23", t: "Euphonic", s: "An open production lab on YouTube: future house, synthwave and remixes." },
     { y: "2025", t: "Opening", s: "অপূর্ব, Hridnic, ACND (Ahmed Masum) and Prothey on one record, then Trance by 3, Progress!ve, VOID, PsyEcho and the London Love compilation." },
     { y: "2026", t: "1by1 · Monolithic Flow", s: "New অপূর্ব releases, with H4PPY and You Make It. from the Luminous Lullabies and Zalvix aliases." },
-    ...(set ? [{ y: day(set.date), t: "Qbic Pulse on HKCR", s: `${set.hosts} on Hong Kong Community Radio, opening with their unreleased collaboration “Initiate”.` }] : []),
+    ...(set ? [{ y: day(set.date), t: `${set.show} ${set.volume}`, s: `${set.hosts}: a set made for Hong Kong Community Radio, published here, opening with their unreleased collaboration “Initiate”.` }] : []),
     { y: "30 Oct 2026", t: "Down In Bossa", s: "Ash Army & ACND, Afro House, out on Profi Music." },
   ];
 
@@ -163,7 +165,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
         <p class="eyebrow mono">New release · ${esc(next.genre)} · ${esc(next.label)}</p>
         <h2 id="feature-title" class="f-h2">${esc(next.title)}</h2>
         <p class="f-by">${esc(next.artist)}</p>
-        <p>Afro House from Ash Army &amp; ACND, out on Profi Music since 30 October 2026 and distributed worldwide by ADA Central Europe, Warner Music Group’s distribution arm: rolling percussion, deep bass and space in the groove. Two versions, the 2:26 original and a 3:24 Extended Edit.</p><p class="f-dist mono">℗ 2026 profimusic · distributed by ADA Central Europe · Warner Music Group</p>
+        <p>Afro House from Ash Army &amp; ACND, out on Profi Music since 30 October 2026 and distributed by ADA Central Europe, Warner Music Group’s distribution arm: rolling percussion, deep bass and space in the groove. Two versions, the 2:26 original and a 3:24 Extended Edit.</p><p class="f-dist mono">℗ 2026 profimusic, distributed by ADA Central Europe</p>
         <div class="f-ctas">
           <a class="btn btn-hot" href="${esc(next.presave)}" ${ext} data-cta="feature-stream">Listen now ↗</a>
           <a class="btn btn-ghost" href="music/down-in-bossa/" data-cta="feature-details">Credits &amp; details</a>
@@ -309,18 +311,30 @@ export function homeExtraGraph({ artists, next, sets, events: confirmed, origin 
       "@type": "ItemList",
       "@id": `${origin}/#catalogue`,
       name: "Releases, remixes and sets by ACND and অপূর্ব",
-      itemListElement: items.map((it, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
-        item: {
-          "@type": it.type === "set" ? "MusicPlaylist" : "MusicRecording",
-          name: it.title,
-          url: it.page ? `${origin}/${it.page}` : it.href,
-          byArtist: it.artist.map((a) => ({ "@id": id(a) })),
-          ...(it.cover ? { image: `${origin}/${it.cover}` } : {}),
-          ...(it.type === "release" && it.title === next.title ? { datePublished: "2026-10-30", recordLabel: { "@type": "Organization", name: next.label, url: "https://www.profimusic.com/" }, copyrightNotice: "℗ 2026 profimusic, distributed by ADA Central Europe" } : {}),
-        },
-      })),
+      itemListElement: items.map((it, i) => {
+        // Everyone credited on the item: the two artists by @id, anyone else by name.
+        const credited = it.by
+          .replace(/\(.*?\)|\bRemix\b|·.*$|Set 01|Mixtape01 by/gi, "")
+          .split(/,|&|\bx\b/)
+          .map((n) => n.trim())
+          .filter((n) => n && n !== "Various Artists")
+          .map((n) => (/^ACND$/i.test(n) ? { "@id": id("acnd") } : n === "অপূর্ব" ? { "@id": id("apurba") } : { "@type": "Person", name: n }));
+        const url = it.page ? `${origin}/${it.page}` : it.href;
+        const image = it.cover ? { image: `${origin}/${it.cover}` } : {};
+        if (it.type === "set")
+          return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicPlaylist", name: it.title, url, creator: credited.length ? credited : [{ "@id": id("acnd") }, { "@id": id("apurba") }], ...image } };
+        if (it.title === next.title)
+          return {
+            "@type": "ListItem",
+            position: i + 1,
+            item: {
+              "@type": "MusicAlbum", name: it.title, url, byArtist: credited, ...image,
+              albumReleaseType: "https://schema.org/SingleRelease", datePublished: "2026-10-30",
+              albumRelease: { "@type": "MusicRelease", name: it.title, recordLabel: { "@type": "Organization", name: next.label, url: "https://www.profimusic.com/" }, copyrightNotice: "℗ 2026 profimusic, distributed by ADA Central Europe" },
+            },
+          };
+        return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicRecording", name: it.title, url, ...(credited.length ? { byArtist: credited } : {}), ...image } };
+      }),
     },
     ...events
       .filter((e) => e.status === "scheduled")
