@@ -46,6 +46,10 @@ for (const url of urls) {
 const home = readFileSync(resolve(root, "index.html"), "utf8");
 assert.match(home, /<h1[^>]*>I Rave You/);
 assert.match(home, /href="acnd\/"/);
+// The release is distributed by ADA Central Europe (Warner Music Group), per its ℗ line.
+assert.match(home, /distributed by ADA Central Europe/);
+assert.match(readFileSync(resolve(root, "music/down-in-bossa/index.html"), "utf8"), /ADA Central Europe \(Warner Music Group\)/);
+assert.doesNotMatch(home, /Warner Records/);
 const acnd = readFileSync(resolve(root, "acnd/index.html"), "utf8");
 assert.match(acnd, /Ahmed Masum/);
 assert.match(acnd, /Dhaka/);

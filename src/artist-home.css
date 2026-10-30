@@ -1,0 +1,141 @@
+/* ───────────────────────────── ARTIST HOME ────────────────────────────────
+   One artist, full bleed. The portrait fills the screen, mirrored down the
+   middle like the ACND HQ kaleidoscope and washed in the artist's own light
+   (orange for ACND, blue for অপূর্ব); the logo floats over it with the chrome
+   sheen and beats with the mix. Below: the lead record, the discography as a
+   wall of covers, the story, credits and every place to listen.
+   Colours come from the page tokens (--bg, --fg, --glow), so ACND's paper
+   page and অপূর্ব's black page share one layout. */
+
+.ah-hero {
+  --beat: 0;
+  --sy: 0;
+  --px: 0;
+  --py: 0;
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  background: #050505;
+}
+.ah-bg { position: absolute; inset: -4%; z-index: -2; transform: translate3d(calc(var(--px) * -18px), calc(var(--py) * -14px + var(--sy) * 12vh), 0) scale(calc(1.06 + var(--beat) * 0.03)); }
+.ah-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; animation: ah-breathe 16s ease-in-out infinite alternate; filter: saturate(1.1) contrast(1.08); }
+/* the right half, mirrored onto the left */
+.ah-bg .ah-mirror { transform: scaleX(-1); clip-path: inset(0 50% 0 0); mix-blend-mode: screen; opacity: 0.9; animation-name: ah-mirror; }
+body[data-artist='apurba'] .ah-bg img { filter: saturate(1.2) contrast(1.15) blur(1px); }
+.ah-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background:
+    radial-gradient(60% 50% at 50% 38%, transparent, rgba(0, 0, 0, 0.55) 80%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 30%, rgba(0, 0, 0, 0.88) 88%),
+    linear-gradient(135deg, color-mix(in srgb, var(--glow) 55%, transparent), transparent 55%, color-mix(in srgb, var(--glow) 30%, transparent));
+  mix-blend-mode: normal;
+  animation: ah-glow 9s ease-in-out infinite alternate;
+}
+@keyframes ah-breathe { from { transform: scale(1.02); } to { transform: scale(1.12) translateY(-1.5%); } }
+@keyframes ah-mirror { from { transform: scaleX(-1) scale(1.02); } to { transform: scaleX(-1) scale(1.12) translateY(-1.5%); } }
+@keyframes ah-glow { to { opacity: 0.78; } }
+
+.ah-in { display: grid; justify-items: center; text-align: center; gap: 14px; padding: 18vh var(--gutter) 96px; }
+.ah-k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; }
+/* the logo, in the flow here (the old hero pinned it) */
+.ah-hero .ah-mark { position: relative; left: auto; top: auto; translate: none; width: clamp(220px, 34vw, 480px); transform: perspective(900px) rotateX(calc(var(--py) * -12deg)) rotateY(calc(var(--px) * 16deg)) translateY(calc(var(--sy) * -12vh)) scale(calc(1 + var(--beat) * 0.05)); opacity: 1; }
+.ah-hero .a-mark-logo { filter: drop-shadow(0 0 calc(14px + var(--beat) * 30px) color-mix(in srgb, var(--glow) 80%, transparent)) drop-shadow(0 6px 30px rgba(0, 0, 0, 0.6)); }
+body[data-artist='acnd'] .ah-hero .a-mark-logo img { filter: invert(1); }
+.ah-sum { max-width: 54ch; font: 600 clamp(16px, 1.5vw, 20px)/1.5 var(--text, sans-serif); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7); margin: 0; }
+.ah-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+
+.ah-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 18px;
+  border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit;
+  font: 700 12px/1 var(--bar-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 0.07em; text-decoration: none; cursor: pointer;
+  transition: background 0.25s, color 0.25s, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ah-btn:hover { transform: translateY(-2px); }
+.ah-hot { position: relative; background: var(--glow); border-color: var(--glow); color: #050505; }
+.ah-hot::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; border: 2px solid var(--glow); pointer-events: none; animation: ah-ring 2.4s ease-out infinite; }
+.ah-ghost { border-color: color-mix(in srgb, currentColor 35%, transparent); }
+@keyframes ah-ring { from { transform: scale(1); opacity: 0.8; } 70%, to { transform: scale(1.2, 1.6); opacity: 0; } }
+
+.ah-mq { position: absolute; left: 0; right: 0; bottom: 0; overflow: hidden; background: var(--glow); color: #050505; }
+.ah-mq-t { display: flex; width: max-content; animation: ah-mq 30s linear infinite; }
+.ah-mq span { display: flex; align-items: center; }
+.ah-mq b { font: 900 15px/1 var(--brand-font); text-transform: uppercase; padding: 12px 16px; white-space: nowrap; }
+.ah-mq i { font-style: normal; opacity: 0.7; }
+@keyframes ah-mq { to { transform: translateX(-50%); } }
+
+/* ─── sections ─── */
+.ah-now, .ah-disc, .ah-story, .ah-links, .ah-other { padding: clamp(40px, 6vw, 88px) var(--gutter); border-top: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); }
+.ah-h2 { font: 900 clamp(30px, 5vw, 68px)/0.98 var(--brand-font); text-transform: uppercase; margin: 0; text-wrap: balance; }
+.ah-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: clamp(20px, 3vw, 36px); }
+
+.ah-now { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: center; }
+.ah-lead { display: grid; grid-template-columns: minmax(140px, 0.9fr) minmax(0, 1fr); gap: clamp(16px, 3vw, 36px); align-items: center; text-decoration: none; color: inherit; }
+.ah-lead-art { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 6px; box-shadow: 0 30px 60px -20px color-mix(in srgb, var(--glow) 55%, transparent); }
+.ah-lead-art img, .ah-lead-art .pic { width: 100%; height: 100%; object-fit: cover; display: block; animation: ah-breathe 14s ease-in-out infinite alternate; }
+.ah-lead-t { display: grid; gap: 8px; justify-items: start; }
+.ah-lead-t .ah-k { color: var(--glow); opacity: 1; }
+.ah-lead-t b { font: 900 clamp(30px, 4.6vw, 64px)/0.95 var(--brand-font); text-transform: uppercase; }
+.ah-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; background: color-mix(in srgb, var(--fg) 14%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); }
+.ah-facts div { background: var(--bg); padding: 16px; }
+.ah-facts dt { font-size: 11px; text-transform: uppercase; color: var(--glow); }
+.ah-facts dd { margin: 6px 0 0; font-weight: 800; }
+
+.ah-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 200px), 1fr)); gap: clamp(16px, 2.2vw, 28px) clamp(12px, 1.8vw, 22px); }
+.ah-card { display: grid; gap: 4px; align-content: start; text-decoration: none; color: inherit; animation: ah-float 6s ease-in-out infinite alternate; animation-delay: calc(var(--i, 0) * -0.8s); min-width: 0; }
+.ah-card-art { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #111; margin-bottom: 8px; }
+.ah-card-art img, .ah-card-art .pic { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s; }
+.ah-card:hover .ah-card-art img { transform: scale(1.08) rotate(-1deg); filter: saturate(1.25); }
+.ah-card-art i { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-style: normal; background: var(--glow); color: #050505; transform: scale(0.8); opacity: 0; transition: transform 0.3s, opacity 0.3s; }
+.ah-card:hover .ah-card-art i, .ah-card:focus-visible .ah-card-art i { transform: none; opacity: 1; }
+.ah-card .ah-k { color: var(--glow); opacity: 1; font-size: 11px; }
+.ah-card b { font-size: 17px; line-height: 1.2; overflow-wrap: anywhere; }
+.ah-card span:last-child { font-size: 14px; opacity: 0.75; overflow-wrap: anywhere; }
+@keyframes ah-float { to { transform: translateY(-6px); } }
+
+.ah-extras { margin-top: clamp(28px, 4vw, 48px); display: grid; }
+.ah-extras h3 { font-size: 12px; text-transform: uppercase; margin: 0 0 8px; opacity: 0.8; }
+.ah-extras a { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); text-decoration: none; color: inherit; font-weight: 700; transition: padding 0.3s, color 0.3s; }
+.ah-extras a:hover { padding-inline: 10px; color: var(--glow); }
+.ah-extras i { font-style: normal; }
+
+.ah-story { display: grid; gap: clamp(20px, 3vw, 36px); }
+.ah-quote { margin: 0; border-left: 4px solid var(--glow); padding-left: clamp(16px, 2.4vw, 32px); }
+.ah-quote p { margin: 0; font: 900 clamp(26px, 4vw, 54px)/1.08 var(--brand-font); text-transform: uppercase; text-wrap: balance; background: linear-gradient(90deg, currentColor 0 40%, var(--glow) 50%, currentColor 60%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: ah-sweep 8s linear infinite; }
+@keyframes ah-sweep { to { background-position: -300% 0; } }
+.ah-cols { columns: 2 320px; column-gap: clamp(24px, 4vw, 56px); }
+.ah-cols p { margin: 0 0 1em; font-size: clamp(16px, 1.3vw, 18px); line-height: 1.65; break-inside: avoid; }
+.ah-story > .ah-btn { justify-self: start; }
+
+.ah-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: clamp(18px, 3vw, 30px); }
+
+.ah-other-c { display: grid; gap: 10px; padding: clamp(24px, 4vw, 48px); border-radius: 10px; text-decoration: none; color: #fff; background: linear-gradient(135deg, #111, #000); position: relative; overflow: hidden; isolation: isolate; }
+.ah-other-c::before { content: ''; position: absolute; inset: -40%; z-index: -1; background: conic-gradient(from 0deg, var(--orange, #ff6a1a), var(--blue, #2f7bff), var(--orange, #ff6a1a)); opacity: 0.35; animation: ah-spin 14s linear infinite; }
+.ah-other-c b { font: 900 clamp(36px, 6vw, 84px)/0.95 var(--brand-font); }
+.ah-other-c b.bn { font-family: 'Hind Siliguri', sans-serif; }
+.ah-other-c span:last-child { max-width: 60ch; }
+@keyframes ah-spin { to { transform: rotate(360deg); } }
+
+/* reveals reuse the site's data-reveal → .in observer */
+.a-main [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); transition-delay: calc(var(--i, 0) * 0.06s); }
+.a-main [data-reveal].in { opacity: 1; transform: none; }
+.a-main .ah-card[data-reveal].in { transform: none; }
+
+@media (max-width: 860px) {
+  .ah-now { grid-template-columns: 1fr; }
+  .ah-in { padding-top: 22vh; padding-bottom: 80px; }
+}
+@media (max-width: 520px) {
+  .ah-lead { grid-template-columns: 1fr; }
+  .ah-facts { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ah-hero *, .ah-hero::before, .a-main [data-reveal], .ah-card, .ah-other-c::before, .ah-quote p, .ah-hot::after { animation: none !important; transition: none !important; }
+  .a-main [data-reveal] { opacity: 1; transform: none; }
+}
+
+/* Over the photo hero the bar fades from black instead of the page colour. */
+body[data-page='home'] .a-nav { background: linear-gradient(rgba(0, 0, 0, 0.72) 55%, transparent); color: #fff; }

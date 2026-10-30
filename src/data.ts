@@ -152,6 +152,8 @@ export const NEXT_RELEASE = {
   artist: 'Ash Army & ACND',
   genre: 'Afro House',
   label: 'Profi Music',
+  /** From the release's ℗ line: “℗ 2026 profimusic, distributed by ADA Central Europe”. ADA is Warner Music Group's independent distribution arm. */
+  distribution: 'ADA Central Europe (Warner Music Group)',
   labelNote: 'Record label',
   /** Release day per profimusic.com, counted to midnight in Dhaka. */
   date: '2026-10-30T00:00:00+06:00',
@@ -159,6 +161,42 @@ export const NEXT_RELEASE = {
   page: 'https://www.profimusic.com/release/down-in-bossa/',
   cover: 'img/down-in-bossa.jpg',
 };
+
+/* ─────────────────────────────── CALENDAR ─────────────────────────────── */
+
+export interface CalendarEvent {
+  title: string;
+  /** ISO date-time with offset. */
+  start: string;
+  /** How the date reads on the page. */
+  when: string;
+  status: 'scheduled' | 'done';
+  detail: string;
+  href: string;
+  cta: string;
+}
+
+/** Confirmed dates only; each set's broadcast is added from the radio library. */
+export const EVENTS: CalendarEvent[] = [
+  {
+    title: 'Qbic Pulse on Hong Kong Community Radio',
+    start: '2026-11-06T01:00:00+08:00',
+    when: 'Fri 6 Nov 2026 · 01:00 HKT',
+    status: 'scheduled',
+    detail: 'ACND & অপূর্ব in their slot on Hong Kong Community Radio. Tune in live on hkcr.live; between broadcasts the latest set plays here.',
+    href: 'https://hkcr.live/',
+    cta: 'Hong Kong Community Radio',
+  },
+  {
+    title: 'Down In Bossa — Ash Army & ACND',
+    start: '2026-10-30T00:00:00+06:00',
+    when: 'Fri 30 Oct 2026',
+    status: 'done',
+    detail: 'The Afro House single is out on Profi Music, distributed by ADA Central Europe, Warner Music Group’s distribution arm: the original (2:26) and an Extended Edit (3:24).',
+    href: 'music/down-in-bossa/',
+    cta: 'Release details',
+  },
+];
 
 /* ─────────────────────────────── ARTISTS ──────────────────────────────── */
 
@@ -271,7 +309,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     bio: [
       'ACND — read it “Ascend” — is the recording name of Ahmed Masum, a producer, DJ and composer working out of Dhaka, Bangladesh.',
       'Nothing here will tell you what the next record sounds like. That is the point. What holds the work together is not a category but a feeling: a room, a late hour, and a sound that will not leave.',
-      'Out now: “Down In Bossa” with Ash Army, on Profi Music since 30 October 2026.',
+      'Out now: “Down In Bossa” with Ash Army, on Profi Music since 30 October 2026, distributed by ADA Central Europe, Warner Music Group’s distribution arm.',
     ],
     about: {
       summary: 'Ahmed Masum, known as ACND, is a producer, DJ and composer based in Dhaka, Bangladesh.',
@@ -280,7 +318,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
         'His work moves through techno, melodic techno, acid and progressive sounds, with an emphasis on atmosphere, physical energy and the feeling of a dance floor.',
         'His remix credits include “Nitol Paye Electric”, credited to ACND (Ahmed Masum).',
         'Alongside অপূর্ব, he hosts Qbic Pulse on Hong Kong Community Radio. Their shared set opens with “Initiate”, an unreleased collaboration between the two artists.',
-        'His latest release, “Down In Bossa”, is an Afro House collaboration with Ash Army, out now via Profi Music since 30 October 2026.',
+        'His latest release, “Down In Bossa”, is an Afro House collaboration with Ash Army, out now via Profi Music since 30 October 2026 and distributed by ADA Central Europe, Warner Music Group’s distribution arm.',
       ],
     },
     notes: [

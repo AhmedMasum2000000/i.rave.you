@@ -1,5 +1,6 @@
-import { sample } from './audio';
-import { ARTISTS, MIX, OTHER, type Artist } from './data';
+import { playSet, sample } from './audio';
+import './artist-home.css';
+import { ARTISTS, MIX, NEXT_RELEASE, OTHER, SETS, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
 import { mountSequencer } from './sequencer';
 import { asset, esc, exists, img, reducedMotion, revealOnScroll, typewrite } from './ui';
@@ -17,9 +18,6 @@ export type Page = 'home' | 'listen' | 'sequencer' | 'about';
 /** Logo image with a typeset fallback while the artwork file is absent. */
 export const logo = (a: Artist, cls: string): string =>
   `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${asset(a.logo.replace(/\.png$/, '.webp'))}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" fetchpriority="high" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text">${esc(a.name)}</span></span>`;
-
-/** `^n` in copy becomes a superscript footnote marker. */
-const sup = (text: string): string => esc(text).replace(/\^(\d+)/g, '<sup>$1</sup>');
 
 const href = (a: Artist, page: Page): string => routeHref(a.id, page);
 
@@ -59,19 +57,6 @@ const media = (a: Artist, i: number, cls: string): string => {
     </figure>`;
 };
 
-const footnotes = (a: Artist): string => `
-  <ol class="a-notes">
-    ${a.footnotes
-      .map(
-        (f, i) => `
-      <li data-reveal>
-        <span class="a-note-n">${i + 1}</span>
-        <span>${esc(f.text)}${f.link ? `<a href="${esc(f.link.url)}" target="_blank" rel="noopener">${esc(f.link.label)} ↗</a>` : ''}</span>
-      </li>`,
-      )
-      .join('')}
-  </ol>`;
-
 /** Everyone credited alongside this artist on their releases. */
 const collaborators = (a: Artist): string[] => {
   const names = new Set<string>();
@@ -91,7 +76,7 @@ function credits(a: Artist): string {
     ['Radio', MIX.station, `${MIX.show} — a set with ${other.name}`],
     ...(a.id === 'acnd'
       ? ([
-          ['Label', 'Profi Music', 'Down In Bossa with Ash Army · 30.10.2026'],
+          ['Label', 'Profi Music', 'Down In Bossa with Ash Army · 30.10.2026 · dist. ADA Central Europe (Warner Music Group)'],
           ['Remix', 'Nitol Paye Electric', 'ACND remix'],
         ] as [string, string, string][])
       : ([['Catalogue', `${a.releases.length} releases`, 'Spotify · Apple Music · SoundCloud']] as [string, string, string][])),
@@ -108,57 +93,106 @@ function credits(a: Artist): string {
 
 /* ─────────────────────────────── PAGES ──────────────────────────────── */
 
+/** A cover thumbnail made for grids (public/img/s), else the original. */
+const thumb = (src: string): string => {
+  const small = `img/s/${src.replace(/^img\//, '').replace(/\.(jpe?g|png|webp)$/, '')}.webp`;
+  return exists(small) ? small : src;
+};
+
+const ICON_PLAY = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+
+/** At a glance, beside the lead record. */
+const FACTS: Record<Artist['id'], [string, string][]> = {
+  acnd: [['Artist', 'ACND — read “Ascend”'], ['Name', 'Ahmed Masum'], ['Based in', 'Dhaka, Bangladesh'], ['Latest', 'Down In Bossa · Profi Music'], ['Distribution', 'ADA · Warner Music Group']],
+  apurba: [['Artist', 'অপূর্ব (Opurbo)'], ['Name', 'Khalid Bin Alam'], ['Based in', 'Cumilla, Bangladesh'], ['Since', '2016']],
+};
+
+/** Genres and selves, scrolling under the hero. */
+const GENRES: Record<Artist['id'], string[]> = {
+  acnd: ['Techno', 'Melodic techno', 'Acid', 'Progressive', 'Afro House', 'Dhaka', 'Producer · DJ · Composer'],
+  apurba: ['Psychedelic', 'Melodic', 'Bass', 'Ambient', 'Euphonic', 'Zalvix', 'Luminous Lullabies', 'Necture Drop', 'Cumilla'],
+};
+
 function homePage(a: Artist): string {
+  const other = ARTISTS[OTHER[a.id]];
+  const lead = a.id === 'acnd'
+    ? { k: `Out now · ${NEXT_RELEASE.genre} · ${NEXT_RELEASE.label} · dist. ADA / Warner Music Group`, t: NEXT_RELEASE.title, s: NEXT_RELEASE.artist, img: NEXT_RELEASE.cover, href: NEXT_RELEASE.presave, cta: 'Stream it ↗', more: link('music/down-in-bossa/') }
+    : { k: `Latest release · ${a.releases[0].year}`, t: a.releases[0].title, s: a.releases[0].artists, img: a.releases[0].cover!, href: a.releases[0].url, cta: 'Listen on Spotify ↗', more: '' };
+  const quote = a.id === 'apurba' ? 'Language doesn’t matter. Frequency does.' : 'Not a category but a feeling: a room, a late hour, and a sound that will not leave.';
+  const set = SETS[0];
+  const mq = [0, 1].map(() => `<span>${GENRES[a.id].map((g) => `<b>${esc(g)}</b><i>✦</i>`).join('')}</span>`).join('');
   return `
-    <section class="a-hero" data-pulse>
-      <span class="a-hero-l mono">Mix</span>
-      <span class="a-hero-r mono">01</span>
-      <a class="a-hero-listen" href="${esc(a.listen.url)}" target="_blank" rel="noopener">Listen on ${esc(a.listen.label)} ↗</a>
-      <div class="a-scene">
-        <div class="a-door">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', a.heroAlt, 'a-door-img', a.hero, true)}</div>
-        <div class="a-floor" aria-hidden="true">
-          <div class="a-reflect">${img(a.id === 'acnd' ? 'img/acnd.jpg' : 'img/apurba.jpg', '', 'a-door-img', a.hero)}</div>
+    <section class="ah-hero" data-pulse>
+      <div class="ah-bg" aria-hidden="true">
+        <img src="${asset(a.hero)}" alt="" fetchpriority="high" decoding="async" />
+        <img class="ah-mirror" src="${asset(a.hero)}" alt="" decoding="async" />
+      </div>
+      <div class="ah-in">
+        <p class="ah-k mono">${esc(a.role)} · ${esc(a.origin)}</p>
+        <h1 class="a-mark ah-mark" aria-label="${esc(a.name)}">
+          ${logo(a, 'a-mark-logo')}
+          <span class="a-sheen" style="--logo:url('${asset(a.logo)}')" aria-hidden="true"></span>
+        </h1>
+        <p class="ah-sum">${esc(a.about?.summary ?? a.bio[0])}</p>
+        <div class="ah-ctas">
+          ${set ? `<button class="ah-btn ah-hot" type="button" data-play-set="${esc(set.slug)}" data-cta="artist-play">${ICON_PLAY} Play Qbic Pulse</button>` : ''}
+          <a class="ah-btn" href="${esc(lead.href)}" target="_blank" rel="noopener" data-cta="artist-lead">${esc(a.id === 'acnd' ? `Stream ${NEXT_RELEASE.title} ↗` : `Listen to ${lead.t} ↗`)}</a>
+          <a class="ah-btn ah-ghost" href="${esc(a.listen.url)}" target="_blank" rel="noopener" data-cta="artist-follow">Follow on ${esc(a.listen.label)} ↗</a>
         </div>
       </div>
-      <h1 class="a-mark" aria-label="${esc(a.name)}">
-        ${logo(a, 'a-mark-logo')}
-        <span class="a-sheen" style="--logo:url('${asset(a.logo)}')" aria-hidden="true"></span>
-      </h1>
+      <div class="ah-mq" aria-hidden="true"><div class="ah-mq-t">${mq}</div></div>
     </section>
 
-    <section class="a-essay">
-      <span class="a-label mono" data-type>● The mix</span>
-      <p class="a-big a-intro" data-type>${sup(a.essay.intro)}</p>
-      ${a.essay.blocks
-        .map(
-          (b, i) => `
-        <div class="a-block a-block-${i % 3}">
-          <span class="a-side mono">${esc(b.label)}</span>
-          <p class="a-big">${sup(b.text)}</p>
-        </div>`,
-        )
-        .join('')}
+    <section class="ah-now">
+      <a class="ah-lead" href="${esc(lead.href)}" target="_blank" rel="noopener" data-reveal>
+        <span class="ah-lead-art">${img(lead.img, `${lead.t} cover art`, 'ah-cover')}</span>
+        <span class="ah-lead-t">
+          <span class="mono ah-k">${esc(lead.k)}</span>
+          <b>${esc(lead.t)}</b>
+          <span class="${/[\u0980-\u09FF]/.test(lead.s) ? 'bn' : ''}">${esc(lead.s)}</span>
+          <span class="ah-btn ah-hot">${esc(lead.cta)}</span>
+        </span>
+      </a>
+      <dl class="ah-facts" data-reveal>
+        ${FACTS[a.id].map(([k, v]) => `<div><dt class="mono">${esc(k)}</dt><dd class="${/[\u0980-\u09FF]/.test(v) ? 'bn' : ''}">${esc(v)}</dd></div>`).join('')}
+      </dl>
     </section>
 
-    <section class="a-media-row">
-      ${media(a, 1, 'a-media-right')}
-    </section>
-
-    <section class="a-bio">
-      <span class="a-label mono" data-type>● ${esc(a.latin)}</span>
-      <p class="a-big a-intro" data-type>${esc(a.bio[0])} ${esc(a.bio[1])}</p>
-    </section>
-
-    <section class="a-columns">
-      ${media(a, 0, 'a-media-left')}
-      ${footnotes(a)}
-      <div class="a-ab">
-        <div data-reveal><span class="mono">A:</span><b>Where it starts.</b><p>${esc(a.bio[0])}</p></div>
-        <div data-reveal><span class="mono">B:</span><b>${a.id === 'acnd' ? 'Out now.' : 'What comes next.'}</b><p>${esc(a.bio[2])}</p></div>
-        <a class="a-more" href="${href(a, 'about')}">More about ${esc(a.latin)} <span>→</span></a>
+    <section class="ah-disc" aria-labelledby="ah-disc-h">
+      <header class="ah-head"><h2 id="ah-disc-h" class="ah-h2">${a.releases.length === 1 ? 'The record' : `${a.releases.length} releases`}</h2><a class="ah-btn ah-ghost" href="${href(a, 'listen')}">All releases →</a></header>
+      <div class="ah-grid">
+        ${a.releases.map((r, i) => `
+          <a class="ah-card" href="${esc(r.url)}" target="_blank" rel="noopener" style="--i:${i % 6}" data-reveal aria-label="${esc(r.title)} by ${esc(r.artists)}, opens in a new tab">
+            <span class="ah-card-art">${r.cover ? img(thumb(r.cover), `${r.title} cover art`, 'ah-cover') : logo(a, 'ah-cover')}<i aria-hidden="true">↗</i></span>
+            <span class="mono ah-k">${esc(r.tag)}</span>
+            <b>${esc(r.title)}</b>
+            <span class="${/[\u0980-\u09FF]/.test(r.artists) ? 'bn' : ''}">${esc(r.artists)}</span>
+          </a>`).join('')}
       </div>
+      ${a.extras?.items.length ? `<div class="ah-extras" data-reveal><h3 class="mono">● ${esc(a.extras.heading)}</h3>${a.extras.items.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener"><span>${esc(x.title)}</span><i aria-hidden="true">↗</i></a>`).join('')}</div>` : ''}
     </section>
+
+    <section class="ah-story" aria-labelledby="ah-story-h">
+      <h2 id="ah-story-h" class="ah-h2">The story</h2>
+      <blockquote class="ah-quote" data-reveal><p>“${esc(quote)}”</p></blockquote>
+      <div class="ah-cols">${(a.about?.paragraphs ?? a.bio).map((p, i) => `<p data-reveal style="--i:${i}">${esc(p)}</p>`).join('')}</div>
+      <a class="ah-btn ah-ghost" href="${href(a, 'about')}">More about ${esc(a.latin)} →</a>
+    </section>
+
     ${credits(a)}
+
+    <section class="ah-links" aria-labelledby="ah-links-h">
+      <h2 id="ah-links-h" class="ah-h2">Listen &amp; follow</h2>
+      <div class="ah-pills">${a.links.map((l, i) => `<a class="ah-btn${i === 0 ? ' ah-hot' : ''}" href="${esc(l.url)}" target="_blank" rel="noopener" data-cta="artist-link-${i}">${esc(l.label)} ↗</a>`).join('')}</div>
+    </section>
+
+    <section class="ah-other">
+      <a href="${routeHref(other.id)}" class="ah-other-c" data-reveal>
+        <span class="mono ah-k">The other half · Qbic Pulse</span>
+        <b class="${other.id === 'apurba' ? 'bn' : ''}">${esc(other.name)} →</b>
+        <span>${esc(other.about?.summary ?? other.bio[0])}</span>
+      </a>
+    </section>
     ${footer(a)}`;
 }
 
@@ -168,7 +202,7 @@ function listenPage(a: Artist): string {
       <header class="release-heading">
         <span class="a-label mono" data-type>● ${esc(a.latin)} · ${a.releases.length} ${a.releases.length === 1 ? 'release' : 'releases'}</span>
         <h1 id="release-heading" data-type>${a.id === 'acnd' ? 'Coming next.' : 'Selected releases.'}</h1>
-        <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Out now on Profi Music since 30 October 2026.' : esc(a.bio[1])}</p>
+        <p>${a.id === 'acnd' ? 'Down In Bossa — Ash Army & ACND. Out now on Profi Music since 30 October 2026, distributed by ADA Central Europe (Warner Music Group).' : esc(a.bio[1])}</p>
       </header>
       <div class="release-grid">
         ${a.releases.map((r, i) => `
@@ -254,7 +288,16 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
 
   if (page === 'sequencer') cleanup.push(mountSequencer(app.querySelector('.seq-body')!, a.id, MIX.bpm, a.patterns));
 
-  const hero = app.querySelector<HTMLElement>('.a-hero');
+  const hero = app.querySelector<HTMLElement>('.ah-hero, .a-hero');
+
+  const onPlay = (e: Event): void => {
+    const b = (e.target as Element).closest<HTMLElement>('[data-play-set]');
+    if (!b) return;
+    e.preventDefault();
+    playSet(b.dataset.playSet!);
+  };
+  app.addEventListener('click', onPlay);
+  cleanup.push(() => app.removeEventListener('click', onPlay));
   let raf = 0;
   let lastFrame = 0;
   const frameGap = matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 1000 / 60;

@@ -132,7 +132,7 @@ function renderHome(): void {
   document.body.dataset.view = 'home';
   delete document.body.dataset.artist;
   delete document.body.dataset.lean;
-  document.title = 'I RAVE YOU — অপূর্ব ◐ ACND';
+  document.title = 'I Rave You — ACND & অপূর্ব | Electronic Music Bangladesh';
   const A = ARTISTS.apurba;
   const C = ARTISTS.acnd;
   app.innerHTML = `
@@ -152,13 +152,13 @@ function renderHome(): void {
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Out on</span> Profi Music</p>
 
-      <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba" aria-label="Enter অপূর্ব">
+      <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba">
         ${logo(A, 'side-logo')}
         <span class="side-name bn">${esc(A.name)}</span>
         <span class="side-cta mono">Enter →</span>
       </a>
 
-      <a class="side side-light" href="${routeHref('acnd')}" data-side="acnd" aria-label="Enter ACND">
+      <a class="side side-light" href="${routeHref('acnd')}" data-side="acnd">
         ${logo(C, 'side-logo')}
         <span class="side-name">${esc(C.name)}</span>
         <span class="side-cta mono">← Enter</span>
@@ -169,6 +169,16 @@ function renderHome(): void {
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
+  // The feed below the hero (and its stylesheet) loads after the hero has painted.
+  let stopFeed = (): void => {};
+  let left = false;
+  void import('./home').then((m) => {
+    if (!left) stopFeed = m.mountFeed();
+  });
+  cleanup.push(() => {
+    left = true;
+    stopFeed();
+  });
 
   // ── Sneak peek: hovering a half of the emblem opens a window into that world ──
   const peeks = {
