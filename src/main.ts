@@ -185,7 +185,7 @@ function renderHome(): void {
         <span class="news-d">Out now</span>
         <span class="news-go">Details →</span>
       </a>
-      <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Out on</span> Profi Music</p>
+      <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Down In Bossa out on</span> Profi Music</p>
 
       <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba">
         ${logo(A, 'side-logo')}
