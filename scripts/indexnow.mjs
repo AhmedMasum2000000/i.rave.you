@@ -1,5 +1,6 @@
 // Tell IndexNow search engines (Bing, Yandex, Seznam, Naver…) that the sitemap's URLs changed.
-// usage: node scripts/indexnow.mjs   (after a deploy; the key file lives in public/)
+// usage: node scripts/indexnow.mjs [url…]   (after a deploy; the key file lives in public/)
+// Extra URLs, such as removed pages that now redirect, are sent with the sitemap's.
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -8,7 +9,7 @@ const pub = resolve(import.meta.dirname, "../public");
 const key = readdirSync(pub).find((f) => /^[0-9a-f]{32}\.txt$/.test(f))?.slice(0, -4);
 if (!key) throw new Error("IndexNow key file missing from public/");
 const sitemap = await (await fetch(`https://${host}/sitemap.xml`)).text();
-const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]).concat(process.argv.slice(2));
 const res = await fetch("https://api.indexnow.org/indexnow", {
   method: "POST",
   headers: { "Content-Type": "application/json; charset=utf-8" },

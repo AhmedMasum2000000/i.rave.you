@@ -1,15 +1,17 @@
-import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle } from './audio';
-import { ARTISTS, MIX, NEXT_RELEASE, TRACKLIST, fmt, onSetChange, type MixTrack } from './data';
+import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle, upNext } from './audio';
+import { MIX, NEXT_RELEASE, TRACKLIST, fmt, onSetChange, type MixTrack } from './data';
 import { asset, esc } from './ui';
 
 /**
  * The player bar: one full-width bar fixed to the bottom of every page, in
  * two rows. Above, a hairline seek track across the whole set with the time
- * on either side and an eye for a knob. Below, the mix artwork, play and the
- * playing track, the I RAVE YOU wordmark (home), the artist's Spotify, and
- * two pills: share, and listen to the new release.
+ * on either side and an eye for a knob. Below, the set's name, then the track
+ * itself: its cover, title and artist, and play / pause. Before the first play
+ * that is the track Play will start; after, the one playing. Then the
+ * tracklist, the I RAVE YOU wordmark (home) and two pills: share, and listen
+ * to the new release.
  *
- * The artwork or the track title opens the tracklist window above the bar.
+ * The cover or the track title opens the tracklist window above the bar.
  */
 
 const icon = {
@@ -20,11 +22,11 @@ const icon = {
   /** An eye with a half-dark, half-light pupil: the site's duality as a knob. */
   eye: '<svg viewBox="0 0 44 24" aria-hidden="true"><defs><clipPath id="fbar-lid"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z"/></clipPath></defs><g class="fbar-eye"><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="#fff"/><g clip-path="url(#fbar-lid)"><g class="fbar-pupil"><circle cx="22" cy="12" r="6.2" fill="#000"/><path d="M22 6.6a5.4 5.4 0 0 1 0 10.8z" fill="#fff"/><circle cx="24.2" cy="9.6" r="1.1" fill="#fff"/></g></g><path d="M1.5 12C8 3.5 36 3.5 42.5 12 36 20.5 8 20.5 1.5 12z" fill="none" stroke="#000" stroke-width="1.4"/></g></svg>',
   list: '<span class="fbar-tl-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>',
-  spotify:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M6.2 9.3c3.9-1.2 8.3-.9 11.6 1M6.8 12.5c3.2-.9 6.7-.6 9.4.9M7.4 15.5c2.5-.6 5.1-.4 7.2.7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
 };
 
 const two = (n: number): string => String(n).padStart(2, '0');
+/** A track's cover; an unreleased ID shows the set's own artwork. */
+const cover = (t: MixTrack | undefined): string => asset(t?.art ?? 'img/mix-art.jpg');
 
 /** Tracklist rows for the set on air. */
 const listHtml = (): string =>
@@ -71,25 +73,25 @@ export function mountPlayer(): void {
       <span class="fbar-time" data-d>${fmt(MIX.duration)}</span>
     </div>
     <div class="fbar-row">
-      <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
-        <img src="${asset('img/mix-art.jpg')}" alt="" width="48" height="48" />
-      </button>
       <div class="fbar-mix" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}">
         <span class="fbar-mix-a">ACND <i>×</i> <span class="bn">অপূর্ব</span></span>
         <span class="fbar-mix-t">${esc(MIX.show)} · ${esc(MIX.volume)}</span>
       </div>
       <div class="fbar-now">
-        <button type="button" class="fbar-play" aria-label="Play">${icon.play}</button>
+        <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
+          <img class="fbar-cover" src="${cover(TRACKLIST[0])}" alt="" width="44" height="44" decoding="async" />
+        </button>
         <button type="button" class="fbar-text" aria-controls="track-id" aria-expanded="false">
+          <span class="fbar-k" aria-hidden="true">Up next</span>
           <span class="fbar-title"></span>
           <span class="fbar-artist"></span>
         </button>
+        <button type="button" class="fbar-play" aria-label="Play">${icon.play}</button>
       </div>
       <button type="button" class="fbar-tl" aria-label="Tracklist" aria-controls="track-id" aria-expanded="false">
         ${icon.list}<span class="fbar-tl-k">Tracklist</span><span class="fbar-tl-n">01/${TRACKLIST.length}</span>
       </button>
       <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>
-      <a class="fbar-spotify" href="${esc(ARTISTS.acnd.listen.url)}" target="_blank" rel="noopener">${icon.spotify}<span>Spotify</span></a>
       <div class="fbar-actions">
         <button type="button" class="fbar-pill fbar-share">Share</button>
         <a class="fbar-pill fbar-cta" href="${esc(NEXT_RELEASE.presave)}" target="_blank" rel="noopener" title="${esc(NEXT_RELEASE.title)} — ${esc(NEXT_RELEASE.artist)}">
@@ -143,12 +145,24 @@ export function mountPlayer(): void {
   const tD = bar.querySelector<HTMLElement>('[data-d]')!;
   const track = bar.querySelector<HTMLElement>('.fbar-track')!;
   const knob = bar.querySelector<HTMLElement>('.fbar-knob')!;
-  const spotify = bar.querySelector<HTMLAnchorElement>('.fbar-spotify')!;
+  const coverImg = bar.querySelector<HTMLImageElement>('.fbar-cover')!;
+  const kicker = bar.querySelector<HTMLElement>('.fbar-k')!;
   const share = bar.querySelector<HTMLButtonElement>('.fbar-share')!;
   let rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
 
-  let current: { t: MixTrack; i: number } = { t: TRACKLIST[0], i: 0 };
-  rows[0]?.classList.add('playing');
+  let current: { t: MixTrack; i: number } = { t: TRACKLIST[upNext()], i: upNext() };
+
+  /** Cover, title, artist and count for one track; the bar always names the track Play is about. */
+  const show = (t: MixTrack, i: number): void => {
+    current = { t, i };
+    rows.forEach((r, n) => r.classList.toggle('playing', n === i));
+    title.textContent = t.title;
+    artist.textContent = t.artist;
+    const src = cover(t);
+    if (coverImg.getAttribute('src') !== src) coverImg.src = src;
+    tlCount.textContent = `${two(i + 1)}/${TRACKLIST.length}`;
+    textBtn.setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
+  };
 
   const reveal = (): void => {
     if (!document.body.classList.contains('tid-open')) return;
@@ -197,16 +211,10 @@ export function mountPlayer(): void {
   onTrack((t, i) => {
     if (!firstTrack && isPlaying() && !document.body.classList.contains('tid-open')) announce(t, i);
     firstTrack = false;
-    current = { t, i };
-    rows.forEach((r, n) => r.classList.toggle('playing', n === i));
-    title.textContent = t.title;
-    artist.textContent = t.artist;
-    tlCount.textContent = `${two(i + 1)}/${TRACKLIST.length}`;
-    textBtn.setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
+    show(t, i);
     reveal();
   });
-  title.textContent = current.t.title;
-  artist.textContent = current.t.artist;
+  show(current.t, current.i);
 
   // Another set went on air: rebuild every set-specific line in place.
   onSetChange(() => {
@@ -214,37 +222,29 @@ export function mountPlayer(): void {
     panel.querySelector('.tid-hero')!.innerHTML = heroHtml();
     panel.querySelector('.tid-bar-t')!.innerHTML = `${icon.list} Tracklist · ${TRACKLIST.length} tracks`;
     rows = [...panel.querySelectorAll<HTMLElement>('.tid-list li')];
-    current = { t: TRACKLIST[0], i: 0 };
-    rows[0]?.classList.add('playing');
     firstTrack = true;
     const label = `${MIX.show} ${MIX.volume}`;
     bar.querySelector('.fbar-mix-t')!.textContent = `${MIX.show} · ${MIX.volume}`;
     bar.querySelector('.fbar-mix-m')!.innerHTML = `ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(label)}`;
     bar.querySelector('.fbar-air-run')!.innerHTML = (air() + news).repeat(3);
     bar.querySelector('.fbar-mix')!.setAttribute('aria-label', `ACND and অপূর্ব, ${label}`);
-    title.textContent = current.t.title;
-    artist.textContent = current.t.artist;
-    tlCount.textContent = `01/${TRACKLIST.length}`;
+    show(TRACKLIST[upNext()], upNext());
   });
 
-  onState((playing) => {
+  // Play and Pause swap; the kicker says whether this track is up next, playing or paused.
+  let started = false;
+  const label = (playing: boolean): void => {
     playBtn.innerHTML = playing ? icon.pause : icon.play;
-    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    playBtn.setAttribute('aria-label', `${playing ? 'Pause' : 'Play'} ${current.t.title} by ${current.t.artist}`);
+    kicker.textContent = playing ? 'Now playing' : started ? 'Paused' : 'Up next';
+  };
+  onState((playing) => {
+    started ||= playing;
+    label(playing);
     bar.classList.toggle('paused', !playing);
   });
-
-  // The Spotify cell follows the artist whose pages are open.
-  const syncArtist = (): void => {
-    const id = document.body.dataset.artist;
-    const a = id === 'acnd' || id === 'apurba' ? ARTISTS[id] : undefined;
-    bar.classList.toggle('fbar-noartist', !a);
-    if (a) {
-      spotify.href = a.listen.url;
-      spotify.setAttribute('aria-label', `${a.latin} on Spotify`);
-    }
-  };
-  syncArtist();
-  window.addEventListener('routechange', syncArtist);
+  onTrack(() => label(isPlaying()));
+  label(false);
 
   share.addEventListener('click', async () => {
     const data = { title: document.title, url: location.href };

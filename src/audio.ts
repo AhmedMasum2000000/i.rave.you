@@ -53,9 +53,6 @@ let stream: Stream | null = null;
 let jumpTo: number | null = null;
 let holdTimer = 0;
 
-export const audioCtx = (): AudioContext | null => ctx;
-/** Where other sound (the sequencer) should connect, so it shares the transport fades. */
-export const output = (): AudioNode | null => focusGain;
 export const isStarted = (): boolean => started;
 
 let prepared = false;
@@ -512,6 +509,12 @@ export function skip(dir: -1 | 1): void {
 export const time = (): number => jumpTo ?? cue?.target ?? holdAt ?? el?.currentTime ?? 0;
 export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : CURRENT.duration);
 
+/**
+ * The track that is playing, or the one Play will start: before the first
+ * play that is the spot this visitor left the set at, not the first track.
+ */
+export const upNext = (): number => trackIndexAt(el ? time() : savedPos());
+
 export function trackIndexAt(sec: number): number {
   let i = 0;
   for (let k = 0; k < TRACKLIST.length; k++) if (TRACKLIST[k].at <= sec) i = k;
@@ -532,12 +535,13 @@ function onTime(): void {
 function updateMediaSession(): void {
   if (!('mediaSession' in navigator) || lastIndex < 0) return;
   const t = TRACKLIST[lastIndex];
-  const art = new URL(asset('img/mix-art.jpg'), location.href).href;
+  const abs = (path: string): string => new URL(asset(path), location.href).href;
   navigator.mediaSession.metadata = new MediaMetadata({
     title: t.title,
     artist: t.artist,
     album: `ACND × অপূর্ব — ${MIX.show} ${MIX.volume} · ${MIX.station}`,
-    artwork: [{ src: art, sizes: '512x512', type: 'image/jpeg' }],
+    // The track's own cover where it has one, the set's artwork otherwise.
+    artwork: t.art ? [{ src: abs(t.art), sizes: '96x96', type: 'image/webp' }] : [{ src: abs('img/mix-art.jpg'), sizes: '512x512', type: 'image/jpeg' }],
   });
 }
 
@@ -578,13 +582,6 @@ export function onTrack(fn: (t: MixTrack, i: number) => void): () => void {
   trackListeners.add(fn);
   if (lastIndex >= 0) fn(TRACKLIST[lastIndex], lastIndex);
   return () => trackListeners.delete(fn);
-}
-
-/** Pull the mix down while the sequencer plays so the two don't fight. */
-export function duck(on: boolean): void {
-  if (!ctx || !master) return;
-  master.gain.cancelScheduledValues(ctx.currentTime);
-  master.gain.setTargetAtTime(on ? 0.18 : 1, ctx.currentTime, 0.25);
 }
 
 /** Smoothed 0..1 levels for visuals: low end, mids, highs, overall, kick pulse. */

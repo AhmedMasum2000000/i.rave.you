@@ -69,7 +69,6 @@ const row = (n: number, title: string, href: string, subs: [string, string][], c
 
 const artistSubs = (a: Artist): [string, string][] => [
   ['Releases', route(`${a.id}/listen/`)],
-  ['Sequencer', route(`${a.id}/sequencer/`)],
   ['About', route(`${a.id}/about/`)],
   ...(a.id === 'acnd' ? ([['Press kit', route('acnd/press/')]] as [string, string][]) : []),
 ];

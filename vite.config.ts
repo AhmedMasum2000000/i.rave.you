@@ -5,6 +5,8 @@ import { SECRET_PATHS } from './src/secret';
 import { mixAudioPlugin } from './scripts/mix-audio.mjs';
 import { seoPlugin } from './scripts/seo.mjs';
 import { ARTISTS, EVENTS, NEXT_RELEASE } from './src/data';
+import { PAGE_META } from './src/meta';
+import { GA4_MEASUREMENT_ID } from './src/site.config';
 import { loadSets } from './scripts/sets.mjs';
 
 // Relative base so the build works on a GitHub Pages project path and on a
@@ -14,7 +16,7 @@ export default defineConfig({
   // The pages learn which images exist, so a missing optional photo goes
   // straight to its fallback and WebP is offered wherever a version exists.
   define: { __IMAGES__: JSON.stringify(readdirSync(resolve(__dirname, 'public/img'))) },
-  plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, sets: loadSets(__dirname), events: EVENTS })],
+  plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, sets: loadSets(__dirname), events: EVENTS, meta: PAGE_META, ga4: GA4_MEASUREMENT_ID })],
   build: {
     target: 'es2020',
     // Every es2020 browser supports modulepreload natively.

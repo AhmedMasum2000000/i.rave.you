@@ -23,7 +23,7 @@ export function loadSets(root) {
         ...json,
         audioDir: resolve(dir, d.name, "audio"),
         duration: existsSync(manifest) ? JSON.parse(readFileSync(manifest, "utf8")).t : 0,
-        tracklist: (json.tracklist ?? []).map((t) => ({ at: seconds(t.at), artist: t.artist, title: t.title, url: t.url, linkLabel: t.linkLabel ?? label(t.url) })),
+        tracklist: (json.tracklist ?? []).map((t) => ({ at: seconds(t.at), artist: t.artist, title: t.title, url: t.url, linkLabel: t.linkLabel ?? label(t.url), art: t.art })),
       };
     })
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || a.slug.localeCompare(b.slug));

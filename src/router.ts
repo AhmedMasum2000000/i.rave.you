@@ -8,7 +8,7 @@
  */
 
 export type ArtistRoute = 'acnd' | 'apurba';
-export type SubRoute = 'home' | 'listen' | 'sequencer' | 'about';
+export type SubRoute = 'home' | 'listen' | 'about';
 export interface Route {
   artist?: ArtistRoute;
   page: SubRoute;
@@ -19,7 +19,7 @@ export interface Route {
 /** Static pages that open inside the shell so the mix never stops. */
 const DOC = /^(?:journal|mixes|radio|music|legal|frequency-unity|acnd\/press)\/(?:[^?#]*\/)?$/;
 
-const ROUTE = /(?:^|\/)(acnd|apurba)\/(?:(listen|sequencer|about)\/?)?(?:index\.html)?$|(?:^|\/)(acnd|apurba)$/;
+const ROUTE = /(?:^|\/)(acnd|apurba)\/(?:(listen|about|sequencer)\/?)?(?:index\.html)?$|(?:^|\/)(acnd|apurba)$/;
 
 function rootOf(pathname: string): string {
   const m = ROUTE.exec(pathname);
@@ -41,13 +41,23 @@ export function parse(pathname = location.pathname): Route {
   if (DOC.test(pathname.slice(ROOT.length))) return { page: 'home', doc: pathname };
   const [artist, sub] = pathname.slice(ROOT.length).replace(/index\.html$/, '').split('/');
   if (artist !== 'acnd' && artist !== 'apurba') return { page: 'home' };
-  const page = sub === 'listen' || sub === 'sequencer' || sub === 'about' ? sub : 'home';
+  const page = sub === 'listen' || sub === 'about' ? sub : 'home';
   return { artist, page };
+}
+
+/**
+ * The sequencer pages are gone. The host answers /acnd/sequencer/ with a 301
+ * (public/.htaccess); where no such rule runs (the GitHub Pages copy, an old
+ * cached shell) the address is corrected here before anything renders.
+ */
+export function retireSequencer(): void {
+  const m = /(?:^|\/)(acnd|apurba)\/sequencer\/?(?:index\.html)?$/.exec(location.pathname);
+  if (m) history.replaceState(history.state, '', routeHref(m[1] as ArtistRoute));
 }
 
 /** Links from before clean URLs (`#/acnd/listen`) still land on the right page. */
 export function upgradeLegacyHash(): void {
-  const m = /^#\/?(acnd|apurba)?(?:\/(listen|sequencer|about))?\/?$/.exec(location.hash);
+  const m = /^#\/?(acnd|apurba)?(?:\/(listen|about))?\/?$/.exec(location.hash);
   if (!m) return;
   history.replaceState(history.state, '', routeHref(m[1] as ArtistRoute | undefined, (m[2] as SubRoute) ?? 'home'));
 }
@@ -56,7 +66,7 @@ export function upgradeLegacyHash(): void {
 function routable(url: URL): boolean {
   if (url.origin !== location.origin || !url.pathname.startsWith(ROOT)) return false;
   const rest = url.pathname.slice(ROOT.length);
-  return rest === '' || rest === 'index.html' || /^(acnd|apurba)\/((listen|sequencer|about)\/)?$/.test(rest) || DOC.test(rest);
+  return rest === '' || rest === 'index.html' || /^(acnd|apurba)\/((listen|about)\/)?$/.test(rest) || DOC.test(rest);
 }
 
 /**

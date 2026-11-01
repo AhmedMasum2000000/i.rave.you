@@ -1,7 +1,6 @@
 import './artist-home.css';
 import { ARTISTS, MIX, NEXT_RELEASE, OTHER, type Artist } from './data';
 import { BLUE, ORANGE } from './duality';
-import { mountSequencer } from './sequencer';
 import { asset, esc, exists, img, revealOnScroll } from './ui';
 import { link, routeHref } from './router';
 
@@ -9,12 +8,12 @@ import { link, routeHref } from './router';
  * Artist pages: one dark page per artist, told apart by accent (orange for
  * ACND, blue for অপূর্ব) and display face (Doto for ACND, Bengali Hind 700
  * for অপূর্ব). A slim top bar with three page links, and four pages — home
- * (hero, the record and facts, releases, story, credits), listen, sequencer
+ * (hero, the record and facts, releases, story, credits), listen
  * and about. Each fact lives in one place. Content and visuals are the
  * artists' own.
  */
 
-export type Page = 'home' | 'listen' | 'sequencer' | 'about';
+export type Page = 'home' | 'listen' | 'about';
 
 /** Logo image with a typeset fallback while the artwork file is absent. */
 export const logo = (a: Artist, cls: string): string =>
@@ -35,7 +34,7 @@ function nav(a: Artist, page: Page): string {
   return `
     <nav class="a-nav" aria-label="${esc(a.latin)}">
       <a class="a-brand" href="${href(a, 'home')}">${logo(a, 'a-brand-mark')}<span>${bn(a.name)}</span></a>
-      <div class="a-links">${link('listen', 'Releases')}${link('sequencer', 'Sequencer')}${link('about', 'About')}</div>
+      <div class="a-links">${link('listen', 'Releases')}${link('about', 'About')}</div>
     </nav>`;
 }
 
@@ -281,10 +280,6 @@ function listenPage(a: Artist): string {
     ${footer(a)}`;
 }
 
-function sequencerPage(): string {
-  return `<section class="s-app"><p class="seq-hint">Tap a step to edit. Swipe the grid sideways for all 16 steps.</p><div class="seq-body"></div></section>`;
-}
-
 /** The whole story in plain text, then the releases and the other selves as ruled rows. */
 function aboutPage(a: Artist): string {
   return `
@@ -336,17 +331,14 @@ export function renderArtist(app: HTMLElement, a: Artist, page: Page): () => voi
   document.body.dataset.view = 'artist';
   document.body.dataset.artist = a.id;
   document.body.dataset.page = page;
-  document.title = `${page === 'home' ? '' : `${page[0].toUpperCase()}${page.slice(1)} · `}${a.name} — I RAVE YOU`;
   const glow = a.id === 'acnd' ? ORANGE : BLUE;
   const body =
-    page === 'listen' ? listenPage(a) : page === 'sequencer' ? sequencerPage() : page === 'about' ? aboutPage(a) : homePage(a);
+    page === 'listen' ? listenPage(a) : page === 'about' ? aboutPage(a) : homePage(a);
 
   app.innerHTML = `<div class="a-page" style="--glow:${glow}">${nav(a, page)}<main class="a-main">${body}</main></div>`;
 
   const io = revealOnScroll(app);
   cleanup.push(() => io.disconnect());
-
-  if (page === 'sequencer') cleanup.push(mountSequencer(app.querySelector('.seq-body')!, a.id, MIX.bpm, a.patterns));
 
   // The bar is clear over the photo hero and turns solid once the hero has
   // scrolled under it; pages without a hero get the solid bar from the start.

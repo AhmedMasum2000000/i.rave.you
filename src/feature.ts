@@ -6,6 +6,7 @@ import './bar.css';
 import './polish.css';
 import './menu.css';
 import { mountChrome } from './chrome';
+import { trackOutbound, trackPage } from './analytics';
 import { inShell, installGuard } from './guard';
 import { mountPlayer } from './player';
 import { autoplay, revealOnScroll } from './ui';
@@ -21,6 +22,8 @@ import { autoplay, revealOnScroll } from './ui';
 if (!inShell()) {
   installGuard();
   mountChrome();
+  trackPage();
+  trackOutbound();
   mountPlayer();
   autoplay();
 }

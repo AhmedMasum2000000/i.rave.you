@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createPosts, PUBLICATION_DATE } from "../content/posts.mjs";
-import { homeExtraGraph, homeFeed } from "./home.mjs";
+import { catalogue, credited, homeExtraGraph, homeFeed } from "./home.mjs";
 /** Static discovery pages share the portfolio's facts and verified music URLs. */
 export const ORIGIN = "https://iraveyou.online";
 const esc = (s) =>
@@ -13,6 +13,23 @@ const esc = (s) =>
       ],
   );
 const json = (value) => JSON.stringify(value).replace(/</g, "\\u003c");
+/** GA4 Measurement ID from src/site.config.ts (set by seoPlugin); empty means no analytics anywhere. */
+let GA4 = "";
+const NO_COOKIES = ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO", "GB", "CH"];
+/**
+ * GA4 on the static pages (journal, music, mixes, press kit), with the same
+ * settings as src/analytics.ts. Silent inside the site's own frame, where the
+ * shell around the page reports it.
+ */
+const analyticsTag = () =>
+  GA4
+    ? `<script>if(window.top===window){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});gtag("consent","default",{analytics_storage:"denied",region:${JSON.stringify(NO_COOKIES)}});gtag("js",new Date());gtag("config",${JSON.stringify(GA4)},{allow_google_signals:false,allow_ad_personalization_signals:false});var r=/\\/music\\/(?:([^/]+)\\/)?$/.exec(location.pathname);if(r)gtag("event","release_page_view",{release:r[1]||"all",page_title:document.title});document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(!a)return;var u=new URL(a.href,location.href);if(!/^https?:$/.test(u.protocol)||u.hostname===location.hostname)return;gtag("event","external_link",{link_url:u.href,link_domain:u.hostname,link_text:(a.getAttribute("aria-label")||a.innerText||a.textContent||"").replace(/\\s+/g," ").trim().slice(0,100),page_path:location.pathname})},true);var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(${JSON.stringify(GA4)});document.head.appendChild(s)}</script>`
+    : "";
+/** The privacy notice's analytics section, true to the build: what runs, or that nothing does. */
+const analyticsNotice = () =>
+  GA4
+    ? `<section id="analytics"><h2>Analytics</h2><p>We use Google Analytics 4, a service of Google LLC, to understand how the site is used: which pages are viewed (including the artist and release pages), when the radio player is started, and which links to music services and social networks are followed. Google Analytics receives information about your device and browser, the pages you visit and an approximate location derived from your IP address; Google Analytics 4 does not log or store IP addresses. We do not use Google’s advertising features, Google signals or personalised advertising, and we do not send your name, email address or other identifying information.</p><p>Outside the European Economic Area, the United Kingdom and Switzerland, Google Analytics sets first-party cookies (<code>_ga</code> and <code>_ga_…</code>) to recognise a returning browser; they last up to two years. In the European Economic Area, the United Kingdom and Switzerland the site measures without analytics cookies.</p><p>Google processes this data under the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>. You can opt out with <a href="https://tools.google.com/dlpage/gaoptout">Google’s opt-out browser add-on</a>, by blocking cookies, or with a content blocker. Analytics data is kept for the retention period set in our Google Analytics property, 14 months at most.</p></section>`
+    : `<section id="analytics"><h2>Analytics</h2><p>The site currently runs no analytics: no analytics scripts are loaded and no analytics cookies are set. If that changes, this section will describe the service and what it measures before it starts.</p></section>`;
 export const HOME_TITLE =
   "I Rave You — ACND & অপূর্ব | Electronic Music Bangladesh";
 export const HOME_DESCRIPTION =
@@ -33,6 +50,11 @@ const website = {
   url: `${ORIGIN}/`,
   publisher: { "@id": orgId },
 };
+/** The genres each artist's own pages name. A Person has no genre property, so they go in knowsAbout. */
+const GENRES = {
+  acnd: ["Techno", "Melodic techno", "Acid", "Progressive", "Afro House"],
+  apurba: ["Psychedelic", "Melodic", "Bass", "Ambient"],
+};
 export function artistEntity(a) {
   return {
     "@type": "Person",
@@ -51,6 +73,7 @@ export function artistEntity(a) {
     image: `${ORIGIN}/${a.hero}`,
     mainEntityOfPage: `${ORIGIN}/${a.id}/`,
     jobTitle: "Electronic music producer and DJ",
+    knowsAbout: GENRES[a.id],
     homeLocation: { "@type": "Place", name: a.origin },
     sameAs: a.links
       .filter((l) =>
@@ -97,7 +120,7 @@ function head({
 }
 function shell(page, body) {
   const root = "../".repeat(page.path.split("/").filter(Boolean).length);
-  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css"></head><body class="discovery"><a class="skip" href="#content">Skip to content</a><header><a class="brand" href="${root}">I Rave You</a><nav aria-label="Main navigation"><a href="${root}acnd/">ACND</a><a href="${root}apurba/">অপূর্ব</a><a href="${root}mixes/qbic-pulse/">Mix &amp; tracklist</a><a href="${root}journal/">Journal</a></nav></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css">${analyticsTag()}</head><body class="discovery"><a class="skip" href="#content">Skip to content</a><header><a class="brand" href="${root}">I Rave You</a><nav aria-label="Main navigation"><a href="${root}acnd/">ACND</a><a href="${root}apurba/">অপূর্ব</a><a href="${root}mixes/qbic-pulse/">Mix &amp; tracklist</a><a href="${root}journal/">Journal</a></nav></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer></body></html>`;
 }
 const pageGraph = (page, entities = [], type = "WebPage") => ({
   "@context": "https://schema.org",
@@ -129,7 +152,7 @@ const pageGraph = (page, entities = [], type = "WebPage") => ({
     ...entities,
   ],
 });
-export function discoveryPages(artists, next, tracks) {
+export function discoveryPages(artists, next, tracks, meta = {}) {
   const pages = [];
   for (const a of Object.values(artists)) {
     const page = {
@@ -137,14 +160,8 @@ export function discoveryPages(artists, next, tracks) {
       image: a.hero,
       label:
         a.id === "acnd" ? "Ahmed Masum (ACND)" : "অপূর্ব (Opurbo / Apurba)",
-      title:
-        a.id === "acnd"
-          ? "Ahmed Masum (ACND) — Electronic Music Producer & DJ"
-          : "অপূর্ব (Opurbo / Apurba) — Electronic Artist, Bangladesh",
-      description:
-        a.id === "acnd"
-          ? "Meet ACND, the electronic music alias of Ahmed Masum in Dhaka, Bangladesh. Explore his biography, Down In Bossa with Ash Army, and Qbic Pulse."
-          : "অপূর্ব (Opurbo / Apurba) is Khalid Bin Alam, an independent electronic producer and DJ from Cumilla, Bangladesh. Explore his biography and releases.",
+      title: meta[`${a.id}/`]?.title ?? a.name,
+      description: meta[`${a.id}/`]?.description ?? a.about.summary,
     };
     page.graph = pageGraph(page, [artistEntity(a)], "ProfilePage");
     const releases = a.releases
@@ -197,7 +214,22 @@ export function discoveryPages(artists, next, tracks) {
       genre: next.genre,
       datePublished: "2026-10-30",
       duration: "PT2M26S",
-      inAlbum: { "@type": "MusicAlbum", name: "Down In Bossa", albumReleaseType: "https://schema.org/SingleRelease", numTracks: 2 },
+      // The single, and the release of it: label and ℗ line as printed on the release.
+      inAlbum: {
+        "@type": "MusicAlbum",
+        name: "Down In Bossa",
+        albumReleaseType: "https://schema.org/SingleRelease",
+        numTracks: 2,
+        image: `${ORIGIN}/${next.cover}`,
+        albumRelease: {
+          "@type": "MusicRelease",
+          name: "Down In Bossa",
+          datePublished: "2026-10-30",
+          recordLabel: { "@type": "Organization", name: next.label, url: "https://www.profimusic.com/" },
+          copyrightNotice: "℗ 2026 profimusic, distributed by ADA Central Europe",
+          url: next.page,
+        },
+      },
       url: next.page,
       image: `${ORIGIN}/${next.cover}`,
       description: release.description,
@@ -470,6 +502,82 @@ export function radioPages(sets) {
   return pages;
 }
 
+/** A release as a list line: title, credit and where it opens. */
+const releaseLine = (title, by, note, url) =>
+  `<li><a href="${esc(url)}"${/^https?:/.test(url) ? ' target="_blank" rel="noopener"' : ""}><strong>${esc(title)}</strong><span>${esc([by, note].filter(Boolean).join(" · "))}${/^https?:/.test(url) ? " ↗" : ""}</span></a></li>`;
+
+/**
+ * Each artist's Releases and About pages: their own title, description,
+ * self-referencing canonical, structured data and crawlable content. The app
+ * renders them for visitors; these files are what search engines read.
+ */
+export function artistSubPages(artists, meta = {}) {
+  const pages = [];
+  for (const a of Object.values(artists)) {
+    const listen = { path: `${a.id}/listen/`, sub: true, artist: a, image: a.hero, label: `${a.name} releases`, ...meta[`${a.id}/listen/`] };
+    const items = a.releases.map((r) => ({
+      "@type": "MusicRecording",
+      name: r.title,
+      url: r.url,
+      byArtist: credited(r.artists, ORIGIN),
+      ...(r.cover ? { image: `${ORIGIN}/${r.cover}` } : {}),
+      ...(r.year ? { datePublished: String(r.year) } : {}),
+    }));
+    listen.graph = pageGraph(
+      listen,
+      [
+        {
+          "@type": "ItemList",
+          "@id": `${ORIGIN}/${listen.path}#releases`,
+          name: `Releases by ${a.name}`,
+          itemListElement: items.map((item, i) => ({ "@type": "ListItem", position: i + 1, item })),
+        },
+        artistEntity(a),
+      ],
+      "CollectionPage",
+    );
+    listen.body = `<p class="eyebrow">${esc(a.origin)} · Releases</p><h1>${esc(listen.title)}</h1><p class="intro">${esc(listen.description)}</p><section><h2>Releases</h2><ul class="recordings">${a.releases
+      .map((r) => releaseLine(r.title, r.artists, r.year ? String(r.year) : "", r.url))
+      .join("")}</ul></section>${
+      a.extras?.items.length
+        ? `<section><h2>${esc(a.extras.heading)}</h2><ul class="recordings">${a.extras.items.map((x) => releaseLine(x.title, "", "", x.url)).join("")}</ul></section>`
+        : ""
+    }<p><a href="../">${esc(a.name)} artist page →</a> · <a href="../../music/">All music →</a></p>`;
+    pages.push(listen);
+
+    const about = { path: `${a.id}/about/`, sub: true, artist: a, image: a.hero, label: `About ${a.name}`, ...meta[`${a.id}/about/`] };
+    about.graph = pageGraph(about, [artistEntity(a)], "AboutPage");
+    about.body = `<p class="eyebrow">${esc(a.origin)} · About</p><h1>${esc(about.title)}</h1><p class="intro">${esc(a.about.summary)}</p><section><h2>Biography</h2>${a.about.paragraphs
+      .map((p) => `<p>${esc(p)}</p>`)
+      .join("")}</section><section><h2>Sound</h2><p>${esc(GENRES[a.id].join(", "))}</p></section><p><a href="../">${esc(a.name)} artist page →</a> · <a href="../listen/">Releases →</a></p>`;
+    pages.push(about);
+  }
+  return pages;
+}
+
+/** Music: every release, remix and set by both artists on one crawlable page (it was a bare folder). */
+export function musicPage(artists, next, sets) {
+  const page = {
+    path: "music/",
+    label: "Music",
+    title: "Music Releases — ACND & অপূর্ব | I Rave You",
+    description:
+      "Every release by ACND (Ahmed Masum) and অপূর্ব (Opurbo / Apurba): Down In Bossa on Profi Music, 1by1, Monolithic Flow, remixes and DJ sets, with official listening links.",
+    image: next.cover,
+  };
+  const items = catalogue({ artists, next, sets });
+  const list = (type) =>
+    items
+      .filter((it) => it.type === type)
+      .map((it) => releaseLine(it.title, it.by, String(it.when ?? it.year ?? ""), it.page ? `../${it.page}` : it.href))
+      .join("");
+  const [catalogueList] = homeExtraGraph({ artists, next, sets, events: [], origin: ORIGIN });
+  page.graph = pageGraph(page, [{ ...catalogueList, "@id": `${ORIGIN}/music/#catalogue` }], "CollectionPage");
+  page.body = `<p class="eyebrow">ACND · অপূর্ব · Electronic music from Bangladesh</p><h1>Music</h1><p class="intro">${esc(page.description)}</p><section><h2>Releases</h2><ul class="recordings">${list("release")}</ul><p><a href="down-in-bossa/">Down In Bossa — release details and credits →</a></p></section><section><h2>Remixes</h2><ul class="recordings">${list("remix")}</ul></section><section><h2>DJ sets</h2><ul class="recordings">${list("set")}</ul></section><p><a href="../acnd/listen/">ACND releases →</a> · <a href="../apurba/listen/">অপূর্ব releases →</a></p>`;
+  page.html = shell(page, page.body);
+  return page;
+}
+
 /** Sitemap from the generated pages plus the hand-written ones, so new sets and posts are listed automatically. */
 function sitemap(pages) {
   const fixed = ["", "frequency-unity/", "legal/terms/", "legal/privacy/", "legal/copyright/"];
@@ -481,7 +589,8 @@ function sitemap(pages) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows.join("\n")}\n</urlset>\n`;
 }
 
-export function seoPlugin({ artists, next, sets, events = [] }) {
+export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "" }) {
+  GA4 = ga4;
   // The home feed links journal articles from the site root.
   const homePosts = createPosts({
     internal: (path, label) => `<a href="${esc(path)}">${esc(label)}</a>`,
@@ -495,7 +604,9 @@ export function seoPlugin({ artists, next, sets, events = [] }) {
   const extraGraph = homeExtraGraph({ artists, next, sets, events, origin: ORIGIN });
   const tracks = (sets.find((x) => x.slug === FIRST_SET) ?? sets[sets.length - 1]).tracklist;
   const pages = [
-    ...discoveryPages(artists, next, tracks),
+    ...discoveryPages(artists, next, tracks, meta),
+    ...artistSubPages(artists, meta),
+    musicPage(artists, next, sets),
     ...radioPages(sets),
     pressPage(artists.acnd),
     ...journalPages(artists, next, tracks),
@@ -526,6 +637,7 @@ export function seoPlugin({ artists, next, sets, events = [] }) {
               `<script type="application/ld+json">${json(homeGraph(artists, extraGraph))}</script>`,
             );
         if (ctx.path.startsWith("/afw26/")) return html;
+        html = html.replace("<!-- analytics-notice -->", analyticsNotice());
         const path = ctx.path.replace(/^\//, "").replace(/index\.html$/, "");
         const url = `${ORIGIN}/${path}`;
         html = html
@@ -548,24 +660,14 @@ export function seoPlugin({ artists, next, sets, events = [] }) {
     writeBundle(options) {
       const dir = options.dir;
       const index = readFileSync(resolve(dir, "index.html"), "utf8");
-      for (const page of pages.filter((p) => p.artist)) {
+      for (const page of pages.filter((p) => p.artist && !p.sub)) {
         const up = "../".repeat(page.path.split("/").filter(Boolean).length);
         // The hero photo is the largest paint on artist pages; fetch it first, then the logo.
         const hero = page.artist.hero.replace(/\.(jpe?g|png)$/, ".webp");
         const early = `<link rel="preload" as="image" href="${up}${hero}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="${up}img/logo-${page.artist.id}.webp" type="image/webp">`;
         writeRoute(dir, index, page.path, head(page) + early, page.body);
-        for (const [sub, label] of [["listen", "Releases"], ["sequencer", "Sequencer"], ["about", "About"]]) {
-          const url = `${ORIGIN}/${page.path}`;
-          const title = `${label} · ${page.label} — I Rave You`;
-          writeRoute(
-            dir,
-            index,
-            `${page.path}${sub}/`,
-            `<title>${esc(title)}</title><meta name="description" content="${esc(page.description)}"><link rel="canonical" href="${url}"><meta property="og:type" content="website"><meta property="og:site_name" content="I Rave You"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(page.description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ORIGIN}/${page.image ?? "img/og-frequency-unity.jpg"}"><meta name="twitter:card" content="summary_large_image">`,
-            "",
-          );
-        }
       }
+      for (const page of pages.filter((p) => p.sub)) writeRoute(dir, index, page.path, head(page), page.body);
     },
     generateBundle() {
       this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(pages) });
