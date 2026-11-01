@@ -12,13 +12,14 @@ import './home.css';
 import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
-import { ARTISTS, CURRENT, NEXT_RELEASE, type ArtistId } from './data';
-import { playSet } from './audio';
+import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
+import { onState, playSet, upNext } from './audio';
+import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
-import { ROOT, interceptLinks, link, parse, routeHref, upgradeLegacyHash } from './router';
+import { ROOT, interceptLinks, link, parse, retireSequencer, routeHref, upgradeLegacyHash } from './router';
 import { entry, initHistory, push, rememberScroll, restoreScroll, stamp } from './history';
 import { mountBack } from './back';
 
@@ -26,6 +27,7 @@ import { mountBack } from './back';
 document.documentElement.dataset.root = ROOT;
 document.documentElement.classList.add('k-js');
 upgradeLegacyHash();
+retireSequencer();
 initHistory();
 
 installGuard();
@@ -55,8 +57,10 @@ const route = (restore = false): void => {
   if (doc) cleanup.push(renderDoc(doc, fy));
   else if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
   else renderHome();
-  if (!doc) syncSearchMetadata(artist as ArtistId | undefined);
+  if (!doc) syncSearchMetadata(artist as ArtistId | undefined, page);
   if (y) restoreScroll(y);
+  // Content pages report their view once their frame has loaded (renderDoc).
+  if (!doc) trackPage();
   window.dispatchEvent(new Event('routechange'));
 };
 
@@ -136,6 +140,8 @@ function renderDoc(path: string, y = 0): () => void {
     }, true);
     mark();
     interceptLinks(navigate, d);
+    trackOutbound(d);
+    trackPage(framePath(f).replace(/#.*$/, ''), d.title);
     // Back into a page read earlier: pick up where it was left.
     const win = f.contentWindow!;
     if (pendingFrameY) restoreScroll(pendingFrameY, win);
@@ -167,7 +173,6 @@ function renderHome(): void {
   document.body.dataset.view = 'home';
   delete document.body.dataset.artist;
   delete document.body.dataset.lean;
-  document.title = 'I Rave You — ACND & অপূর্ব | Electronic Music Bangladesh';
   const A = ARTISTS.apurba;
   const C = ARTISTS.acnd;
   app.innerHTML = `
@@ -309,6 +314,16 @@ mountChrome();
 mountBack(navigate);
 mountPlayer();
 mountFx();
+trackOutbound();
+// A radio play: each time the set starts or resumes, with the track it starts on.
+let wasPlaying = false;
+onState((playing) => {
+  if (playing && !wasPlaying) {
+    const t = TRACKLIST[upNext()];
+    track('radio_play', { set: CURRENT.slug, track_title: t?.title, track_artist: t?.artist, page_path: location.pathname });
+  }
+  wasPlaying = playing;
+});
 // Only a first visit to the home page asks about sound; every other page
 // simply starts the mix (or waits for the first tap if autoplay is blocked).
 if (parse().artist || parse().doc) autoplay();

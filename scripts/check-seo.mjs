@@ -1,12 +1,13 @@
 /** Regression checks on the actual production documents, not source templates. */
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const origin = "https://iraveyou.online";
+const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(resolve(dir, d.name)) : [resolve(dir, d.name)]));
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 23);
+assert.equal(urls.length, 28);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -73,12 +74,32 @@ for (const id of ["acnd", "apurba"]) {
   const html = readFileSync(resolve(root, id, "index.html"), "utf8");
   assert.match(html, /<div id="app"><\/div><section class="discovery-home discovery-profile">/);
   assert.match(html, /<script type="module"[^>]*src="\.\.\/assets\//);
-  for (const sub of ["listen", "sequencer", "about"]) {
+  // Releases and About are pages of their own: self canonical, own title and description, crawlable content.
+  const titles = new Set([html.match(/<title>([^<]*)/)[1]]);
+  for (const sub of ["listen", "about"]) {
     const page = readFileSync(resolve(root, id, sub, "index.html"), "utf8");
-    assert.match(page, new RegExp(`rel="canonical" href="${origin}/${id}/"`));
+    assert.match(page, new RegExp(`rel="canonical" href="${origin}/${id}/${sub}/"`));
     assert.match(page, /src="\.\.\/\.\.\/assets\//);
+    assert.match(page, /<meta name="description" content="[^"]{70,}"/);
+    assert.match(page, /<section class="discovery-home discovery-profile">/);
+    const title = page.match(/<title>([^<]*)/)[1];
+    assert.ok(!titles.has(title), `duplicate title ${title}`);
+    titles.add(title);
   }
+  // The sequencer is gone: no file, no link, a 301 on the host.
+  assert.ok(!existsSync(resolve(root, id, "sequencer")), `${id}/sequencer/ still built`);
 }
+const htaccess = readFileSync(resolve(root, ".htaccess"), "utf8");
+assert.match(htaccess, /RewriteRule \^\(acnd\|apurba\)\/sequencer\(\?:\/\.\*\)\?\$ https:\/\/iraveyou\.online\/\$1\/ \[R=301,L\]/);
+for (const file of walk(root).filter((f) => f.endsWith(".html")))
+  assert.doesNotMatch(readFileSync(file, "utf8"), /\/sequencer\//, `${file} links to a sequencer page`);
+assert.doesNotMatch(sitemap, /sequencer/);
+// Music: the releases index answers instead of a bare folder.
+const music = readFileSync(resolve(root, "music", "index.html"), "utf8");
+assert.match(music, new RegExp(`rel="canonical" href="${origin}/music/"`));
+assert.match(music, /"@type":"CollectionPage"/);
+for (const path of ["music/", "acnd/listen/", "acnd/about/", "apurba/listen/", "apurba/about/"])
+  assert.match(sitemap, new RegExp(`<loc>${origin}/${path}</loc>`));
 for (const html of [home, acnd, apurba]) assert.doesNotMatch(html, /href="[^"]*#\//);
 for (const path of [
   "music/down-in-bossa",
@@ -246,3 +267,27 @@ assert.equal([...list.matchAll(/<a\b/g)].length, 14);
 console.log(
   "PASS unreleased opening track retains credit and timestamp without an external link; other 14 recording links remain",
 );
+
+// Legal: the domain, the contact, the licensing statement, and a privacy
+// notice that matches what actually runs (src/site.config.ts).
+{
+  const terms = readFileSync(resolve(root, "legal/terms/index.html"), "utf8");
+  const privacy = readFileSync(resolve(root, "legal/privacy/index.html"), "utf8");
+  const rights = readFileSync(resolve(root, "legal/copyright/index.html"), "utf8");
+  const statement = "All music, recordings, compositions, and creative materials featured on iRaveYou remain the property of their respective copyright owners unless otherwise stated.";
+  for (const page of [terms, rights]) assert.ok(page.includes(statement), "licensing statement");
+  for (const page of [terms, privacy, rights]) {
+    assert.match(page, /khalidbinalam250@gmail\.com/);
+    assert.doesNotMatch(page, /iraveyou\.com|i-rave-you\.com/);
+  }
+  const ga4 = readFileSync(resolve("src/site.config.ts"), "utf8").match(/GA4_MEASUREMENT_ID = '([^']*)'/)[1];
+  const tagged = walk(root).filter((f) => f.endsWith(".html") && readFileSync(f, "utf8").includes("googletagmanager"));
+  if (ga4) {
+    assert.match(privacy, /We use Google Analytics 4/);
+    assert.ok(tagged.length > 0, "GA4 tag on static pages");
+  } else {
+    assert.match(privacy, /The site currently runs no analytics/);
+    assert.deepEqual(tagged, [], "no analytics while no Measurement ID is set");
+  }
+  console.log(`PASS legal pages: iraveyou.online, contact, licensing statement, analytics notice (${ga4 ? "GA4 on" : "no analytics"})`);
+}

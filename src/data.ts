@@ -68,8 +68,6 @@ export interface Artist {
   essay: { intro: string; blocks: { label: string; text: string }[] };
   footnotes: Footnote[];
   media: Media[];
-  /** Four tracks that name the sequencer's four patterns. */
-  patterns: [string, string, string, string];
 }
 
 /* ──────────────────────────── QBIC PULSE RADIO ─────────────────────────── */
@@ -80,6 +78,8 @@ export interface MixTrack {
   title: string;
   url?: string;
   linkLabel: string;
+  /** Cover art from the release's platform (scripts/track-art.mjs); unreleased IDs have none. */
+  art?: string;
 }
 
 /** One set in the radio library (sets/<slug>/set.json, built by scripts/mix-audio.mjs). */
@@ -282,7 +282,6 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { src: 'img/sunset-mix.jpg', caption: 'LUMINOUS LULLABIES', sub: 'SET 01' },
       { src: 'img/monolithic-flow.jpg', caption: 'MONOLITHIC FLOW', sub: '2026' },
     ],
-    patterns: ['1by1', 'Monolithic Flow', 'VOID', 'PsyEcho'],
     links: [
       { label: 'Link hub', url: 'https://linktr.ee/youmeiyou' },
       { label: 'Spotify', url: 'https://open.spotify.com/artist/6ciIrhy1tI3vHlU1yGDiNk' },
@@ -353,7 +352,6 @@ export const ARTISTS: Record<ArtistId, Artist> = {
       { src: 'img/down-in-bossa.jpg', caption: 'DOWN IN BOSSA', sub: '30.10 · PROFI MUSIC' },
       { src: 'img/acnd-portrait.webp', caption: 'ACND × অপূর্ব', sub: 'QBIC PULSE · HKCR' },
     ],
-    patterns: ['Initiate', 'Down In Bossa', 'Qbic Pulse', 'Ascend'],
     links: [
       { label: 'Listen to “Down In Bossa”', url: NEXT_RELEASE.presave },
       { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },

@@ -241,13 +241,12 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
           <p class="ar-sum">${bnw(a.about.summary)}</p>
           <p class="ar-genres">${genres[a.id]}</p>
           ${a.id === "apurba" ? '<p class="ar-also">Other selves: Euphonic, Zalvix, Luminous Lullabies, Necture Drop</p>' : ""}
-          <p class="ar-seq"><a class="k-link" href="${a.id}/sequencer/" data-cta="seq-${a.id}">Sequencer →</a> <span>${a.patterns.map(bnw).join(", ")}</span></p>
+          <p class="ar-more"><a class="k-link" href="${a.id}/listen/" data-cta="releases-${a.id}">Releases →</a></p>
         </div>
       </article>`,
         )
         .join("\n      ")}
     </div>
-    <p class="f-note">Each artist page has a step sequencer built from their own tracks. Tap steps, swap patterns and play along with the set, in time with the mix.</p>
   </section>
 
   <section class="f-arch" aria-labelledby="arch-title">
@@ -301,6 +300,15 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
 }
 
 /** Structured data for the feed: the catalogue, the calendar and the questions above. */
+/** Everyone credited on a line like "অপূর্ব, Hridnic, ACND (Ahmed Masum), Prothey": the two artists by @id, anyone else by name. */
+export const credited = (by, origin) =>
+  by
+    .replace(/\(.*?\)|\bRemix\b|·.*$|Set 01|Mixtape01 by/gi, "")
+    .split(/,|&|\bx\b/)
+    .map((n) => n.trim())
+    .filter((n) => n && n !== "Various Artists")
+    .map((n) => (/^ACND$/i.test(n) ? { "@id": `${origin}/acnd/#artist` } : n === "অপূর্ব" ? { "@id": `${origin}/apurba/#artist` } : { "@type": "Person", name: n }));
+
 export function homeExtraGraph({ artists, next, sets, events: confirmed, origin }) {
   const events = calendar(confirmed, sets);
   const id = (a) => `${origin}/${a}/#artist`;
@@ -311,28 +319,22 @@ export function homeExtraGraph({ artists, next, sets, events: confirmed, origin 
       "@id": `${origin}/#catalogue`,
       name: "Releases, remixes and sets by ACND and অপূর্ব",
       itemListElement: items.map((it, i) => {
-        // Everyone credited on the item: the two artists by @id, anyone else by name.
-        const credited = it.by
-          .replace(/\(.*?\)|\bRemix\b|·.*$|Set 01|Mixtape01 by/gi, "")
-          .split(/,|&|\bx\b/)
-          .map((n) => n.trim())
-          .filter((n) => n && n !== "Various Artists")
-          .map((n) => (/^ACND$/i.test(n) ? { "@id": id("acnd") } : n === "অপূর্ব" ? { "@id": id("apurba") } : { "@type": "Person", name: n }));
+        const by = credited(it.by, origin);
         const url = it.page ? `${origin}/${it.page}` : it.href;
         const image = it.cover ? { image: `${origin}/${it.cover}` } : {};
         if (it.type === "set")
-          return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicPlaylist", name: it.title, url, creator: credited.length ? credited : [{ "@id": id("acnd") }, { "@id": id("apurba") }], ...image } };
+          return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicPlaylist", name: it.title, url, creator: by.length ? by : [{ "@id": id("acnd") }, { "@id": id("apurba") }], ...image } };
         if (it.title === next.title)
           return {
             "@type": "ListItem",
             position: i + 1,
             item: {
-              "@type": "MusicAlbum", name: it.title, url, byArtist: credited, ...image,
+              "@type": "MusicAlbum", name: it.title, url, byArtist: by, ...image,
               albumReleaseType: "https://schema.org/SingleRelease", datePublished: "2026-10-30",
               albumRelease: { "@type": "MusicRelease", name: it.title, recordLabel: { "@type": "Organization", name: next.label, url: "https://www.profimusic.com/" }, copyrightNotice: "℗ 2026 profimusic, distributed by ADA Central Europe" },
             },
           };
-        return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicRecording", name: it.title, url, ...(credited.length ? { byArtist: credited } : {}), ...image } };
+        return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicRecording", name: it.title, url, ...(by.length ? { byArtist: by } : {}), ...image } };
       }),
     },
     ...events

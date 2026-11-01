@@ -16,7 +16,7 @@ let fetched: Promise<HTMLElement | null> | null = null;
 async function ensureFeed(): Promise<HTMLElement | null> {
   const here = document.getElementById('home-feed');
   if (here) return here;
-  fetched ??= fetch(`${ROOT}index.html`, { credentials: 'same-origin' })
+  fetched ??= fetch(ROOT, { credentials: 'same-origin' })
     .then((r) => (r.ok ? r.text() : ''))
     .then((html) => {
       const el = new DOMParser().parseFromString(html, 'text/html').getElementById('home-feed');

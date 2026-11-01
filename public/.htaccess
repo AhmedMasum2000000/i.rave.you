@@ -1,8 +1,16 @@
-# One address for search engines: send www to https://iraveyou.online (HTTPS itself is enforced by the host).
+# One address for search engines: https://iraveyou.online (HTTPS itself is
+# enforced by the host).
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # www → the bare domain, in one hop.
   RewriteCond %{HTTP_HOST} ^www\.iraveyou\.online$ [NC]
   RewriteRule ^(.*)$ https://iraveyou.online/$1 [R=301,L]
+  # The sequencer pages were removed: send their old addresses to the artist page.
+  RewriteRule ^(acnd|apurba)/sequencer(?:/.*)?$ https://iraveyou.online/$1/ [R=301,L]
+  # A page has one address: /journal/index.html → /journal/ (only when asked
+  # for by name, not when the server serves the folder's index itself).
+  RewriteCond %{THE_REQUEST} \s/+((?:[^\s?]*/)?)index\.html[\s?]
+  RewriteRule ^ https://iraveyou.online/%1 [R=301,L]
 </IfModule>
 
 # The mix's file name carries its content hash, so it can be cached for a

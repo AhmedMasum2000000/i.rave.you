@@ -1,27 +1,26 @@
-import { ARTISTS, type ArtistId } from "./data";
+import type { ArtistId } from "./data";
+import { PAGE_META } from "./meta";
 
 const ORIGIN = "https://iraveyou.online";
-/** Hash views remain interactive; their clean, static profiles are canonical. */
-export function syncSearchMetadata(artist?: ArtistId): void {
-  const a = artist ? ARTISTS[artist] : undefined;
-  const title = a
-    ? `${a.id === "acnd" ? "Ahmed Masum (ACND)" : "অপূর্ব (Opurbo / Apurba)"} — I Rave You`
-    : "I Rave You — ACND & অপূর্ব | Electronic Music Bangladesh";
-  const description =
-    a?.about?.summary ??
-    "Explore ACND (Ahmed Masum) and অপূর্ব (Opurbo / Apurba): electronic music from Bangladesh, artist biographies, releases and the Qbic Pulse DJ mix tracklist.";
-  const url = `${ORIGIN}/${artist ? `${artist}/` : ""}`;
-  document.title = title;
+/**
+ * Moving between app pages without a reload: give the document the same
+ * title, description and self-referencing canonical its static file has.
+ */
+export function syncSearchMetadata(artist?: ArtistId, page = "home"): void {
+  const path = artist ? `${artist}/${page === "home" ? "" : `${page}/`}` : "";
+  const meta = PAGE_META[path] ?? PAGE_META[""];
+  const url = `${ORIGIN}/${path}`;
+  document.title = meta.title;
   document
     .querySelector<HTMLLinkElement>('link[rel="canonical"]')
     ?.setAttribute("href", url);
   for (const [selector, content] of [
-    ['meta[name="description"]', description],
-    ['meta[property="og:title"]', title],
-    ['meta[property="og:description"]', description],
+    ['meta[name="description"]', meta.description],
+    ['meta[property="og:title"]', meta.title],
+    ['meta[property="og:description"]', meta.description],
     ['meta[property="og:url"]', url],
-    ['meta[name="twitter:title"]', title],
-    ['meta[name="twitter:description"]', description],
+    ['meta[name="twitter:title"]', meta.title],
+    ['meta[name="twitter:description"]', meta.description],
   ])
     document.querySelector(selector)?.setAttribute("content", content);
 }

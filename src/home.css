@@ -137,10 +137,8 @@
 .ar-body { display: grid; gap: 10px; padding-top: 20px; }
 .ar-sum { max-width: 46ch; margin: 0; font-size: 17px; line-height: 1.55; }
 .ar-genres, .ar-also { max-width: 52ch; margin: 0; font-size: 15px; line-height: 1.5; color: var(--f-body); }
-.ar-seq { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 14px; margin: 0; }
-.ar-seq .k-link { position: relative; z-index: 2; }
-.ar-seq span { font-size: 13px; color: var(--k-mute); }
-.f-note { max-width: 62ch; margin: 32px 0 0; font-size: 15px; color: var(--k-mute); }
+.ar-more { margin: 0; }
+.ar-more .k-link { position: relative; z-index: 2; }
 
 /* ─── 2016 → 2026: a ruled list, year | title | text; the text starts on the halfway line ─── */
 .tl { margin-top: clamp(24px, 3vw, 36px); }
