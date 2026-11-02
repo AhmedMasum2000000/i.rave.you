@@ -180,6 +180,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
    * the dark side, orange to ink on the light), split along the live seam.
    */
   let liveMix = 0;
+  let spin = 0;
+  const whiteHalo = sprite('#ffffff', 160);
   let seamTable = new Float32Array(0);
   const bloom = (t: number, lv: ReturnType<typeof sample>, R: number, cx: number, cy: number): void => {
     // At the lowest quality the bloom steps aside so the mix keeps the main thread.
@@ -199,18 +201,31 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       return wide() ? x < seamTable[i] : y < seamTable[i];
     };
     const energy = Math.min(1, lv.low * 0.9 + lv.mid * 0.6 + lv.beat * 0.5);
-    const gap = R * (0.085 + energy * 0.1);
+    // Spin accumulates (so a change of speed never jumps the rings), faster with the energy.
+    if (!reduced) spin += 0.012 * (1 + energy * 2.5);
+    const gap = R * (0.042 + energy * 0.05);
     const size = compact ? 1.9 : 2.2;
     const lobes = 7;
+    // Behind everything: a soft white glow around the emblem that breathes with the low end.
+    g.globalAlpha = Math.min(0.85, 0.22 + lv.low * 0.3 + lv.beat * 0.3);
+    const gs = R * (4.2 + lv.low * 0.6 + lv.beat * 0.8);
+    g.drawImage(whiteHalo, cx - gs / 2, cy - gs / 2, gs, gs);
+    g.globalAlpha = 1;
     for (let k = 0; k < K; k++) {
       const f = k / (K - 1);
       const dark = new Path2D();
       const light = new Path2D();
-      const r0 = R * 1.22 + k * gap;
-      const twist = k * 0.2 + t * (k % 2 ? 0.22 : -0.15) + rot * 0.5;
+      const near = f < 0.2;
+      const haloDark = near ? new Path2D() : null;
+      const haloLight = near ? new Path2D() : null;
+      const hs = size * 2.8;
+      // Each ring breathes a little on its own beat.
+      const r0 = (R * 1.18 + k * gap) * (1 + Math.sin(t * 2.4 + k * 0.6) * 0.015 * (1 + lv.low * 2));
+      // Neighbouring rings turn opposite ways: the spiral arms shear as they spin.
+      const twist = k * 0.2 + spin * (k % 2 ? 1 : -0.75) * (0.7 + f * 0.6) + rot * 0.5;
       // Inner rings ride the bass, outer rings the mids and highs.
-      const reach = R * (0.2 + f * 0.9) * (0.5 + energy * 1.2);
-      const wobble = R * (0.08 + lv.low * 0.32 + lv.beat * 0.2) * (0.5 + f);
+      const reach = R * (0.1 + f * 0.45) * (0.5 + energy * 1.2);
+      const wobble = R * (0.04 + lv.low * 0.16 + lv.beat * 0.1) * (0.5 + f);
       for (let j = 0; j < N; j++) {
         const base = (j / N) * Math.PI * 2;
         const a = base + twist;
@@ -219,21 +234,38 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
         const bin = Math.floor(2 + u ** 1.7 * (60 + f * 360));
         const idle = 0.25 + 0.15 * Math.sin(t * 2 + base * 3 + k);
         const v = liveMix > 0.01 ? liveMix * ((spec[bin] ?? 0) / 255) + (1 - liveMix) * idle : idle;
-        let r = r0 + v * v * reach + Math.sin(a * lobes + t * 1.3 + k * 0.45) * wobble + Math.sin(a * 3 - t * 0.9 + k * 0.2) * wobble * 0.5;
+        // Ripples run around the rings in both directions.
+        let r = r0 + v * v * reach + Math.sin(a * lobes + t * 3.2 + k * 0.45) * wobble + Math.sin(a * 3 - t * 2.1 + k * 0.2) * wobble * 0.5;
         let aa = a;
         // On a kick the outer rings scatter.
         if (f > 0.55 && lv.beat > 0.2) {
           const h = hash(j, k);
           if (h > 0.55) {
-            r += (h - 0.55) * R * 1.6 * lv.beat * f;
+            r += (h - 0.55) * R * 0.8 * lv.beat * f;
             aa += (hash(k, j) - 0.5) * 0.25 * lv.beat;
           }
         }
         const x = cx + Math.cos(aa) * r;
         const y = cy + Math.sin(aa) * r;
-        (darkAt(x, y) ? dark : light).rect(x - size / 2, y - size / 2, size, size);
+        const isD = darkAt(x, y);
+        (isD ? dark : light).rect(x - size / 2, y - size / 2, size, size);
+        if (near) (isD ? haloDark : haloLight)!.rect(x - hs / 2, y - hs / 2, hs, hs);
       }
       const alpha = Math.min(1, (1 - f * 0.6) * (0.5 + energy * 0.7));
+      if (near) {
+        // The rings hugging the emblem glow white: a soft halo in each half's colour under a white core.
+        const glow = Math.min(1, 0.5 + energy * 0.5 + lv.beat * 0.3) * (1 - f * 2.5);
+        g.globalAlpha = 0.22 * glow;
+        g.fillStyle = 'rgb(160,200,255)';
+        g.fill(haloDark!);
+        g.fillStyle = 'rgb(255,150,80)';
+        g.fill(haloLight!);
+        g.globalAlpha = 1;
+        g.fillStyle = `rgba(255,255,255,${Math.min(1, 0.55 + glow * 0.45).toFixed(3)})`;
+        g.fill(dark);
+        g.fill(light);
+        continue;
+      }
       g.fillStyle = `rgba(${mix(DARK_IN, DARK_OUT, f)},${alpha.toFixed(3)})`;
       g.fill(dark);
       g.fillStyle = `rgba(${mix(LIGHT_IN, LIGHT_OUT, f)},${alpha.toFixed(3)})`;
