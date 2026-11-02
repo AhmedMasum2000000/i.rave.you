@@ -1,4 +1,4 @@
-import { sample, spectrum } from './audio';
+import { isPlaying, sample, spectrum } from './audio';
 
 /**
  * The home page: one canvas, two worlds.
@@ -103,7 +103,6 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   /** Adaptive quality: shed particles and resolution if frames run long. */
   let quality = 1;
   let slowFrames = 0;
-  let prevStamp = 0;
 
   const resize = (): void => {
     dpr = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.25) * (quality < 1 ? 0.8 : 1);
@@ -180,11 +179,25 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
    * a cloud on every kick. Each dot takes its half's colours (blue to ice on
    * the dark side, orange to ink on the light), split along the live seam.
    */
+  let liveMix = 0;
+  let seamTable = new Float32Array(0);
   const bloom = (t: number, lv: ReturnType<typeof sample>, R: number, cx: number, cy: number): void => {
+    // At the lowest quality the bloom steps aside so the mix keeps the main thread.
+    if (quality <= 0.25) return;
     const spec = spectrum();
-    const live = spec.length > 0 && lv.all > 0.02;
+    // Ease between the live spectrum and an idle breath, by whether the mix is playing.
+    liveMix += ((isPlaying() && spec.length > 0 ? 1 : 0) - liveMix) * 0.08;
     const K = Math.max(6, Math.round((compact ? 14 : 24) * quality));
-    const N = compact ? 100 : 168;
+    const N = Math.max(48, Math.round((compact ? 100 : 168) * quality));
+    // The seam for this frame, sampled every 4 px: one lookup per dot instead of three sines.
+    const across = wide() ? H : W;
+    const steps = Math.ceil(across / 4) + 1;
+    if (seamTable.length < steps) seamTable = new Float32Array(steps);
+    for (let i = 0; i < steps; i++) seamTable[i] = wide() ? edge(i * 4, t, lv.low) : edgeH(i * 4, t, lv.low);
+    const darkAt = (x: number, y: number): boolean => {
+      const i = Math.max(0, Math.min(steps - 1, Math.round((wide() ? y : x) / 4)));
+      return wide() ? x < seamTable[i] : y < seamTable[i];
+    };
     const energy = Math.min(1, lv.low * 0.9 + lv.mid * 0.6 + lv.beat * 0.5);
     const gap = R * (0.085 + energy * 0.1);
     const size = compact ? 1.9 : 2.2;
@@ -204,7 +217,8 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
         // The spectrum, mirrored three times around the ring: a balanced bloom that closes without a seam.
         const u = Math.abs(((base * 3) / (Math.PI * 2)) % 1 * 2 - 1);
         const bin = Math.floor(2 + u ** 1.7 * (60 + f * 360));
-        const v = live ? spec[bin] / 255 : 0.25 + 0.15 * Math.sin(t * 2 + base * 3 + k);
+        const idle = 0.25 + 0.15 * Math.sin(t * 2 + base * 3 + k);
+        const v = liveMix > 0.01 ? liveMix * ((spec[bin] ?? 0) / 255) + (1 - liveMix) * idle : idle;
         let r = r0 + v * v * reach + Math.sin(a * lobes + t * 1.3 + k * 0.45) * wobble + Math.sin(a * 3 - t * 0.9 + k * 0.2) * wobble * 0.5;
         let aa = a;
         // On a kick the outer rings scatter.
@@ -217,7 +231,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
         }
         const x = cx + Math.cos(aa) * r;
         const y = cy + Math.sin(aa) * r;
-        (isDark(x, y, t, lv.low) ? dark : light).rect(x - size / 2, y - size / 2, size, size);
+        (darkAt(x, y) ? dark : light).rect(x - size / 2, y - size / 2, size, size);
       }
       const alpha = Math.min(1, (1 - f * 0.6) * (0.5 + energy * 0.7));
       g.fillStyle = `rgba(${mix(DARK_IN, DARK_OUT, f)},${alpha.toFixed(3)})`;
@@ -230,22 +244,13 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   const frame = (now: number): void => {
     if (!alive) return;
     // Nothing to draw while the page is hidden, scrolled away, or under the opaque entry gate.
-    if (document.hidden || offscreen || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
+    // The cap tolerates vsync rounding: two 16.6 ms vsyncs can read 33.2 ms.
+    if (document.hidden || offscreen || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60) - 2)) {
       raf = requestAnimationFrame(frame);
       return;
     }
     lastFrame = now;
-    // Long frames starve the audio thread on phones: degrade before that happens.
-    if (!reduced && prevStamp && quality > 0.5) {
-      const budget = compact ? 1000 / 24 : 1000 / 45;
-      slowFrames = now - prevStamp > budget ? slowFrames + 1 : Math.max(0, slowFrames - 1);
-      if (slowFrames > 15) {
-        quality = Math.max(0.5, quality - 0.25);
-        slowFrames = 0;
-        resize();
-      }
-    }
-    prevStamp = now;
+    const workStart = performance.now();
     const t = reduced ? 0 : now / 1000;
     const lv = sample();
     // While the emblem is hovered it holds still, so it never slides out from under the pointer.
@@ -433,6 +438,17 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       }
     }
 
+    // Long frames starve the audio thread on phones: degrade before that happens.
+    // Judged by this frame's own drawing time, not the gap between frames.
+    if (!reduced && quality > 0.25) {
+      const cost = performance.now() - workStart;
+      slowFrames = cost > (compact ? 12 : 9) ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+      if (slowFrames > 15) {
+        quality = Math.max(0.25, quality - 0.25);
+        slowFrames = 0;
+        resize();
+      }
+    }
     if (!reduced) raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
