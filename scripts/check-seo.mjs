@@ -107,7 +107,7 @@ for (const path of [
 ])
   assert.doesNotMatch(
     readFileSync(resolve(root, path, "index.html"), "utf8"),
-    /<script(?! type="application\/ld\+json")|<audio/,
+    /<script(?! type="application\/ld\+json"| src="[^"]*ga4\.js")|<audio/,
   );
 for (const path of ["acnd-7q4x2k", "apurba-9m1v8t", "ash-army-3k8w5n"]) {
   const html = readFileSync(resolve(root, "afw26", path, "index.html"), "utf8");
@@ -163,7 +163,7 @@ for (const url of articleUrls) {
   assert.equal(targets.length, 3);
   assert.ok(!targets.includes(url));
   graph.set(url, targets);
-  assert.doesNotMatch(html, /<audio|<script(?! type="application\/ld\+json")/);
+  assert.doesNotMatch(html, /<audio|<script(?! type="application\/ld\+json"| src="[^"]*ga4\.js")/);
   assert.doesNotMatch(html, /iraveyou\.com/);
 }
 for (const start of articleUrls) {
@@ -305,4 +305,18 @@ console.log(
   assert.equal(new Set(feed.releases.map((r) => r.id)).size, feed.releases.length, "release ids are unique");
   assert.match(htaccess, /FilesMatch "\\\.\(html\|json\)\$"/, "releases.json always revalidates");
   console.log(`PASS release feed: ${feed.releases.length} releases, links, dates and covers`);
+}
+
+// Security layers: headers, audio only from the site, encrypted stream, no inline scripts.
+{
+  for (const h of ["Content-Security-Policy", "Permissions-Policy", "Strict-Transport-Security", "X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Cross-Origin-Resource-Policy"])
+    assert.match(htaccess, new RegExp(`Header always set ${h} `), h);
+  assert.match(htaccess, /microphone=\(\).*display-capture=\(\)/);
+  assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(www\\\.\)\?iraveyou/);
+  const bins = readdirSync(resolve(root, "audio")).filter((f) => f.endsWith(".bin"));
+  assert.ok(bins.length > 0, "encrypted stream copy");
+  for (const f of walk(root).filter((f) => f.endsWith(".html")))
+    assert.doesNotMatch(readFileSync(f, "utf8"), /<script(?![^>]*\bsrc=)(?! type="application\/ld\+json")[^>]*>/, `inline script in ${f}`);
+  assert.match(readFileSync(resolve(root, "seo.css"), "utf8"), /user-select: none/);
+  console.log(`PASS security: headers, audio referer lock, ${bins.length} encrypted stream(s), no inline scripts, static copy guard`);
 }

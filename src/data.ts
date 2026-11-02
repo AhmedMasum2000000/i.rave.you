@@ -95,8 +95,12 @@ export interface RadioSet {
   date: string;
   bpm: number;
   description: string;
-  /** Hashed, long-cached audio file. */
+  /** Hashed, long-cached audio file, plain: only for players without Media Source Extensions. */
   file: string;
+  /** The same audio AES-256-CTR encrypted: what the streaming player fetches (src/stream.ts). */
+  stream?: string;
+  /** Its key, hex. */
+  k?: string;
   /** Seconds. */
   duration: number;
   tracklist: MixTrack[];

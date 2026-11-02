@@ -12,12 +12,69 @@
  *    tools and screen recorders take focus), on Print Screen and on the
  *    macOS screenshot chord (⌘⇧3/4/5), and the clipboard is wiped
  *  - other sites cannot frame the page
+ *  - the same blockers on the journal, music and mix pages the shell shows in
+ *    its frame (guardDocument); opened directly, those pages run no script and
+ *    get the CSS half of this (public/seo.css)
  */
 
 const CURTAIN_MS = 1500;
 
+// Duck-typed: an element from the content frame is not an `Element` of this window.
 const editable = (t: EventTarget | null): boolean =>
-  t instanceof Element && !!t.closest('input, textarea, select, [contenteditable="true"]');
+  !!(t as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"]');
+
+/** What the shell does when a capture shortcut is pressed (black out, wipe the clipboard). */
+let onCapture = (): void => {};
+
+/** The copy, save and capture-shortcut blockers, on one document: the shell's, or a page in its frame. */
+export function guardDocument(doc: Document): void {
+  const win = doc.defaultView;
+  if (!win) return;
+  const block = (e: Event): void => {
+    if (editable(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  for (const type of ['contextmenu', 'selectstart', 'dragstart', 'cut']) {
+    doc.addEventListener(type, block, { capture: true });
+  }
+  doc.addEventListener(
+    'copy',
+    (e) => {
+      if (editable(e.target)) return;
+      e.preventDefault();
+      e.clipboardData?.setData('text/plain', '');
+    },
+    { capture: true },
+  );
+  win.addEventListener(
+    'keydown',
+    (e) => {
+      const k = e.key.toLowerCase();
+      const mod = e.ctrlKey || e.metaKey;
+      const screenshotChord = e.metaKey && e.shiftKey && ['3', '4', '5', 's'].includes(k);
+      if (k === 'printscreen' || screenshotChord) onCapture();
+      const devtools =
+        k === 'f12' ||
+        (mod && e.shiftKey && ['i', 'j', 'c', 'k'].includes(k)) ||
+        (e.metaKey && e.altKey && ['i', 'j', 'c', 'u'].includes(k));
+      const saving = mod && ['s', 'u', 'p'].includes(k);
+      const copying = mod && ['c', 'x', 'a'].includes(k) && !editable(e.target);
+      if (devtools || saving || copying || screenshotChord) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    { capture: true },
+  );
+  win.addEventListener(
+    'keyup',
+    (e) => {
+      if (e.key === 'PrintScreen') onCapture();
+    },
+    { capture: true },
+  );
+}
 
 /** True inside this site's own shell (a content page opened from the site). */
 export function inShell(): boolean {
@@ -66,57 +123,11 @@ export function installGuard(): void {
     void navigator.clipboard?.writeText('').catch(() => undefined);
   };
 
-  const block = (e: Event): void => {
-    if (editable(e.target)) return;
-    e.preventDefault();
-    e.stopPropagation();
+  onCapture = (): void => {
+    flash();
+    wipeClipboard();
   };
-  for (const type of ['contextmenu', 'selectstart', 'dragstart', 'cut']) {
-    document.addEventListener(type, block, { capture: true });
-  }
-  document.addEventListener(
-    'copy',
-    (e) => {
-      if (editable(e.target)) return;
-      e.preventDefault();
-      e.clipboardData?.setData('text/plain', '');
-    },
-    { capture: true },
-  );
-
-  window.addEventListener(
-    'keydown',
-    (e) => {
-      const k = e.key.toLowerCase();
-      const mod = e.ctrlKey || e.metaKey;
-      const screenshotChord = e.metaKey && e.shiftKey && ['3', '4', '5', 's'].includes(k);
-      if (k === 'printscreen' || screenshotChord) {
-        flash();
-        wipeClipboard();
-      }
-      const devtools =
-        k === 'f12' ||
-        (mod && e.shiftKey && ['i', 'j', 'c', 'k'].includes(k)) ||
-        (e.metaKey && e.altKey && ['i', 'j', 'c', 'u'].includes(k));
-      const saving = mod && ['s', 'u', 'p'].includes(k);
-      const copying = mod && ['c', 'x', 'a'].includes(k) && !editable(e.target);
-      if (devtools || saving || copying || screenshotChord) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
-    { capture: true },
-  );
-  window.addEventListener(
-    'keyup',
-    (e) => {
-      if (e.key === 'PrintScreen') {
-        flash();
-        wipeClipboard();
-      }
-    },
-    { capture: true },
-  );
+  guardDocument(document);
 
   // Black out whenever the page is not the thing in focus.
   const sync = (): void => cover(document.hidden || !document.hasFocus());
