@@ -1,5 +1,6 @@
 import { duration, isPlaying, onState, onTrack, seek, skip, time, toggle, upNext } from './audio';
 import { MIX, NEXT_RELEASE, TRACKLIST, fmt, onSetChange, type MixTrack } from './data';
+import { onRelease, type Featured } from './release';
 import { asset, esc } from './ui';
 
 /**
@@ -8,8 +9,11 @@ import { asset, esc } from './ui';
  * on either side and an eye for a knob. Below, the set's name, then the track
  * itself: its cover, title and artist, and play / pause. Before the first play
  * that is the track Play will start; after, the one playing. Then the
- * tracklist, the I RAVE YOU wordmark (home) and two pills: share, and listen
- * to the new release.
+ * tracklist, the I RAVE YOU wordmark (home) and two pills: share this page,
+ * and the release button, which says where it leads before it is pressed
+ * ("Latest release · Down In Bossa ↗", "Pre-save · out 13 Nov"). It follows
+ * public/releases.json live (src/release.ts), so a new release or pre-save
+ * takes the button over without a deploy of this code or a reload.
  *
  * The cover or the track title opens the tracklist window above the bar.
  */
@@ -58,10 +62,17 @@ export function mountPlayer(): void {
   // The credit, said like a broadcast: who made this set, and for whom.
   const opener = (): string => (TRACKLIST[0] ? `, opening with “${esc(TRACKLIST[0].title.replace(/\s*\(unreleased ID\)/i, ''))}”` : '');
   const air = (): string => `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>ACND × <span class="bn">অপূর্ব</span></strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(MIX.duration / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> <em>—</em> ${TRACKLIST.length} tracks${opener()} <em>✶</em></span>`;
-  const news = `<span class="fbar-air-item"><b class="fbar-new">New release</b> <strong>${esc(NEXT_RELEASE.title)}</strong> <em>—</em> ${esc(NEXT_RELEASE.artist)} · ${esc(NEXT_RELEASE.genre)} on <strong>${esc(NEXT_RELEASE.label)}</strong> <em>—</em> out now <em>✶</em></span>`;
+  // The release the button points to, said the same way in the ticker.
+  let featured: Featured | null = null;
+  const news = (): string => {
+    if (!featured) return '';
+    const r = featured.release;
+    const more = featured.when ? ` <em>—</em> ${esc(featured.when)}` : `${r.genre ? ` · ${esc(r.genre)}` : ''}${r.label ? ` on <strong>${esc(r.label)}</strong>` : ''}`;
+    return `<span class="fbar-air-item"><b class="fbar-new">${esc(featured.kicker)}</b> <strong>${esc(r.title)}</strong> <em>—</em> ${esc(r.artists)}${more} <em>✶</em></span>`;
+  };
   bar.innerHTML = `
     <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="ACND and অপূর্ব, ${esc(MIX.show)} ${esc(MIX.volume)}: a set for ${esc(MIX.station)}. Open the tracklist.">
-      <span class="fbar-air-run" aria-hidden="true">${(air() + news).repeat(3)}</span>
+      <span class="fbar-air-run" aria-hidden="true">${air().repeat(3)}</span>
     </button>
     <div class="fbar-seek">
       <span class="fbar-mix-m">ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
@@ -93,10 +104,10 @@ export function mountPlayer(): void {
       </button>
       <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>
       <div class="fbar-actions">
-        <button type="button" class="fbar-pill fbar-share">Share</button>
-        <a class="fbar-pill fbar-cta" href="${esc(NEXT_RELEASE.presave)}" target="_blank" rel="noopener" title="${esc(NEXT_RELEASE.title)} — ${esc(NEXT_RELEASE.artist)}">
-          <span data-presave-label>Listen now</span>
-          <span class="fbar-cd" aria-hidden="true"><b data-cd="d">00</b>d <b data-cd="h">00</b>h <b data-cd="m">00</b>m</span>
+        <button type="button" class="fbar-pill fbar-share"><span class="fbar-share-t">Share this page</span></button>
+        <a class="fbar-pill fbar-cta" href="${root}music/" target="_blank" rel="noopener" hidden>
+          <img class="fbar-cta-art" src="" alt="" width="36" height="36" decoding="async" />
+          <span class="fbar-cta-text"><span class="fbar-cta-k"><b></b><span class="fbar-cta-when"></span></span><span class="fbar-cta-t"></span></span>
         </a>
       </div>
     </div>`;
@@ -226,7 +237,7 @@ export function mountPlayer(): void {
     const label = `${MIX.show} ${MIX.volume}`;
     bar.querySelector('.fbar-mix-t')!.textContent = `${MIX.show} · ${MIX.volume}`;
     bar.querySelector('.fbar-mix-m')!.innerHTML = `ACND <i>×</i> <span class="bn">অপূর্ব</span> · ${esc(label)}`;
-    bar.querySelector('.fbar-air-run')!.innerHTML = (air() + news).repeat(3);
+    bar.querySelector('.fbar-air-run')!.innerHTML = (air() + news()).repeat(3);
     bar.querySelector('.fbar-mix')!.setAttribute('aria-label', `ACND and অপূর্ব, ${label}`);
     show(TRACKLIST[upNext()], upNext());
   });
@@ -246,14 +257,63 @@ export function mountPlayer(): void {
   onTrack(() => label(isPlaying()));
   label(false);
 
+  // The release button names where it goes: the state, the release, the arrow out.
+  const cta = bar.querySelector<HTMLAnchorElement>('.fbar-cta')!;
+  const ctaArt = cta.querySelector<HTMLImageElement>('.fbar-cta-art')!;
+  onRelease((f) => {
+    featured = f;
+    cta.hidden = !f;
+    if (f) {
+      const r = f.release;
+      cta.href = f.href;
+      cta.dataset.state = f.state;
+      if (ctaArt.getAttribute('src') !== f.cover) ctaArt.src = f.cover;
+      cta.querySelector('.fbar-cta-k b')!.textContent = f.kicker;
+      cta.querySelector('.fbar-cta-when')!.textContent = f.when ? ` · ${f.when}` : '';
+      // The arrow stays with the last word when the name wraps.
+      cta.querySelector('.fbar-cta-t')!.textContent = `${r.title}\u00a0↗`;
+      cta.setAttribute('aria-label', `${f.kicker}${f.when ? `, ${f.when}` : ''}: ${f.state === 'presave' ? 'pre-save' : 'listen to'} ${r.title} by ${r.artists} (opens in a new tab)`);
+      cta.title = `${r.title} — ${r.artists}${r.label ? ` · ${r.label}` : ''}`;
+    }
+    bar.querySelector('.fbar-air-run')!.innerHTML = (air() + news()).repeat(3);
+  });
+
+  // Share names what it shares: the page that is open, by its name.
+  const shareText = share.querySelector<HTMLElement>('.fbar-share-t')!;
+  let shareName = 'this page';
+  const syncShare = (): void => {
+    const p = location.pathname.slice((document.documentElement.dataset.root ?? '/').length);
+    shareName = /^acnd\//.test(p)
+      ? 'ACND'
+      : /^apurba\//.test(p)
+        ? 'অপূর্ব'
+        : /^music\/down-in-bossa\//.test(p)
+          ? NEXT_RELEASE.title
+          : /^music\/$/.test(p)
+            ? 'the music'
+            : /^(?:mixes|radio)\//.test(p)
+              ? MIX.show
+              : /^journal\/[^/]+\//.test(p)
+                ? 'this article'
+                : /^journal\/$/.test(p)
+                  ? 'the journal'
+                  : p === '' || p === 'index.html'
+                    ? 'I Rave You'
+                    : 'this page';
+    shareText.textContent = `Share ${shareName}`;
+    shareText.classList.toggle('bn', shareName === 'অপূর্ব');
+    share.setAttribute('aria-label', `Share ${shareName}: send a link to this page`);
+  };
+  syncShare();
+  window.addEventListener('routechange', syncShare);
   share.addEventListener('click', async () => {
-    const data = { title: document.title, url: location.href };
+    const data = { title: document.title, text: `${shareName === 'this page' || shareName === 'this article' ? document.title : shareName} on I Rave You`, url: location.href };
     try {
       if (navigator.share) await navigator.share(data);
       else {
         await navigator.clipboard.writeText(data.url);
-        share.textContent = 'Link copied';
-        window.setTimeout(() => (share.textContent = 'Share'), 1800);
+        shareText.textContent = 'Link copied';
+        window.setTimeout(syncShare, 1800);
       }
     } catch {
       /* the visitor dismissed the share sheet */

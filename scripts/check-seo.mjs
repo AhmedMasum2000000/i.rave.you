@@ -291,3 +291,18 @@ console.log(
   }
   console.log(`PASS legal pages: iraveyou.online, contact, licensing statement, analytics notice (${ga4 ? "GA4 on" : "no analytics"})`);
 }
+
+// The release button's feed: served as-is, every entry usable, every cover on disk.
+{
+  const feed = JSON.parse(readFileSync(resolve(root, "releases.json"), "utf8"));
+  assert.ok(Array.isArray(feed.releases) && feed.releases.length > 0, "releases.json lists releases");
+  for (const r of feed.releases) {
+    assert.ok(r.id && r.title && r.artists, `release fields: ${JSON.stringify(r)}`);
+    assert.ok(Number.isFinite(Date.parse(r.date)), `release date: ${r.title}`);
+    for (const link of [r.url, r.presave].filter(Boolean)) assert.match(link, /^https:\/\//, `release link: ${r.title}`);
+    if (r.cover && !/^https:/.test(r.cover)) assert.ok(existsSync(resolve(root, r.cover)), `release cover: ${r.cover}`);
+  }
+  assert.equal(new Set(feed.releases.map((r) => r.id)).size, feed.releases.length, "release ids are unique");
+  assert.match(htaccess, /FilesMatch "\\\.\(html\|json\)\$"/, "releases.json always revalidates");
+  console.log(`PASS release feed: ${feed.releases.length} releases, links, dates and covers`);
+}

@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { SECRET_PATHS } from './src/secret';
@@ -15,7 +15,11 @@ export default defineConfig({
   base: './',
   // The pages learn which images exist, so a missing optional photo goes
   // straight to its fallback and WebP is offered wherever a version exists.
-  define: { __IMAGES__: JSON.stringify(readdirSync(resolve(__dirname, 'public/img'))) },
+  define: {
+    __IMAGES__: JSON.stringify(readdirSync(resolve(__dirname, 'public/img'))),
+    // The release button's list at build time; the page re-reads public/releases.json live (src/release.ts).
+    __RELEASES__: JSON.stringify(JSON.parse(readFileSync(resolve(__dirname, 'public/releases.json'), 'utf8')).releases),
+  },
   plugins: [mixAudioPlugin(), seoPlugin({ artists: ARTISTS, next: NEXT_RELEASE, sets: loadSets(__dirname), events: EVENTS, meta: PAGE_META, ga4: GA4_MEASUREMENT_ID })],
   build: {
     target: 'es2020',

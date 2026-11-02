@@ -19,8 +19,9 @@
   AddType audio/mp4 .m4a
 </IfModule>
 <IfModule mod_headers.c>
-  # Pages always revalidate, so a deploy never serves old HTML pointing at removed assets.
-  <FilesMatch "\.html$">
+  # Pages always revalidate, so a deploy never serves old HTML pointing at
+  # removed assets; so does the release list, which changes without a new build.
+  <FilesMatch "\.(html|json)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
   # Fonts and images change rarely: a month, refreshed quietly in the background.

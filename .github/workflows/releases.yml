@@ -1,0 +1,45 @@
+name: Release button
+
+# Every 30 minutes: ask Apple Music for ACND's and অপূর্ব's releases
+# (scripts/releases.mjs) and commit any new release or pre-add to
+# public/releases.json. The push publishes the site on Hostinger; open pages
+# pick the change up on their next read of the file (src/release.ts). The
+# GitHub Pages copy is rebuilt by dispatching its workflow, since a push made
+# with GITHUB_TOKEN does not start workflows on its own.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: releases
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/releases.mjs
+      - name: Commit and publish a change
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain -- public/releases.json public/img/releases)" ]; then
+            echo "No new releases."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/releases.json public/img/releases
+          git commit -m "Release button: update from Apple Music"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          gh workflow run deploy.yml --ref "$GITHUB_REF_NAME"
