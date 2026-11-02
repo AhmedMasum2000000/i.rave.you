@@ -277,15 +277,39 @@ export function walkIn(seconds = 2.4): void {
   d.wet.gain.linearRampToValueAtTime(0, end);
   d.dry.gain.setValueAtTime(0, t);
   d.dry.gain.linearRampToValueAtTime(1, end);
-  window.setTimeout(() => {
+  // Remove the muffled path on the audio clock, after its fade has really
+  // finished: a context that is slow to start would leave a wall-clock timer
+  // cutting it while still audible (a click at the end of the entrance).
+  const clock = ctx.createConstantSource();
+  clock.offset.value = 0;
+  clock.connect(d.wet);
+  clock.onended = () => {
     try {
-      master!.disconnect(d.filter);
+      master?.disconnect(d.filter);
       d.filter.disconnect();
       d.wet.disconnect();
+      clock.disconnect();
     } catch {
       /* already gone */
     }
-  }, (seconds + 0.2) * 1000);
+  };
+  clock.start(t);
+  clock.stop(end + 0.1);
+}
+
+/**
+ * Whether the connection has room for extras (the hero visualizer, prefetched
+ * images) without touching the mix: a fast enough link, and either no mix
+ * running or 20 s of it buffered ahead. Loading never takes the audio's share.
+ */
+export function slowLink(): boolean {
+  const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string; downlink?: number } }).connection;
+  return !!c && (!!c.saveData || /(^|-)(2g|3g)$/.test(c.effectiveType ?? '') || (typeof c.downlink === 'number' && c.downlink > 0 && c.downlink < 1.5));
+}
+export function roomForExtras(): boolean {
+  if (!started || !el) return true;
+  if (el.error) return false;
+  return bufferedAhead() >= 20 || (Number.isFinite(el.duration) && bufferedAhead() >= el.duration - el.currentTime - 1);
 }
 
 /** Report actual audible playback, including autoplay rejection or suspension. */

@@ -31,6 +31,8 @@ export interface DualityHandle {
   hit(x: number, y: number): 'apurba' | 'acnd' | null;
   /** Called when the pointer moves onto a half of the emblem or off it. */
   onPeek(fn: (side: 'apurba' | 'acnd' | null, at: { x: number; y: number; r: number; wide: boolean }) => void): void;
+  /** Where the emblem is drawn now (canvas px), for the visualizer's clear zone. */
+  emblem(): { x: number; y: number; r: number };
   /** Hold the emblem open on one side (touch: first tap peeks, second enters). */
   peek(side: 'apurba' | 'acnd' | null): void;
   destroy(): void;
@@ -383,6 +385,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     onPeek(fn) {
       peekFn = fn;
     },
+    emblem: () => em,
     peek(side) {
       pinned = side;
       if (reduced) requestAnimationFrame(frame);

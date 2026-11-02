@@ -13,7 +13,7 @@ import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
-import { bufferedAhead, onState, playSet, upNext } from './audio';
+import { onState, playSet, roomForExtras, slowLink, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountViz } from './viz';
@@ -213,7 +213,7 @@ function renderHome(): void {
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
   // The visualizer under the logos and the emblem; it loads after the page and the mix's opening.
-  cleanup.push(mountViz(app.querySelector<HTMLElement>('.home')!));
+  cleanup.push(mountViz(app.querySelector<HTMLElement>('.home')!, () => fx.emblem()));
   // The feed's behaviour loads after the hero has painted.
   let stopFeed = (): void => {};
   let left = false;
@@ -336,9 +336,9 @@ onState((playing) => {
 window.addEventListener(
   'load',
   () => {
-    const t0 = performance.now();
+    if (slowLink()) return;
     const warm = (): void => {
-      if (bufferedAhead() < 8 && performance.now() - t0 < 5000) return void window.setTimeout(warm, 300);
+      if (!roomForExtras()) return void window.setTimeout(warm, 500);
       for (const a of Object.values(ARTISTS)) {
         for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}.webp`)]) {
           const l = document.createElement('link');
