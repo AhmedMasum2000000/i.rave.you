@@ -408,3 +408,36 @@ h1 { line-height: 1.02; }
 .journal-card { border-radius: 0; }
 /* An odd card out spans the row instead of leaving a hole beside it. */
 .journal-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* Content guard without script: these pages run none (see src/guard.ts, which
+   adds the rest when the site shows them in its frame). No selecting, no
+   long-press menu, no dragging or saving images, no printing. */
+html {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+img,
+a {
+  -webkit-user-drag: none;
+}
+img {
+  pointer-events: none;
+}
+@media print {
+  body > * {
+    display: none !important;
+  }
+  body::after {
+    content: 'Printing is disabled on this site.';
+    display: block;
+    padding: 40px;
+    font: 700 16px var(--font, sans-serif);
+    color: #000;
+  }
+}

@@ -21,10 +21,12 @@ const NO_COOKIES = ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", 
  * settings as src/analytics.ts. Silent inside the site's own frame, where the
  * shell around the page reports it.
  */
-const analyticsTag = () =>
+/** The static pages' GA4 snippet, served as ga4.js: the Content-Security-Policy (public/.htaccess) runs no inline script. */
+const analyticsScript = () =>
   GA4
-    ? `<script>if(window.top===window){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});gtag("consent","default",{analytics_storage:"denied",region:${JSON.stringify(NO_COOKIES)}});gtag("js",new Date());gtag("config",${JSON.stringify(GA4)},{allow_google_signals:false,allow_ad_personalization_signals:false});var r=/\\/music\\/(?:([^/]+)\\/)?$/.exec(location.pathname);if(r)gtag("event","release_page_view",{release:r[1]||"all",page_title:document.title});document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(!a)return;var u=new URL(a.href,location.href);if(!/^https?:$/.test(u.protocol)||u.hostname===location.hostname)return;gtag("event","external_link",{link_url:u.href,link_domain:u.hostname,link_text:(a.getAttribute("aria-label")||a.innerText||a.textContent||"").replace(/\\s+/g," ").trim().slice(0,100),page_path:location.pathname})},true);var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(${JSON.stringify(GA4)});document.head.appendChild(s)}</script>`
+    ? `if(window.top===window){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});gtag("consent","default",{analytics_storage:"denied",region:${JSON.stringify(NO_COOKIES)}});gtag("js",new Date());gtag("config",${JSON.stringify(GA4)},{allow_google_signals:false,allow_ad_personalization_signals:false});var r=/\\/music\\/(?:([^/]+)\\/)?$/.exec(location.pathname);if(r)gtag("event","release_page_view",{release:r[1]||"all",page_title:document.title});document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(!a)return;var u=new URL(a.href,location.href);if(!/^https?:$/.test(u.protocol)||u.hostname===location.hostname)return;gtag("event","external_link",{link_url:u.href,link_domain:u.hostname,link_text:(a.getAttribute("aria-label")||a.innerText||a.textContent||"").replace(/\\s+/g," ").trim().slice(0,100),page_path:location.pathname})},true);var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(${JSON.stringify(GA4)});document.head.appendChild(s)}\n`
     : "";
+const analyticsTag = (root) => (GA4 ? `<script src="${root}ga4.js"></script>` : "");
 /** The privacy notice's analytics section, true to the build: what runs, or that nothing does. */
 const analyticsNotice = () =>
   GA4
@@ -120,7 +122,7 @@ function head({
 }
 function shell(page, body) {
   const root = "../".repeat(page.path.split("/").filter(Boolean).length);
-  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css">${analyticsTag()}</head><body class="discovery"><a class="skip" href="#content">Skip to content</a><header><a class="brand" href="${root}">I Rave You</a><nav aria-label="Main navigation"><a href="${root}acnd/">ACND</a><a href="${root}apurba/">অপূর্ব</a><a href="${root}mixes/qbic-pulse/">Mix &amp; tracklist</a><a href="${root}journal/">Journal</a></nav></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css">${analyticsTag(root)}</head><body class="discovery"><a class="skip" href="#content">Skip to content</a><header><a class="brand" href="${root}">I Rave You</a><nav aria-label="Main navigation"><a href="${root}acnd/">ACND</a><a href="${root}apurba/">অপূর্ব</a><a href="${root}mixes/qbic-pulse/">Mix &amp; tracklist</a><a href="${root}journal/">Journal</a></nav></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer></body></html>`;
 }
 const pageGraph = (page, entities = [], type = "WebPage") => ({
   "@context": "https://schema.org",
@@ -671,6 +673,7 @@ export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "
     },
     generateBundle() {
       this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap(pages) });
+      if (GA4) this.emitFile({ type: "asset", fileName: "ga4.js", source: analyticsScript() });
       for (const page of pages.filter((p) => !p.artist))
         this.emitFile({
           type: "asset",

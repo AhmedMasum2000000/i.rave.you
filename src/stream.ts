@@ -9,6 +9,12 @@ import { asset } from './paths';
  * request. A jump fetches from the piece it lands in, and the opening of every
  * track is fetched ahead of time, so tracklist jumps start at once. Elsewhere
  * the browser streams the file itself.
+ *
+ * The streaming player fetches an encrypted copy of the set (AES-256-CTR, made
+ * by scripts/mix-audio.mjs) and decrypts every range at its byte offset before
+ * the player sees it, so a download extension or the network panel captures
+ * noise, not a playable file. Only players without Media Source Extensions get
+ * the plain copy.
  */
 export interface Stream {
   /** True when this loader controls the download (MSE). */
@@ -45,9 +51,37 @@ const MIME = 'audio/mp4; codecs="mp4a.40.2"';
 type MSCtor = typeof MediaSource;
 const MS: MSCtor | undefined = (window as unknown as { ManagedMediaSource?: MSCtor }).ManagedMediaSource ?? window.MediaSource;
 
+/** A range of the encrypted copy, decrypted as it arrives (CTR: byte `n` of the file uses keystream block n/16). */
+function sealedRange(url: string, key: Promise<CryptoKey>) {
+  return async (start: number, last: number, signal: AbortSignal): Promise<Response> => {
+    const res = await fetch(url, { headers: { Range: `bytes=${start}-${last}` }, signal });
+    if (res.status !== 206 || !res.body) return res;
+    const k = await key;
+    let pos = start;
+    const body = res.body.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        async transform(chunk, out) {
+          const skip = pos % 16;
+          const counter = new Uint8Array(16);
+          new DataView(counter.buffer).setBigUint64(8, BigInt(Math.floor(pos / 16)));
+          const input = new Uint8Array(skip + chunk.length);
+          input.set(chunk, skip);
+          const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-CTR', counter, length: 64 }, k, input));
+          pos += chunk.length;
+          out.enqueue(plain.subarray(skip));
+        },
+      }),
+    );
+    return new Response(body, { status: 206 });
+  };
+}
+
+const hexBytes = (hex: string): Uint8Array => new Uint8Array((hex.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
 export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
-  const url = asset(CURRENT.file);
-  if (!MS || !MS.isTypeSupported(MIME)) return nativeStream(el, url, startAt);
+  const plainUrl = asset(CURRENT.file);
+  if (!MS || !MS.isTypeSupported(MIME) || !CURRENT.stream || !CURRENT.k || !window.crypto?.subtle) return nativeStream(el, plainUrl, startAt);
+  const range = sealedRange(asset(CURRENT.stream), crypto.subtle.importKey('raw', hexBytes(CURRENT.k) as Uint8Array<ArrayBuffer>, 'AES-CTR', false, ['decrypt']));
 
   let frags: Frag[] = [];
   let sb: SourceBuffer | null = null;
@@ -347,7 +381,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
       else if (midPiece()) reset();
       j.at = start;
       lastByte = performance.now();
-      const res = await fetch(url, { headers: { Range: `bytes=${start}-${last}` }, signal: j.ctl.signal });
+      const res = await range(start, last, j.ctl.signal);
       if (res.status !== 206 || !res.body) throw new Error(`mix ${res.status}`);
       await feed(res, start, j);
     } catch {
@@ -401,7 +435,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
   /** Read the header and index, then keep feeding the same response as the opening audio. */
   const open = async (): Promise<void> => {
     const ctl = new AbortController();
-    const res = await fetch(url, { headers: { Range: `bytes=0-${HEAD}` }, signal: ctl.signal });
+    const res = await range(0, HEAD, ctl.signal);
     if (res.status !== 206 || !res.body) throw new Error(`mix ${res.status}`);
     const reader = res.body.getReader();
     let head = new Uint8Array(0);
@@ -501,7 +535,7 @@ export function attachStream(el: HTMLAudioElement, startAt: number): Stream {
       // on report plain playback so seeks take the native path.
       if (!sb) {
         fellBack = true;
-        nativeStream(el, url, startAt);
+        nativeStream(el, plainUrl, startAt);
         waiter?.done(true);
         waiter = null;
       } else void pump();

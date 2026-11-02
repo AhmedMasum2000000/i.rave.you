@@ -1,4 +1,4 @@
-import { createDecipheriv, createHash } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadSets } from './sets.mjs';
@@ -105,8 +105,8 @@ function splitFragment(fragment, target, nextSequence) {
   return out;
 }
 
-/** Authenticate and join a set's fragments at build time, not in the browser. */
-function continuousMix(root, dir) {
+/** The key the sets in sets/ are stored with. */
+function storeKey(root) {
   const source = readFileSync(resolve(root, 'src/stream-key.ts'), 'utf8');
   const parts = ['K1', 'K2'].map((name) => {
     const match = source.match(new RegExp(`export const ${name}\\s*=\\s*['"]([a-fA-F0-9]+)['"]`));
@@ -114,7 +114,27 @@ function continuousMix(root, dir) {
     return Buffer.from(match[1], 'hex');
   });
   if (parts.some((part) => part.length !== 32)) throw new Error('Invalid mix key length');
-  const key = Buffer.from(parts[0].map((byte, i) => byte ^ parts[1][i]));
+  return Buffer.from(parts[0].map((byte, i) => byte ^ parts[1][i]));
+}
+
+/**
+ * The copy the player streams: the whole file AES-256-CTR encrypted, so what a
+ * download extension or the network panel captures is noise, not a playable
+ * file. CTR keeps every byte where it was, so the fragment index and the range
+ * requests work unchanged, and the player decrypts each range at its offset
+ * (src/stream.ts). The key comes from the audio itself, so an unchanged set
+ * keeps its file name and stays in visitors' caches; it ships in the page, so
+ * this stops capture tools, not someone who reverse-engineers the player.
+ */
+export function deliveryCopy(root, plain) {
+  const key = createHmac('sha256', storeKey(root)).update('delivery:').update(createHash('sha256').update(plain).digest()).digest();
+  const cipher = createCipheriv('aes-256-ctr', key, Buffer.alloc(16));
+  return { key: key.toString('hex'), bytes: Buffer.concat([cipher.update(plain), cipher.final()]) };
+}
+
+/** Authenticate and join a set's fragments at build time, not in the browser. */
+function continuousMix(root, dir) {
+  const key = storeKey(root);
   const manifest = JSON.parse(readFileSync(resolve(dir, 'm.json'), 'utf8'));
   const names = ['i.bin', ...manifest.s.map((_, i) => `${i}.bin`)];
   const decoded = names.map((name) => {
@@ -181,29 +201,43 @@ export function mixAudioPlugin() {
     if (!audio.has(set.slug)) audio.set(set.slug, continuousMix(root, set.audioDir));
     return audio.get(set.slug);
   };
+  const sealed = new Map();
+  const delivery = (set) => {
+    if (!sealed.has(set.slug)) sealed.set(set.slug, deliveryCopy(root, bytes(set)));
+    return sealed.get(set.slug);
+  };
+  const hash = (data) => createHash('sha256').update(data).digest('hex').slice(0, 10);
   return {
     name: 'continuous-mix-audio',
     config(config) {
       root = resolve(config.root ?? process.cwd());
       sets = loadSets(root).map((set) => ({
         ...set,
-        file: `audio/${set.audioName ?? set.slug}.${createHash('sha256').update(bytes(set)).digest('hex').slice(0, 10)}.m4a`,
+        // Plain copy: only for players without Media Source Extensions.
+        file: `audio/${set.audioName ?? set.slug}.${hash(bytes(set))}.m4a`,
+        // Encrypted copy: what the streaming player fetches everywhere else.
+        stream: `audio/${set.audioName ?? set.slug}.${hash(delivery(set).bytes)}.bin`,
+        k: delivery(set).key,
       }));
       if (!sets.length) throw new Error('No sets found in sets/');
       const publicSets = sets.map(({ audioDir: _dir, audioName: _name, ...rest }) => rest);
       return { define: { __SETS__: JSON.stringify(publicSets) } };
     },
     generateBundle() {
-      for (const set of sets) this.emitFile({ type: 'asset', fileName: set.file, source: bytes(set) });
+      for (const set of sets) {
+        this.emitFile({ type: 'asset', fileName: set.file, source: bytes(set) });
+        this.emitFile({ type: 'asset', fileName: set.stream, source: delivery(set).bytes });
+      }
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const set = sets.find((s) => req.url?.split('?')[0] === `/${s.file}`);
+        const path = req.url?.split('?')[0];
+        const set = sets.find((s) => path === `/${s.file}` || path === `/${s.stream}`);
         if (!set || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
-        const data = bytes(set);
+        const data = path === `/${set.stream}` ? delivery(set).bytes : bytes(set);
         let start = 0;
         let end = data.length - 1;
-        res.setHeader('Content-Type', 'audio/mp4');
+        res.setHeader('Content-Type', path === `/${set.stream}` ? 'application/octet-stream' : 'audio/mp4');
         res.setHeader('Accept-Ranges', 'bytes');
         if (req.headers.range) {
           const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);

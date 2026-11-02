@@ -1,7 +1,7 @@
 import './style.css';
 import './system.css';
 import { syncSearchMetadata } from './seo';
-import { installGuard } from './guard';
+import { guardDocument, installGuard } from './guard';
 import './artist.css';
 import './mobile.css';
 import './fx.css';
@@ -120,6 +120,8 @@ function renderDoc(path: string, y = 0): () => void {
     const d = f.contentDocument;
     if (!d) return;
     d.documentElement.classList.add('in-shell');
+    // Journal, music and mix pages get the shell's copy guard; the legal pages stay copyable (contact details, terms).
+    if (!/\/legal\//.test(framePath(f))) guardDocument(d);
     document.title = d.title || document.title;
     f.title = d.title || 'Page';
     // "Play this set" buttons on the radio pages put that set on air, here.

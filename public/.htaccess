@@ -11,6 +11,12 @@
   # for by name, not when the server serves the folder's index itself).
   RewriteCond %{THE_REQUEST} \s/+((?:[^\s?]*/)?)index\.html[\s?]
   RewriteRule ^ https://iraveyou.online/%1 [R=301,L]
+  # The mix only plays from this site: a request for the audio that does not
+  # come from one of its pages (an address pasted into a browser or a download
+  # manager, another site embedding it) is refused.
+  RewriteCond %{REQUEST_URI} \.(m4a|bin)$ [NC]
+  RewriteCond %{HTTP_REFERER} !^https://(www\.)?iraveyou\.online/ [NC]
+  RewriteRule ^ - [F,L]
 </IfModule>
 
 # The mix's file name carries its content hash, so it can be cached for a
@@ -28,7 +34,26 @@
   <FilesMatch "\.(woff2|webp|avif|jpg|png|svg)$">
     Header set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400"
   </FilesMatch>
-  <FilesMatch "\.m4a$">
+  <FilesMatch "\.(m4a|bin)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
+
+  # ── Security headers ──
+  # Scripts, styles, fonts, audio and frames come from this site only (plus
+  # Google Analytics once a Measurement ID is set): an injected or third-party
+  # script cannot run, and nothing can lift the page's content off to another
+  # server. No plugins, no foreign <base>, and other sites cannot frame it.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+  # The page may not use the microphone, the camera, screen or tab capture,
+  # location or any device ports, and neither may anything injected into it.
+  Header always set Permissions-Policy "camera=(), microphone=(), display-capture=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), midi=(), browsing-topics=(), picture-in-picture=(), fullscreen=(self), autoplay=(self)"
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  # The audio, images and fonts load only on this site's own pages: other
+  # sites cannot embed them. The press kit stays open for the press.
+  SetEnvIf Request_URI "^/(audio|img|fonts|assets)/" IRY_OWN
+  Header always set Cross-Origin-Resource-Policy "same-origin" env=IRY_OWN
 </IfModule>
