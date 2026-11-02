@@ -1,0 +1,124 @@
+{
+  "about": "The releases the player bar's release button can point to. scripts/releases.mjs adds new ones from Apple Music on its own (every 30 minutes, via .github/workflows/releases.yml). Entries marked \"source\": \"manual\" are never overwritten: add one by hand for a pre-save or a smart link. Fields: title, artists, date (ISO 8601 with offset; the moment it is out), url (where Listen goes), presave (optional: where the button goes before the date), cover (path under public/ or https URL), label, genre.",
+  "releases": [
+    {
+      "id": "down-in-bossa",
+      "title": "Down In Bossa",
+      "artists": "Ash Army & ACND",
+      "for": [
+        "acnd"
+      ],
+      "date": "2026-10-30T00:00:00+06:00",
+      "url": "https://profimusic.lnk.to/DownInBossa",
+      "cover": "img/down-in-bossa.webp",
+      "label": "Profi Music",
+      "genre": "Afro House",
+      "apple": 6822243986,
+      "source": "manual"
+    },
+    {
+      "id": "1by1",
+      "title": "1by1",
+      "artists": "অপূর্ব",
+      "for": [
+        "apurba"
+      ],
+      "date": "2026-08-07T07:00:00Z",
+      "url": "https://music.apple.com/us/album/1by1-single/6791628824",
+      "cover": "img/releases/6791628824.webp",
+      "apple": 6791628824,
+      "source": "apple"
+    },
+    {
+      "id": "monolithic-flow",
+      "title": "Monolithic Flow",
+      "artists": "অপূর্ব",
+      "for": [
+        "apurba"
+      ],
+      "date": "2026-05-08T07:00:00Z",
+      "url": "https://music.apple.com/us/album/monolithic-flow-single/1895384969",
+      "cover": "img/releases/1895384969.webp",
+      "apple": 1895384969,
+      "source": "apple"
+    },
+    {
+      "id": "h4ppy",
+      "title": "H4PPY",
+      "artists": "Luminous Lullabies & অপূর্ব",
+      "for": [
+        "apurba"
+      ],
+      "date": "2026-01-02T08:00:00Z",
+      "url": "https://music.apple.com/us/album/h4ppy-single/1866009308",
+      "cover": "img/releases/1866009308.webp",
+      "apple": 1866009308,
+      "source": "apple"
+    },
+    {
+      "id": "progress-ve",
+      "title": "Progress!ve",
+      "artists": "অপূর্ব & Zalvix",
+      "for": [
+        "apurba"
+      ],
+      "date": "2025-11-08T08:00:00Z",
+      "url": "https://music.apple.com/us/album/progress-ve-single/1849943175",
+      "cover": "img/releases/1849943175.webp",
+      "apple": 1849943175,
+      "source": "apple"
+    },
+    {
+      "id": "psyecho",
+      "title": "PsyEcho",
+      "artists": "অপূর্ব & Luminous Lullabies",
+      "for": [
+        "apurba"
+      ],
+      "date": "2025-08-22T07:00:00Z",
+      "url": "https://music.apple.com/us/album/psyecho-single/1835813510",
+      "cover": "img/releases/1835813510.webp",
+      "apple": 1835813510,
+      "source": "apple"
+    },
+    {
+      "id": "trance-by-3",
+      "title": "Trance by 3",
+      "artists": "অপূর্ব & Zalvix",
+      "for": [
+        "apurba"
+      ],
+      "date": "2025-08-15T07:00:00Z",
+      "url": "https://music.apple.com/us/album/trance-by-3-single/1836501190",
+      "cover": "img/releases/1836501190.webp",
+      "apple": 1836501190,
+      "source": "apple"
+    },
+    {
+      "id": "void",
+      "title": "VOID",
+      "artists": "অপূর্ব & Luminous Lullabies",
+      "for": [
+        "apurba"
+      ],
+      "date": "2025-08-15T07:00:00Z",
+      "url": "https://music.apple.com/us/album/void-single/1835741376",
+      "cover": "img/releases/1835741376.webp",
+      "apple": 1835741376,
+      "source": "apple"
+    },
+    {
+      "id": "opening",
+      "title": "Opening",
+      "artists": "অপূর্ব, Hridnic, Ahmed Masum & Prothey",
+      "for": [
+        "apurba"
+      ],
+      "date": "2025-05-27T07:00:00Z",
+      "url": "https://music.apple.com/us/album/opening-single/1821995432",
+      "cover": "img/releases/1821995432.webp",
+      "apple": 1821995432,
+      "source": "apple"
+    }
+  ]
+}
