@@ -1,4 +1,4 @@
-import { bufferedAhead, isPlaying, pause, prepare, start } from './audio';
+import { bufferedAhead, isPlaying, outsideTheClub, pause, prepare, start, walkIn } from './audio';
 
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -97,6 +97,8 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       <p class="gate-credit">Site by ACND</p>`;
     document.body.append(gate);
     document.body.classList.add('gated');
+    // Behind the door, the mix (if the browser lets it start) sounds as if from inside.
+    outsideTheClub();
     const stop = meter(gate);
     let done = false;
     const enter = (quiet = false): void => {
@@ -108,8 +110,14 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       } catch {
         /* private mode: the gate simply shows again next time */
       }
-      if (quiet) pause();
-      else start();
+      if (quiet) {
+        walkIn(0);
+        pause();
+      } else {
+        // Walking in: the sound opens up as the hero and its visualizer fade in.
+        start();
+        walkIn(2.4);
+      }
       gate.classList.add('gate-out');
       document.body.classList.remove('gated');
       setTimeout(() => gate.remove(), 1100);

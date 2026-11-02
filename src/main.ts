@@ -13,9 +13,10 @@ import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
-import { onState, playSet, upNext } from './audio';
+import { bufferedAhead, onState, playSet, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
+import { mountViz } from './viz';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
@@ -211,6 +212,8 @@ function renderHome(): void {
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
+  // The visualizer under the logos and the emblem; it loads after the page and the mix's opening.
+  cleanup.push(mountViz(app.querySelector<HTMLElement>('.home')!));
   // The feed's behaviour loads after the hero has painted.
   let stopFeed = (): void => {};
   let left = false;
@@ -326,6 +329,31 @@ onState((playing) => {
   }
   wasPlaying = playing;
 });
+// While the visitor is at the door (or idles on the hero), fetch what the next
+// click needs at the lowest priority: both artist pages' hero photos and logos.
+// Only after the page has loaded and the mix's opening is buffered, so neither
+// the first paint nor the sound waits on it.
+window.addEventListener(
+  'load',
+  () => {
+    const t0 = performance.now();
+    const warm = (): void => {
+      if (bufferedAhead() < 8 && performance.now() - t0 < 5000) return void window.setTimeout(warm, 300);
+      for (const a of Object.values(ARTISTS)) {
+        for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}.webp`)]) {
+          const l = document.createElement('link');
+          l.rel = 'prefetch';
+          l.as = 'image';
+          l.href = href;
+          document.head.append(l);
+        }
+      }
+    };
+    window.setTimeout(warm, 800);
+  },
+  { once: true },
+);
+
 // Only a first visit to the home page asks about sound; every other page
 // simply starts the mix (or waits for the first tap if autoplay is blocked).
 if (parse().artist || parse().doc) autoplay();
