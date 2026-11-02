@@ -178,6 +178,7 @@ export function start(): void {
   analyser.connect(master);
   master.connect(focusGain);
   focusGain.connect(ctx.destination);
+  if (inside) shutDoor();
 
   // A browser may reject the initial autoplay. Recover both the media element
   // and suspended AudioContext on a real gesture; never claim it is playing early.
@@ -225,6 +226,90 @@ function savePos(): void {
 
 function emitState(): void {
   stateListeners.forEach((fn) => fn(isPlaying()));
+}
+
+/* ───────────── The entrance: the mix heard from outside the club ───────────── */
+
+let inside = false;
+/** While the gate is up: a muffled copy of the mix (the club through its door) instead of the dry one. */
+let door: { filter: BiquadFilterNode; wet: GainNode; dry: GainNode } | null = null;
+
+function shutDoor(): void {
+  if (!ctx || !master || !focusGain || door) return;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 320;
+  filter.Q.value = 0.9;
+  const wet = ctx.createGain();
+  const dry = ctx.createGain();
+  dry.gain.value = 0;
+  wet.gain.value = 0.85;
+  master.disconnect(focusGain);
+  master.connect(dry).connect(focusGain);
+  master.connect(filter).connect(wet).connect(focusGain);
+  door = { filter, wet, dry };
+}
+
+/**
+ * The gate is the club's door: if the mix starts behind it, it sounds as if
+ * from inside (low-passed). Call before `start()`.
+ */
+export function outsideTheClub(): void {
+  inside = true;
+  shutDoor();
+}
+
+/**
+ * Walk in: the door opens over `seconds` (the filter sweeps open while the dry
+ * mix fades up), then the muffled path is removed, so from here on the sound
+ * is exactly the untouched mix. Safe to call when nothing is muffled.
+ */
+export function walkIn(seconds = 2.4): void {
+  inside = false;
+  const d = door;
+  if (!d || !ctx || !master) return;
+  door = null;
+  const t = ctx.currentTime;
+  const end = t + Math.max(0.05, seconds);
+  d.filter.frequency.setValueAtTime(d.filter.frequency.value, t);
+  d.filter.frequency.exponentialRampToValueAtTime(18000, end);
+  d.wet.gain.setValueAtTime(d.wet.gain.value, t);
+  d.wet.gain.linearRampToValueAtTime(0, end);
+  d.dry.gain.setValueAtTime(0, t);
+  d.dry.gain.linearRampToValueAtTime(1, end);
+  // Remove the muffled path on the audio clock, after its fade has really
+  // finished: a context that is slow to start would leave a wall-clock timer
+  // cutting it while still audible (a click at the end of the entrance).
+  const clock = ctx.createConstantSource();
+  clock.offset.value = 0;
+  clock.connect(d.wet);
+  clock.onended = () => {
+    try {
+      master?.disconnect(d.filter);
+      d.filter.disconnect();
+      d.wet.disconnect();
+      clock.disconnect();
+    } catch {
+      /* already gone */
+    }
+  };
+  clock.start(t);
+  clock.stop(end + 0.1);
+}
+
+/**
+ * Whether the connection has room for extras (the hero visualizer, prefetched
+ * images) without touching the mix: a fast enough link, and either no mix
+ * running or 20 s of it buffered ahead. Loading never takes the audio's share.
+ */
+export function slowLink(): boolean {
+  const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string; downlink?: number } }).connection;
+  return !!c && (!!c.saveData || /(^|-)(2g|3g)$/.test(c.effectiveType ?? '') || (typeof c.downlink === 'number' && c.downlink > 0 && c.downlink < 1.5));
+}
+export function roomForExtras(): boolean {
+  if (!started || !el) return true;
+  if (el.error) return false;
+  return bufferedAhead() >= 20 || (Number.isFinite(el.duration) && bufferedAhead() >= el.duration - el.currentTime - 1);
 }
 
 /** Report actual audible playback, including autoplay rejection or suspension. */

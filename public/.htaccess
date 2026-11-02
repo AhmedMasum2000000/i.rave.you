@@ -15,7 +15,8 @@
   # come from one of its pages (an address pasted into a browser or a download
   # manager, another site embedding it) is refused.
   RewriteCond %{REQUEST_URI} \.(m4a|bin)$ [NC]
-  RewriteCond %{HTTP_REFERER} !^https://(www\.)?iraveyou\.online/ [NC]
+  # (Hostinger's per-pull-request previews, *.hostingersite.com, are let through too.)
+  RewriteCond %{HTTP_REFERER} !^https://((www\.)?iraveyou\.online|[a-z0-9-]+\.hostingersite\.com)/ [NC]
   RewriteRule ^ - [F,L]
 </IfModule>
 

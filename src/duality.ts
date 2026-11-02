@@ -1,4 +1,4 @@
-import { sample, spectrum } from './audio';
+import { isPlaying, sample, spectrum } from './audio';
 
 /**
  * The home page: one canvas, two worlds.
@@ -49,6 +49,19 @@ const sprite = (color: string, r: number): HTMLCanvasElement => {
   return c;
 };
 
+/** 0..1 noise per dot, fixed: which dots fly off on a kick, and how far. */
+const hash = (a: number, b: number): number => {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+const mix = (a: readonly number[], b: readonly number[], f: number): string =>
+  `${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)}`;
+/** The bloom's colours: the dark half runs blue to ice, the light half orange to ink. */
+const DARK_IN = [47, 123, 255];
+const DARK_OUT = [214, 228, 255];
+const LIGHT_IN = [255, 106, 26];
+const LIGHT_OUT = [36, 18, 8];
+
 export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): DualityHandle {
   const g = canvas.getContext('2d')!;
   const blueGlow = sprite(BLUE, 64);
@@ -90,7 +103,6 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   /** Adaptive quality: shed particles and resolution if frames run long. */
   let quality = 1;
   let slowFrames = 0;
-  let prevStamp = 0;
 
   const resize = (): void => {
     dpr = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.25) * (quality < 1 ? 0.8 : 1);
@@ -160,25 +172,117 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   const sight = new IntersectionObserver(([e]) => (offscreen = !e.isIntersecting));
   sight.observe(canvas);
 
+  /**
+   * The bloom: rings of dots around the emblem, twisted into spiral arms and
+   * pushed out by the mix's frequencies, bass on the inner rings and highs on
+   * the outer ones. It widens with the energy and throws its outer dots into
+   * a cloud on every kick. Each dot takes its half's colours (blue to ice on
+   * the dark side, orange to ink on the light), split along the live seam.
+   */
+  let liveMix = 0;
+  let spin = 0;
+  const whiteHalo = sprite('#ffffff', 160);
+  let seamTable = new Float32Array(0);
+  const bloom = (t: number, lv: ReturnType<typeof sample>, R: number, cx: number, cy: number): void => {
+    // At the lowest quality the bloom steps aside so the mix keeps the main thread.
+    if (quality <= 0.25) return;
+    const spec = spectrum();
+    // Ease between the live spectrum and an idle breath, by whether the mix is playing.
+    liveMix += ((isPlaying() && spec.length > 0 ? 1 : 0) - liveMix) * 0.08;
+    const K = Math.max(6, Math.round((compact ? 14 : 24) * quality));
+    const N = Math.max(48, Math.round((compact ? 100 : 168) * quality));
+    // The seam for this frame, sampled every 4 px: one lookup per dot instead of three sines.
+    const across = wide() ? H : W;
+    const steps = Math.ceil(across / 4) + 1;
+    if (seamTable.length < steps) seamTable = new Float32Array(steps);
+    for (let i = 0; i < steps; i++) seamTable[i] = wide() ? edge(i * 4, t, lv.low) : edgeH(i * 4, t, lv.low);
+    const darkAt = (x: number, y: number): boolean => {
+      const i = Math.max(0, Math.min(steps - 1, Math.round((wide() ? y : x) / 4)));
+      return wide() ? x < seamTable[i] : y < seamTable[i];
+    };
+    const energy = Math.min(1, lv.low * 0.9 + lv.mid * 0.6 + lv.beat * 0.5);
+    // Spin accumulates (so a change of speed never jumps the rings), faster with the energy.
+    if (!reduced) spin += 0.012 * (1 + energy * 2.5);
+    const gap = R * (0.042 + energy * 0.05);
+    const size = compact ? 1.9 : 2.2;
+    const lobes = 7;
+    // Behind everything: a soft white glow around the emblem that breathes with the low end.
+    g.globalAlpha = Math.min(0.85, 0.22 + lv.low * 0.3 + lv.beat * 0.3);
+    const gs = R * (4.2 + lv.low * 0.6 + lv.beat * 0.8);
+    g.drawImage(whiteHalo, cx - gs / 2, cy - gs / 2, gs, gs);
+    g.globalAlpha = 1;
+    for (let k = 0; k < K; k++) {
+      const f = k / (K - 1);
+      const dark = new Path2D();
+      const light = new Path2D();
+      const near = f < 0.2;
+      const haloDark = near ? new Path2D() : null;
+      const haloLight = near ? new Path2D() : null;
+      const hs = size * 2.8;
+      // Each ring breathes a little on its own beat.
+      const r0 = (R * 1.18 + k * gap) * (1 + Math.sin(t * 2.4 + k * 0.6) * 0.015 * (1 + lv.low * 2));
+      // Neighbouring rings turn opposite ways: the spiral arms shear as they spin.
+      const twist = k * 0.2 + spin * (k % 2 ? 1 : -0.75) * (0.7 + f * 0.6) + rot * 0.5;
+      // Inner rings ride the bass, outer rings the mids and highs.
+      const reach = R * (0.1 + f * 0.45) * (0.5 + energy * 1.2);
+      const wobble = R * (0.04 + lv.low * 0.16 + lv.beat * 0.1) * (0.5 + f);
+      for (let j = 0; j < N; j++) {
+        const base = (j / N) * Math.PI * 2;
+        const a = base + twist;
+        // The spectrum, mirrored three times around the ring: a balanced bloom that closes without a seam.
+        const u = Math.abs(((base * 3) / (Math.PI * 2)) % 1 * 2 - 1);
+        const bin = Math.floor(2 + u ** 1.7 * (60 + f * 360));
+        const idle = 0.25 + 0.15 * Math.sin(t * 2 + base * 3 + k);
+        const v = liveMix > 0.01 ? liveMix * ((spec[bin] ?? 0) / 255) + (1 - liveMix) * idle : idle;
+        // Ripples run around the rings in both directions.
+        let r = r0 + v * v * reach + Math.sin(a * lobes + t * 3.2 + k * 0.45) * wobble + Math.sin(a * 3 - t * 2.1 + k * 0.2) * wobble * 0.5;
+        let aa = a;
+        // On a kick the outer rings scatter.
+        if (f > 0.55 && lv.beat > 0.2) {
+          const h = hash(j, k);
+          if (h > 0.55) {
+            r += (h - 0.55) * R * 0.8 * lv.beat * f;
+            aa += (hash(k, j) - 0.5) * 0.25 * lv.beat;
+          }
+        }
+        const x = cx + Math.cos(aa) * r;
+        const y = cy + Math.sin(aa) * r;
+        const isD = darkAt(x, y);
+        (isD ? dark : light).rect(x - size / 2, y - size / 2, size, size);
+        if (near) (isD ? haloDark : haloLight)!.rect(x - hs / 2, y - hs / 2, hs, hs);
+      }
+      const alpha = Math.min(1, (1 - f * 0.6) * (0.5 + energy * 0.7));
+      if (near) {
+        // The rings hugging the emblem glow white: a soft halo in each half's colour under a white core.
+        const glow = Math.min(1, 0.5 + energy * 0.5 + lv.beat * 0.3) * (1 - f * 2.5);
+        g.globalAlpha = 0.22 * glow;
+        g.fillStyle = 'rgb(160,200,255)';
+        g.fill(haloDark!);
+        g.fillStyle = 'rgb(255,150,80)';
+        g.fill(haloLight!);
+        g.globalAlpha = 1;
+        g.fillStyle = `rgba(255,255,255,${Math.min(1, 0.55 + glow * 0.45).toFixed(3)})`;
+        g.fill(dark);
+        g.fill(light);
+        continue;
+      }
+      g.fillStyle = `rgba(${mix(DARK_IN, DARK_OUT, f)},${alpha.toFixed(3)})`;
+      g.fill(dark);
+      g.fillStyle = `rgba(${mix(LIGHT_IN, LIGHT_OUT, f)},${alpha.toFixed(3)})`;
+      g.fill(light);
+    }
+  };
+
   const frame = (now: number): void => {
     if (!alive) return;
     // Nothing to draw while the page is hidden, scrolled away, or under the opaque entry gate.
-    if (document.hidden || offscreen || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60))) {
+    // The cap tolerates vsync rounding: two 16.6 ms vsyncs can read 33.2 ms.
+    if (document.hidden || offscreen || document.body.classList.contains('gated') || (!reduced && now - lastFrame < (compact ? 1000 / 30 : 1000 / 60) - 2)) {
       raf = requestAnimationFrame(frame);
       return;
     }
     lastFrame = now;
-    // Long frames starve the audio thread on phones: degrade before that happens.
-    if (!reduced && prevStamp && quality > 0.5) {
-      const budget = compact ? 1000 / 24 : 1000 / 45;
-      slowFrames = now - prevStamp > budget ? slowFrames + 1 : Math.max(0, slowFrames - 1);
-      if (slowFrames > 15) {
-        quality = Math.max(0.5, quality - 0.25);
-        slowFrames = 0;
-        resize();
-      }
-    }
-    prevStamp = now;
+    const workStart = performance.now();
     const t = reduced ? 0 : now / 1000;
     const lv = sample();
     // While the emblem is hovered it holds still, so it never slides out from under the pointer.
@@ -327,6 +431,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.globalAlpha = 1;
     g.globalCompositeOperation = 'source-over';
 
+    bloom(t, lv, R, cx, cy);
     drawYinYang(g, cx, cy, R, rot, lv.beat, false);
 
     // ── HUD rings, spectrum halo, ticks — all inverted per side ──
@@ -365,6 +470,17 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
       }
     }
 
+    // Long frames starve the audio thread on phones: degrade before that happens.
+    // Judged by this frame's own drawing time, not the gap between frames.
+    if (!reduced && quality > 0.25) {
+      const cost = performance.now() - workStart;
+      slowFrames = cost > (compact ? 12 : 9) ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+      if (slowFrames > 15) {
+        quality = Math.max(0.25, quality - 0.25);
+        slowFrames = 0;
+        resize();
+      }
+    }
     if (!reduced) raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);

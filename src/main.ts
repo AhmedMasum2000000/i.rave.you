@@ -13,7 +13,7 @@ import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
-import { onState, playSet, upNext } from './audio';
+import { onState, playSet, roomForExtras, slowLink, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
@@ -326,6 +326,31 @@ onState((playing) => {
   }
   wasPlaying = playing;
 });
+// While the visitor is at the door (or idles on the hero), fetch what the next
+// click needs at the lowest priority: both artist pages' hero photos and logos.
+// Only after the page has loaded and the mix's opening is buffered, so neither
+// the first paint nor the sound waits on it.
+window.addEventListener(
+  'load',
+  () => {
+    if (slowLink()) return;
+    const warm = (): void => {
+      if (!roomForExtras()) return void window.setTimeout(warm, 500);
+      for (const a of Object.values(ARTISTS)) {
+        for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}.webp`)]) {
+          const l = document.createElement('link');
+          l.rel = 'prefetch';
+          l.as = 'image';
+          l.href = href;
+          document.head.append(l);
+        }
+      }
+    };
+    window.setTimeout(warm, 800);
+  },
+  { once: true },
+);
+
 // Only a first visit to the home page asks about sound; every other page
 // simply starts the mix (or waits for the first tap if autoplay is blocked).
 if (parse().artist || parse().doc) autoplay();

@@ -312,7 +312,7 @@ console.log(
   for (const h of ["Content-Security-Policy", "Permissions-Policy", "Strict-Transport-Security", "X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Cross-Origin-Resource-Policy"])
     assert.match(htaccess, new RegExp(`Header always set ${h} `), h);
   assert.match(htaccess, /microphone=\(\).*display-capture=\(\)/);
-  assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(www\\\.\)\?iraveyou/);
+  assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(\(www\\\.\)\?iraveyou/);
   const bins = readdirSync(resolve(root, "audio")).filter((f) => f.endsWith(".bin"));
   assert.ok(bins.length > 0, "encrypted stream copy");
   for (const f of walk(root).filter((f) => f.endsWith(".html")))
