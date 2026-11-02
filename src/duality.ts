@@ -31,8 +31,6 @@ export interface DualityHandle {
   hit(x: number, y: number): 'apurba' | 'acnd' | null;
   /** Called when the pointer moves onto a half of the emblem or off it. */
   onPeek(fn: (side: 'apurba' | 'acnd' | null, at: { x: number; y: number; r: number; wide: boolean }) => void): void;
-  /** Where the emblem is drawn now (canvas px), for the visualizer's clear zone. */
-  emblem(): { x: number; y: number; r: number };
   /** Hold the emblem open on one side (touch: first tap peeks, second enters). */
   peek(side: 'apurba' | 'acnd' | null): void;
   destroy(): void;
@@ -50,6 +48,19 @@ const sprite = (color: string, r: number): HTMLCanvasElement => {
   g.fillRect(0, 0, r * 2, r * 2);
   return c;
 };
+
+/** 0..1 noise per dot, fixed: which dots fly off on a kick, and how far. */
+const hash = (a: number, b: number): number => {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+const mix = (a: readonly number[], b: readonly number[], f: number): string =>
+  `${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)}`;
+/** The bloom's colours: the dark half runs blue to ice, the light half orange to ink. */
+const DARK_IN = [47, 123, 255];
+const DARK_OUT = [214, 228, 255];
+const LIGHT_IN = [255, 106, 26];
+const LIGHT_OUT = [36, 18, 8];
 
 export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): DualityHandle {
   const g = canvas.getContext('2d')!;
@@ -161,6 +172,60 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
   let offscreen = false;
   const sight = new IntersectionObserver(([e]) => (offscreen = !e.isIntersecting));
   sight.observe(canvas);
+
+  /**
+   * The bloom: rings of dots around the emblem, twisted into spiral arms and
+   * pushed out by the mix's frequencies, bass on the inner rings and highs on
+   * the outer ones. It widens with the energy and throws its outer dots into
+   * a cloud on every kick. Each dot takes its half's colours (blue to ice on
+   * the dark side, orange to ink on the light), split along the live seam.
+   */
+  const bloom = (t: number, lv: ReturnType<typeof sample>, R: number, cx: number, cy: number): void => {
+    const spec = spectrum();
+    const live = spec.length > 0 && lv.all > 0.02;
+    const K = Math.max(6, Math.round((compact ? 14 : 24) * quality));
+    const N = compact ? 100 : 168;
+    const energy = Math.min(1, lv.low * 0.9 + lv.mid * 0.6 + lv.beat * 0.5);
+    const gap = R * (0.085 + energy * 0.1);
+    const size = compact ? 1.9 : 2.2;
+    const lobes = 7;
+    for (let k = 0; k < K; k++) {
+      const f = k / (K - 1);
+      const dark = new Path2D();
+      const light = new Path2D();
+      const r0 = R * 1.22 + k * gap;
+      const twist = k * 0.2 + t * (k % 2 ? 0.22 : -0.15) + rot * 0.5;
+      // Inner rings ride the bass, outer rings the mids and highs.
+      const reach = R * (0.2 + f * 0.9) * (0.5 + energy * 1.2);
+      const wobble = R * (0.08 + lv.low * 0.32 + lv.beat * 0.2) * (0.5 + f);
+      for (let j = 0; j < N; j++) {
+        const base = (j / N) * Math.PI * 2;
+        const a = base + twist;
+        // The spectrum, mirrored three times around the ring: a balanced bloom that closes without a seam.
+        const u = Math.abs(((base * 3) / (Math.PI * 2)) % 1 * 2 - 1);
+        const bin = Math.floor(2 + u ** 1.7 * (60 + f * 360));
+        const v = live ? spec[bin] / 255 : 0.25 + 0.15 * Math.sin(t * 2 + base * 3 + k);
+        let r = r0 + v * v * reach + Math.sin(a * lobes + t * 1.3 + k * 0.45) * wobble + Math.sin(a * 3 - t * 0.9 + k * 0.2) * wobble * 0.5;
+        let aa = a;
+        // On a kick the outer rings scatter.
+        if (f > 0.55 && lv.beat > 0.2) {
+          const h = hash(j, k);
+          if (h > 0.55) {
+            r += (h - 0.55) * R * 1.6 * lv.beat * f;
+            aa += (hash(k, j) - 0.5) * 0.25 * lv.beat;
+          }
+        }
+        const x = cx + Math.cos(aa) * r;
+        const y = cy + Math.sin(aa) * r;
+        (isDark(x, y, t, lv.low) ? dark : light).rect(x - size / 2, y - size / 2, size, size);
+      }
+      const alpha = Math.min(1, (1 - f * 0.6) * (0.5 + energy * 0.7));
+      g.fillStyle = `rgba(${mix(DARK_IN, DARK_OUT, f)},${alpha.toFixed(3)})`;
+      g.fill(dark);
+      g.fillStyle = `rgba(${mix(LIGHT_IN, LIGHT_OUT, f)},${alpha.toFixed(3)})`;
+      g.fill(light);
+    }
+  };
 
   const frame = (now: number): void => {
     if (!alive) return;
@@ -329,6 +394,7 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     g.globalAlpha = 1;
     g.globalCompositeOperation = 'source-over';
 
+    bloom(t, lv, R, cx, cy);
     drawYinYang(g, cx, cy, R, rot, lv.beat, false);
 
     // ── HUD rings, spectrum halo, ticks — all inverted per side ──
@@ -385,7 +451,6 @@ export function mountDuality(canvas: HTMLCanvasElement, reduced: boolean): Duali
     onPeek(fn) {
       peekFn = fn;
     },
-    emblem: () => em,
     peek(side) {
       pinned = side;
       if (reduced) requestAnimationFrame(frame);

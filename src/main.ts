@@ -16,7 +16,6 @@ import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data
 import { onState, playSet, roomForExtras, slowLink, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
-import { mountViz } from './viz';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
 import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
@@ -212,8 +211,6 @@ function renderHome(): void {
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
   cleanup.push(() => fx.destroy());
-  // The visualizer under the logos and the emblem; it loads after the page and the mix's opening.
-  cleanup.push(mountViz(app.querySelector<HTMLElement>('.home')!, () => fx.emblem()));
   // The feed's behaviour loads after the hero has painted.
   let stopFeed = (): void => {};
   let left = false;

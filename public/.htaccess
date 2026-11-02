@@ -31,8 +31,8 @@
   <FilesMatch "\.(html|json)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
-  # Fonts, images and the hero video change rarely: a month, refreshed quietly in the background.
-  <FilesMatch "\.(woff2|webp|avif|jpg|png|svg|mp4|webm)$">
+  # Fonts and images change rarely: a month, refreshed quietly in the background.
+  <FilesMatch "\.(woff2|webp|avif|jpg|png|svg)$">
     Header set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400"
   </FilesMatch>
   <FilesMatch "\.(m4a|bin)$">
@@ -55,6 +55,6 @@
   Header always set Cross-Origin-Opener-Policy "same-origin"
   # The audio, images and fonts load only on this site's own pages: other
   # sites cannot embed them. The press kit stays open for the press.
-  SetEnvIf Request_URI "^/(audio|img|fonts|assets|video)/" IRY_OWN
+  SetEnvIf Request_URI "^/(audio|img|fonts|assets)/" IRY_OWN
   Header always set Cross-Origin-Resource-Policy "same-origin" env=IRY_OWN
 </IfModule>
