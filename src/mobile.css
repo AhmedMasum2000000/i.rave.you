@@ -8,7 +8,7 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .a-nav { grid-template-columns: 1fr; gap: 8px; padding: calc(58px + var(--safe-top)) var(--gutter) 10px; background: #0b0b0b; border-bottom: 1px solid #262626; }
   body .a-brand { top: calc(10px + var(--safe-top)); min-height: 44px; }
   body .a-info { display: none; }
-  body .a-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; padding: 0; font-size: 13px; }
+  body .a-links { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; width: 100%; padding: 0; font-size: 13px; }
   body .a-links a { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 8px; border: 1px solid #292929; border-radius: 6px; }
   body .a-links a.on { background: #202020; border-color: var(--glow); }
   body .a-links a.on::before { content: '●'; font-size: 8px; }
@@ -77,7 +77,40 @@ body .pitch p:not(.mono) { font-family: var(--font); font-weight: 700; line-heig
 
 @media (max-height: 500px) and (orientation: landscape) {
   body .home { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
-  body .home .side { padding: 60px 24px 124px; justify-content: center; gap: 8px; }
+  body .home .side { padding: 56px 24px 16px; justify-content: center; gap: 8px; }
   body .side-logo { width: 72px; }
   body .side-name { font-size: 22px; }
+}
+
+/* ── Phones held sideways: the page gets the height ──
+   The artist bar scrolls away with the page instead of staying fixed (Back and
+   MENU stay reachable), the player is one 60px row (Mixcloud's mini player
+   beside the controls), and the gate puts the record beside the two choices. */
+@media (max-height: 500px) and (orientation: landscape) {
+  html:root { --fbar-air: 0px; --fbar-row: 0px; }
+  body .fbar { grid-template-rows: var(--fbar-seek); grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+  body .fbar-air { display: none; }
+  body .fbar-seek { border-bottom: 0; }
+  body .fbar-row { border-left: 1px solid var(--bar-ink); }
+  body:not([data-view='home']) { padding-bottom: calc(var(--fbar-h) + 16px); }
+
+  body .a-nav { position: absolute; }
+  body .a-brand { position: absolute; }
+
+  body .gate {
+    grid-template-columns: auto minmax(0, 440px);
+    grid-auto-flow: row dense;
+    place-content: center;
+    align-content: center;
+    justify-items: start;
+    column-gap: 28px;
+    row-gap: 6px;
+    padding: calc(12px + var(--safe-top)) calc(var(--gutter) + env(safe-area-inset-right, 0px)) calc(12px + var(--safe-bottom)) calc(var(--gutter) + env(safe-area-inset-left, 0px));
+    text-align: left;
+  }
+  body .gate-record { grid-column: 1; grid-row: 1 / span 3; align-self: center; width: min(150px, 42svh); margin: 0; }
+  body .gate-kicker, body .gate-line, body .vibe, body .gate-credit { grid-column: 2; }
+  body .gate-line, body .vibe-body, body .vibe-meter, body .gate-credit { display: none; }
+  body .vibe { margin-top: 4px; padding: 14px; gap: 8px; }
+  body .vibe-title { font-size: 19px; }
 }

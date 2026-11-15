@@ -80,6 +80,8 @@ export function interceptLinks(go: (path: string) => void, doc: Document = docum
     const t = e.target as Element | null;
     const a = t && typeof t.closest === 'function' ? t.closest<HTMLAnchorElement>('a[href]') : null;
     if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    // Nothing behind the entry gate navigates while it is up.
+    if (a.closest('.gate')) return;
     const url = new URL(a.href, doc.location.href);
     if (!routable(url) || (url.hash && url.pathname === doc.location.pathname)) return;
     e.preventDefault();

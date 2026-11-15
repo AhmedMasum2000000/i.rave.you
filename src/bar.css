@@ -3,7 +3,7 @@
 
 :root {
   --fbar-air: 30px;
-  --fbar-seek: 44px;
+  --fbar-seek: 61px; /* Mixcloud's mini player, 60px, and its hairline */
   --fbar-row: 52px;
   --fbar-h: calc(var(--fbar-air) + var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
   --bar-ink: #000;
@@ -42,39 +42,18 @@
 .fbar a { color: inherit; text-decoration: none; }
 .fbar :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: 2px; }
 
-/* ── Seek row: time, hairline with the eye, total ── */
+/* ── Mixcloud row: the set's name (phones) and Mixcloud's own player ── */
 .fbar-seek {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
-  padding: 0 20px;
+  gap: 16px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--bar-ink);
+  overflow: hidden;
 }
-.fbar-time { font-variant-numeric: tabular-nums; min-width: 5ch; }
-.fbar-time:last-child { text-align: right; }
-.fbar-track { position: relative; height: 100%; cursor: pointer; touch-action: none; }
-.fbar-line { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--bar-ink); }
-.fbar-knob {
-  --kw: 44px;
-  position: absolute;
-  top: 50%;
-  /* The eye travels inside the line, never over the time labels. */
-  left: calc(var(--kw) / 2 + (100% - var(--kw)) * var(--p, 0));
-  width: var(--kw);
-  height: 24px;
-  translate: -50% -50%;
-  pointer-events: none;
-}
-.fbar-knob svg { display: block; width: 100%; height: 100%; }
-.fbar-pupil {
-  transform-origin: 22px 12px;
-  transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)) scale(calc(0.92 + var(--lv-low, 0) * 0.22));
-}
-.fbar.paused .fbar-pupil { transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)); }
-.fbar-eye { transform-origin: 22px 12px; transition: transform 0.07s ease-in; }
-.fbar-eye.blink { transform: scaleY(0.08); }
-.fbar-track:focus-visible { outline-offset: -6px; }
+.fbar-mc { height: 60px; min-width: 0; }
+.fbar-mc .mc-frame { display: block; width: 100%; height: 60px; border: 0; }
 
 /* ── Control row: set name | cover + track + play | tracklist | wordmark | pills ── */
 .fbar-row {
@@ -158,7 +137,8 @@
   transform: translateY(8px);
   transition: opacity 0.2s, transform 0.25s, visibility 0.2s;
 }
-body.tid-open .tid { opacity: 1; visibility: visible; transform: none; }
+/* Visible at once on open (so focus can move in), faded out on close. */
+body.tid-open .tid { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s, transform 0.25s, visibility 0s; }
 .tid button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .tid a { color: inherit; }
 .tid :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: -2px; }
@@ -242,12 +222,12 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   .fbar-mark { padding: 0 20px; font-size: 22px; }
 }
 @media (max-width: 760px) {
-  :root { --fbar-seek: 34px; --fbar-row: 58px; }
+  :root { --fbar-row: 56px; }
   .fbar-seek { gap: 12px; padding: 0 12px; }
   .fbar-time { font-size: 11px; }
   .fbar-knob { --kw: 38px; height: 21px; }
   .fbar-actions { flex: none; min-width: 0; }
-  .fbar-mark, .fbar-share { display: none; }
+  .fbar-mark { display: none; }
   .fbar-now { gap: 10px; padding: 0 12px; }
   .fbar-actions { padding: 0 10px; }
   .fbar-cta { flex: none; padding: 0 16px; height: 38px; }
@@ -270,7 +250,7 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   letter-spacing: 0.08em !important;
 }
 .fbar-air-run { display: inline-flex; white-space: nowrap; animation: air 48s linear infinite; will-change: transform; }
-.fbar-air:hover .fbar-air-run { animation-play-state: paused; }
+.fbar-air:hover .fbar-air-run, .fbar:focus-within .fbar-air-run { animation-play-state: paused; }
 .fbar-air-item { display: inline-flex; align-items: center; gap: 0.6em; padding-right: 2.4em; line-height: var(--fbar-air); }
 .fbar-air-item strong { font-weight: 800; color: #fff; }
 .fbar-air-item strong.bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; }
@@ -447,9 +427,8 @@ body.flooding .peek { opacity: 0 !important; }
 @media (max-width: 760px) {
   .fbar-mix { display: none; }
   /* Phones: the mix's name takes the seek row's left side; the eye shows the position. */
-  .fbar-seek { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .fbar-seek .fbar-time[data-t] { display: none; }
-  .fbar-mix-m { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
+  .fbar-seek { grid-template-columns: minmax(0, 1fr); padding: 0 6px; }
+  .fbar-mix-m { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 12px; letter-spacing: 0; color: #000; }
   /* The tracklist sits below the header and above the menu button while open. */
@@ -467,9 +446,8 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-actions { flex: 0 1 auto; min-width: 0; }
 }
 @media (min-width: 761px) and (max-width: 900px) {
-  .fbar-mix, .fbar-share { display: none; }
-  .fbar-seek .fbar-time[data-t] { display: none; }
-  .fbar-mix-m { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
+  .fbar-mix { display: none; }
+  .fbar-mix-m { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; color: #000; }
 }
@@ -502,6 +480,128 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-cta { height: 46px; padding: 0 12px; gap: 0; border-radius: 23px; }
   .fbar-cta-art, .fbar-cta-when { display: none; }
   .fbar-cta-text { gap: 1px; max-width: 80px; }
-  .fbar-cta-k { font-size: 8.5px; letter-spacing: 0.04em; }
+  .fbar-cta-k { font-size: 10px; letter-spacing: 0.04em; }
   .fbar-cta-t { font-size: 12px; line-height: 1.1; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
+
+/* ── The set's badge: "Recorded set"; "On air" with the red dot only during its broadcast slot ── */
+.fbar-onair-on { display: none; }
+:is(.fbar, .tid) .fbar-onair { color: #bdbdbd; }
+:is(.fbar, .tid) .fbar-onair i { display: none; }
+:is(.fbar, .tid).on-air .fbar-onair { color: var(--red-hi, #d4202b); }
+:is(.fbar, .tid).on-air .fbar-onair i { display: block; }
+.on-air .fbar-onair-on { display: inline; }
+.on-air .fbar-onair-off { display: none; }
+
+/* ── Share as an icon where the bar is narrow ── */
+.fbar-share-i { display: none; width: 18px; height: 18px; flex: none; }
+@media (max-width: 900px) {
+  .fbar-share { flex: none; width: 44px; height: 44px; padding: 0; gap: 0; }
+  .fbar-share-i { display: block; }
+  .fbar-share-t { display: none; }
+}
+
+/* ── A link the browser would not copy, shown to copy by hand ── */
+.np-now.np-link { pointer-events: auto; }
+.np-now.np-link .np-now-t { font-size: 13px; font-weight: 500; text-transform: none; word-break: break-all; user-select: all; -webkit-user-select: all; }
+.np-now.np-link .np-now-a { display: none; }
+
+/* ── Phones and short screens: no ticker row; the bar is Mixcloud's player over one control row ── */
+@media (max-width: 760px), (max-height: 940px) {
+  :root { --fbar-air: 0px; }
+  .fbar { grid-template-rows: var(--fbar-seek) var(--fbar-row); }
+  .fbar-air { display: none; }
+}
+
+/* ── Touch: every control at least 44px ── */
+@media (max-width: 760px), (pointer: coarse) {
+  .fbar-play { width: 44px; height: 44px; }
+  .fbar-play svg { width: 36px; height: 36px; }
+  .tid-bar { padding-top: 2px; padding-bottom: 2px; padding-right: 4px; }
+  .tid-bar button { width: 44px; height: 44px; }
+  .tid-transport button { width: 44px; height: 44px; }
+}
+
+@media (max-width: 760px) {
+  .fbar-seek { padding: 0; }
+  .fbar-now { gap: 8px; padding: 0 6px 0 8px; }
+  .fbar-play { margin-left: 0; }
+  .fbar-tl { width: 46px; justify-content: center; padding: 0 !important; }
+  .fbar-actions { gap: 6px; padding: 0 8px; }
+  .fbar-cta-text { max-width: 76px; }
+  /* The tracklist window: centred, a short headline, most of the height for the tracks. */
+  .tid { left: 10px; right: 10px; width: auto; }
+  .tid-hero { padding: 10px 14px; gap: 2px; }
+  .tid-hero-t { font-size: 24px; }
+  .tid-hero-a { font-size: 16px; }
+  .tid-hero-link { display: none; }
+  .tid-head { padding: 6px 8px 6px 14px; }
+  .tid-title span { display: none; }
+  .tid-list li button { min-height: 48px; padding: 8px 12px; grid-template-columns: 44px minmax(0, 1fr); }
+}
+/* The narrowest phones: the cover, the "Up next" kicker and the share pill go (the title opens the
+   tracklist too; the browser's own menu shares the page) so the artist names can take two lines. */
+@media (max-width: 400px) {
+  .fbar-art, .fbar-k, .fbar-share { display: none; }
+  .fbar-text { gap: 1px; }
+  .fbar-artist { white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+}
+
+/* ── Qbic Pulse volumes: the set name (and, where it is hidden, a small "Vol." chip) opens the picker ── */
+.fbar .fbar-mix { padding: 0 18px; background: #000; color: #fff; text-align: left; }
+.fbar .fbar-mix:hover .fbar-mix-t { text-decoration: underline; text-underline-offset: 3px; }
+.fbar .fbar-mix:focus-visible, .fbar .fbar-vol:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.fbar-mix-c { display: inline-block; margin-left: 2px; font-size: 10px; color: #fff; opacity: 0.7; }
+.fbar .fbar-vol { display: none; flex: none; width: 48px; border-left: 0 !important; background: #000; color: #fff; }
+.fbar-vol-k { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; line-height: 1; color: #bdbdbd; }
+.fbar-vol-n { font-family: var(--brand-font); font-size: 19px; font-weight: 900; line-height: 1; color: #ff4d57; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .fbar .fbar-vol { display: grid; place-content: center; justify-items: center; gap: 3px; }
+}
+
+.tid { grid-template-rows: auto auto auto auto minmax(0, 1fr); }
+.tid-sets { display: grid; gap: 8px; padding: 10px 14px 12px; border-bottom: 1px solid #d9d9d9; }
+.tid-sets-k { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+.tid-vols { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.tid-vols li { flex: 1 0 200px; min-width: 0; display: flex; }
+.tid .tid-vol {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid #000;
+  text-align: left;
+}
+.tid .tid-vol:hover { background: #f3f3f3; }
+.tid-vol-k { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #555; }
+.tid-vol-k b { font-weight: 700; color: #000; }
+.tid-vol-on { display: none; margin-left: auto; padding-left: 8px; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #ff4d57; }
+.tid-vol-h { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.tid .tid-vol[aria-pressed='true'] { background: #000; color: #fff; cursor: default; }
+.tid-vol[aria-pressed='true'] .tid-vol-k, .tid-vol[aria-pressed='true'] .tid-vol-k b { color: #fff; }
+.tid-vol[aria-pressed='true'] .tid-vol-on { display: inline; }
+.tid .tid-vol[aria-pressed='true']:focus-visible { outline-color: var(--red-hi, #d4202b); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .tid-sets { gap: 6px; padding: 8px 10px 10px; }
+  .tid-vols li { flex: 1 0 136px; }
+  .tid .tid-vol { padding: 6px 9px; }
+  .tid-vol-k { gap: 3px; font-size: 10px; letter-spacing: 0.02em; }
+  .tid-vol-h { font-size: 13px; }
+  /* No room for the words: the volume on air keeps a red dot (and aria-pressed says it). */
+  .tid-vol-on { width: 7px; height: 7px; margin: 0 0 0 auto; padding: 0; overflow: hidden; border-radius: 50%; background: #ff4d57; color: transparent; align-self: center; flex: none; }
+}
+
+/* Short screens (phones on their side): the window ends above the bar and
+   scrolls as a whole, so the volumes and the tracks stay reachable. */
+@media (max-height: 500px) {
+  .tid { bottom: calc(var(--fbar-h) + 8px); display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .tid-bar { position: sticky; top: 0; z-index: 1; background: var(--bar-paper); }
+  .tid-list { overflow: visible; }
+  .tid-hero-s, .tid-hero-link { display: none; }
+}
+/* Narrow phones: the hosts take two lines rather than lose a name. */
+@media (max-width: 420px) {
+  .tid-vol-h { white-space: normal; text-overflow: clip; line-height: 1.2; }
 }

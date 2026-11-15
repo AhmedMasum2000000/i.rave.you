@@ -2,12 +2,13 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { bnLang } from "./lang.mjs";
 const origin = "https://iraveyou.online";
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(resolve(dir, d.name)) : [resolve(dir, d.name)]));
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 28);
+assert.equal(urls.length, 29);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -65,8 +66,8 @@ assert.match(apurba, /Opurbo/);
 assert.match(apurba, /Cumilla/);
 const mix = readFileSync(resolve(root, "mixes/qbic-pulse/index.html"), "utf8");
 const list = mix.match(/<ol class="tracks">([\s\S]*?)<\/ol>/)[1];
-assert.equal([...list.matchAll(/<li>/g)].length, 15);
-assert.match(list, /43:19/);
+assert.equal([...list.matchAll(/<li>/g)].length, 21);
+assert.match(list, /58:21/);
 assert.match(list, /Vakabular Remix/);
 // Artist profiles are the interactive app at clean URLs, with the full
 // crawlable profile in the document; every sub-page exists as a real file.
@@ -119,7 +120,7 @@ assert.match(
   /Sitemap: https:\/\/iraveyou\.online\/sitemap\.xml/,
 );
 console.log(
-  "PASS identity credits, 15-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
+  "PASS identity credits, 21-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
 );
 
 // Check the published cluster, including related links and in-page references.
@@ -240,12 +241,12 @@ const releasePage = readFileSync(
   "utf8",
 );
 assert.match(releasePage, /<h1>Down In Bossa<\/h1>/);
-assert.match(releasePage, /Ibiza-inspired house playlist/);
+assert.doesNotMatch(releasePage, /Ibiza/, "no off-topic playlist padding on the release page");
+assert.match(releasePage, /distributed by ADA Central Europe\. Released 30 October 2026/);
 assert.match(
   releasePage,
   /genre supplied for “Down In Bossa” is <strong>Afro House/,
 );
-assert.match(releasePage, /not a report of Ibiza airplay/);
 const recordingGraph = JSON.parse(
   releasePage.match(
     /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
@@ -258,14 +259,14 @@ assert.equal(
   "Afro House",
 );
 console.log(
-  "PASS expanded Down In Bossa page: single canonical release, Ibiza playlist context, preserved factual genre and credits",
+  "PASS expanded Down In Bossa page: single canonical release, factual description, preserved factual genre and credits",
 );
 const firstTrack = list.match(/<li>([\s\S]*?)<\/li>/)[1];
 assert.doesNotMatch(firstTrack, /<a\b/);
 assert.match(firstTrack, /Unreleased/);
-assert.equal([...list.matchAll(/<a\b/g)].length, 14);
+assert.equal([...list.matchAll(/<a\b/g)].length, 15);
 console.log(
-  "PASS unreleased opening track retains credit and timestamp without an external link; other 14 recording links remain",
+  "PASS unreleased opening track retains credit and timestamp without an external link; other 15 recording links remain",
 );
 
 // Legal: the domain, the contact, the licensing statement, and a privacy
@@ -292,6 +293,27 @@ console.log(
   console.log(`PASS legal pages: iraveyou.online, contact, licensing statement, analytics notice (${ga4 ? "GA4 on" : "no analytics"})`);
 }
 
+// The privacy notice names the embedded Mixcloud player; legal pages share like the rest of the site.
+{
+  const privacy = readFileSync(resolve(root, "legal/privacy/index.html"), "utf8");
+  assert.match(privacy, /https:\/\/www\.mixcloud\.com\/privacy\//, "Mixcloud privacy policy linked");
+  assert.doesNotMatch(privacy, /players are not embedded|DJ sets are served from this website/, "stale no-embed claim");
+  for (const page of ["terms", "privacy", "copyright"]) {
+    const html = readFileSync(resolve(root, "legal", page, "index.html"), "utf8");
+    for (const tag of ["og:title", "og:description", "og:image", "twitter:card"]) assert.match(html, new RegExp(`"${tag}" content="[^"]+"`), `${tag} on legal/${page}`);
+    const description = html.match(/<meta name="description" content="([^"]+)"/)[1];
+    assert.ok(description.length >= 110 && description.length <= 160, `legal/${page} description length ${description.length}`);
+  }
+  // http and www reach https in one hop; unknown addresses get the site's own 404 page.
+  const htaccess = readFileSync(resolve(root, ".htaccess"), "utf8");
+  assert.match(htaccess, /RewriteCond %\{HTTPS\} off\s+RewriteCond %\{HTTP:X-Forwarded-Proto\} !https \[NC\]\s+RewriteRule \^\(\.\*\)\$ https:\/\/iraveyou\.online\/\$1 \[R=301,L\]/);
+  assert.match(htaccess, /^ErrorDocument 404 \/404\.html$/m);
+  const notFound = readFileSync(resolve(root, "404.html"), "utf8");
+  assert.match(notFound, /name="robots" content="noindex"/);
+  for (const path of ["acnd/", "apurba/", "radio/", "journal/", "seo.css", "fonts/brand.css"]) assert.ok(notFound.includes(`"/${path}"`) && existsSync(resolve(root, path.endsWith("/") ? path + "index.html" : path)), `404 page link /${path}`);
+  console.log("PASS legal sharing tags, Mixcloud privacy notice, https redirect and branded 404 page");
+}
+
 // The release button's feed: served as-is, every entry usable, every cover on disk.
 {
   const feed = JSON.parse(readFileSync(resolve(root, "releases.json"), "utf8"));
@@ -312,11 +334,27 @@ console.log(
   for (const h of ["Content-Security-Policy", "Permissions-Policy", "Strict-Transport-Security", "X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Cross-Origin-Resource-Policy"])
     assert.match(htaccess, new RegExp(`Header always set ${h} `), h);
   assert.match(htaccess, /microphone=\(\).*display-capture=\(\)/);
-  assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(www\\\.\)\?iraveyou/);
-  const bins = readdirSync(resolve(root, "audio")).filter((f) => f.endsWith(".bin"));
-  assert.ok(bins.length > 0, "encrypted stream copy");
+  assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(\(www\\\.\)\?iraveyou/);
+  // The sets stream through Mixcloud's player: its script and frame are allowed, and no audio ships.
+  assert.match(htaccess, /script-src [^;]*https:\/\/widget\.mixcloud\.com/, "Mixcloud widget API allowed");
+  assert.match(htaccess, /frame-src [^;]*https:\/\/player-widget\.mixcloud\.com/, "Mixcloud player frame allowed");
+  assert.match(htaccess, /Permissions-Policy '[^'\\]*autoplay=\(self "https:\/\/player-widget\.mixcloud\.com"\)'/, "Mixcloud player may autoplay (single-quoted, no backslashes)");
+  assert.ok(!existsSync(resolve(root, "audio")) || readdirSync(resolve(root, "audio")).length === 0, "no self-hosted audio");
   for (const f of walk(root).filter((f) => f.endsWith(".html")))
     assert.doesNotMatch(readFileSync(f, "utf8"), /<script(?![^>]*\bsrc=)(?! type="application\/ld\+json")[^>]*>/, `inline script in ${f}`);
-  assert.match(readFileSync(resolve(root, "seo.css"), "utf8"), /user-select: none/);
-  console.log(`PASS security: headers, audio referer lock, ${bins.length} encrypted stream(s), no inline scripts, static copy guard`);
+  // Static copy guard: the interface is not selectable, reading text is (select-to-speak, translation).
+  const seoCss = readFileSync(resolve(root, "seo.css"), "utf8");
+  assert.match(seoCss, /html \{\s*-webkit-user-select: none;\s*user-select: none;/, "static pages: interface not selectable");
+  assert.match(seoCss, /:is\(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article\) \{\s*-webkit-user-select: text;\s*user-select: text;/, "static pages: reading text selectable");
+  console.log(`PASS security: headers, Mixcloud player allowed, no self-hosted audio, no inline scripts, static copy guard (reading text selectable)`);
+}
+
+// Language of parts: every run of Bengali text in a page's body sits inside a lang="bn" element.
+{
+  const pages = walk(root).filter((f) => f.endsWith(".html"));
+  for (const f of pages) {
+    const html = readFileSync(f, "utf8");
+    assert.equal(bnLang(html), html, `Bengali text outside lang="bn" in ${f}`);
+  }
+  console.log(`PASS language of parts: Bengali text marked lang="bn" on ${pages.length} pages`);
 }

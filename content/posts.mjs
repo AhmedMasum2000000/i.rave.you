@@ -1,6 +1,30 @@
 /** First-party editorial: artist facts come from the supplied portfolio, not invented press. */
 export const PUBLICATION_DATE = "2026-10-28";
-export function createPosts({ internal: link, external: ext, next }) {
+/** mm:ss from seconds into the set. */
+const stamp = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+/**
+ * Every count, timestamp and track named below comes from the Qbic Pulse
+ * Vol. 1 tracklist (sets/qbic-pulse-vol-1/set.json, HKCR's own list), so the
+ * articles follow it whenever it changes.
+ */
+export function createPosts({ internal: link, external: ext, next, tracks }) {
+  const n = tracks.length;
+  const track = (title) => {
+    const t = tracks.find((x) => x.title.startsWith(title));
+    if (!t) throw new Error(`Qbic Pulse tracklist has no "${title}"`);
+    return t;
+  };
+  const at = (title) => stamp(track(title).at);
+  const first = tracks[0];
+  const last = tracks[n - 1];
+  // The listening route: the published sequence in three even stages, opening track first.
+  const cut = [0, Math.ceil(n / 3), Math.ceil((2 * n) / 3), n];
+  const stages = [0, 1, 2].map((i) => tracks.slice(cut[i], cut[i + 1]));
+  const range = (i) => `${stamp(stages[i][0].at)}–${i < 2 ? stamp(stages[i + 1][0].at) : "the end"}`;
+  const named = (t) => `“${escape(t.title)}” (${escape(t.artist)}) at ${stamp(t.at)}`;
+  const list = (ts) => (ts.length > 1 ? `${ts.slice(0, -1).map(named).join(", ")} and ${named(ts[ts.length - 1])}` : named(ts[0]));
+  const linked = tracks.filter((t) => t.url).length;
   const acnd = (label = "ACND’s artist profile") => link("acnd/", label);
   const mix = (label = "complete Qbic Pulse tracklist") =>
     link("mixes/qbic-pulse/", label);
@@ -104,7 +128,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         </tbody></table>
         <p>These are broad listening prompts, not formal rules or a claim about ACND’s studio equipment. An acid sound does not establish that a particular synthesizer was used, and a melodic passage does not settle a track’s genre by itself.</p></section>
         <section><h2>Try a continuous set before isolating a track</h2>
-        <p>A DJ set lets you hear how selections relate across time. In Qbic Pulse, ACND and অপূর্ব share one continuous programme for Hong Kong Community Radio. Its ${mix()} gives takeover timestamps and original-recording links. Those markers help you identify a selection without treating the set as fifteen unrelated songs.</p>
+        <p>A DJ set lets you hear how selections relate across time. In Qbic Pulse, ACND and অপূর্ব share one continuous programme for Hong Kong Community Radio. Its ${mix()} gives takeover timestamps and original-recording links. Those markers help you identify a selection without treating the set as ${n} unrelated songs.</p>
         <p>Listen for what changes at a transition: a bass pattern, a new rhythmic emphasis, a different melodic shape or simply more space. There is no need to decide which host selected each track; the published tracklist does not attribute individual selections to one DJ.</p></section>
         <section><h2>Keep individual credits and genres separate</h2>
         <p>A recording included in a mix remains credited to its original artists. Playing another producer’s track is different from producing it. Likewise, an artist’s broad musical interests should not replace the genre and contributor information supplied for a specific release.</p>
@@ -172,12 +196,12 @@ export function createPosts({ internal: link, external: ext, next }) {
       slug: "qbic-pulse-listening-route",
       title: "Qbic Pulse with ACND & অপূর্ব: a route through the DJ set",
       description:
-        "Explore the Qbic Pulse set in three timestamped stages, from Initiate to Mystic, with ACND and অপূর্ব and links to the complete tracklist.",
+        `Explore the Qbic Pulse set in three timestamped stages, from Initiate to ${last.title.replace(/\s*\(.*\)$/, "")}, with ACND and অপূর্ব and links to the complete tracklist.`,
       category: "Mix guide",
       image: "img/og-frequency-unity.jpg",
       imageAlt: "অপূর্ব and ACND logos from the Frequency & Unity artwork",
       answer:
-        "Qbic Pulse is the shared DJ set presented here by ACND and অপূর্ব for Hong Kong Community Radio. It opens with “Initiate” at 00:00; the published tracklist identifies fifteen selections with takeover timestamps.",
+        `Qbic Pulse is the shared DJ set presented here by ACND and অপূর্ব for Hong Kong Community Radio. It opens with “Initiate” at 00:00; the published tracklist identifies ${n} selections with takeover timestamps.`,
       related: [
         "how-to-read-dj-mix-tracklist",
         "initiate-unreleased-id-guide",
@@ -187,14 +211,14 @@ export function createPosts({ internal: link, external: ext, next }) {
         <section><h2>Listen continuously, then return to a marker</h2>
         <p>A continuous set makes different demands from a playlist. Transitions and overlaps are part of the listening experience, so the moment a new selection takes over matters as much as its title. Qbic Pulse is presented here as a shared set by ACND and অপূর্ব for Hong Kong Community Radio.</p>
         <p>The route below divides the published sequence into three convenient listening stages. These are editorial navigation points, not chapters announced by the DJs or evidence of which host selected a track. Use the ${mix()} for every exact takeover time and original-recording destination.</p></section>
-        <section><h2>Stage one: the opening, 00:00–15:43</h2>
-        <p>The set begins with “Initiate”, credited to ACND × অপূর্ব and marked as an unreleased ID. Remusic’s “Ancestral Calling” takes over at 03:37, followed by the Vakabular remix of “Acid” at 06:35. “Life” arrives at 09:41, and “Lose My Body” at 12:28.</p>
+        <section><h2>Stage one: the opening, ${range(0)}</h2>
+        <p>The set begins with “${escape(first.title.replace(/\s*\(.*\)$/, ""))}”, credited to ${escape(first.artist.replace(/ x /, " × "))} and marked as an unreleased ID. Then come ${list(stages[0].slice(1))}.</p>
         <p>Rather than skipping immediately, hear how one selection hands the floor to the next. If the opening is the track you came to identify, the ${post("initiate-unreleased-id-guide", "Initiate guide")} explains what the unreleased label means and which details are published here.</p></section>
-        <section><h2>Stage two: the middle sequence, 15:43–30:48</h2>
-        <p>HERMEN’s “Subra” is marked at 15:43. The next takeover points are “Mars” at 18:59 and “WTF” at 21:37. Andy Syn, Heinrich &amp; Heine’s “I Need Every Little Piece of You” follows at 25:30, with the Original Mix specified in the tracklist.</p>
-        <p>That version detail is worth preserving when you move to a streaming service. An original mix, remix and extended version may share a title while being different recordings. The tracklist links aim to identify the version actually listed, rather than send you to a broad search result.</p></section>
-        <section><h2>Stage three: from Pria to the closing selection</h2>
-        <p>Rem Siman’s “Pria” takes over at 30:48. The sequence continues with “QUENTE” at 33:47, “LOSE CONTROL” at 35:41, “Duck Duck” at 38:11 and “Nakupenda” at 40:57. Axl Stace’s “Mystic” is the last published takeover marker, at 43:19.</p>
+        <section><h2>Stage two: the middle sequence, ${range(1)}</h2>
+        <p>${list(stages[1])} carry the middle of the set.</p>
+        <p>Version details are worth preserving when you move to a streaming service. An original mix, remix and extended version may share a title while being different recordings. The tracklist links aim to identify the version actually listed, rather than send you to a broad search result.</p></section>
+        <section><h2>Stage three: to the closing selection</h2>
+        <p>The last stretch runs through ${list(stages[2])}, the last published takeover marker.</p>
         <p>A takeover time does not state the full runtime of the source recording. Nor does the final marker establish the set’s ending time. Read ${post("how-to-read-dj-mix-tracklist", "how to read a DJ mix tracklist")} for those distinctions.</p></section>
         <section><h2>After the set</h2>
         <p>Follow the original-recording links to explore the featured artists on their own platforms. Listening to this site’s mix is not counted as a Spotify, Apple Music or SoundCloud stream of each source track. For the hosts themselves, explore ${acnd()} and ${link("apurba/", "অপূর্ব’s biography and releases")}.</p></section>`,
@@ -217,18 +241,18 @@ export function createPosts({ internal: link, external: ext, next }) {
       ],
       body: `
         <section><h2>A timestamp belongs to the set</h2>
-        <p>If a track is marked 06:35, go to six minutes and thirty-five seconds into the DJ mix. Do not look for a source recording with that runtime. In a blended transition, elements from a new selection can be audible before the published takeover marker, while elements from the previous selection may remain afterwards.</p>
+        <p>If a track is marked ${at("Acid")}, go to ${Number(at("Acid").slice(0, 2))} minutes and ${Number(at("Acid").slice(3))} seconds into the DJ mix. Do not look for a source recording with that runtime. In a blended transition, elements from a new selection can be audible before the published takeover marker, while elements from the previous selection may remain afterwards.</p>
         <p>The ${mix()} uses takeover times supplied for this set. That convention helps listeners identify what is leading the mix without pretending there is a clean silence between selections.</p></section>
         <section><h2>Preserve the complete recording name</h2>
         <p>One title can lead to several different recordings. For example, Qbic Pulse lists “Acid” as the <strong>Vakabular Remix</strong>, with Acrobat, Thomas Gandey and Vakabular in the artist credit. Searching only “Acid” discards the detail that distinguishes this selection.</p>
         <p>Likewise, “I Need Every Little Piece of You” is listed with <strong>Original Mix</strong>. Keep the version wording when sharing it. A matching title or cover is useful, but the remix and version fields often decide whether you have found the right recording.</p>
         <ol><li>Read the artist credit and full title.</li><li>Keep remix, edit and version names intact.</li><li>Follow the tracklist’s recording link.</li><li>Check the destination’s displayed title and artists.</li></ol></section>
         <section><h2>Why the links go to different platforms</h2>
-        <p>The Qbic Pulse list includes Apple Music and SoundCloud links because the goal is to point to the identified recording, not force every result onto one service. A publisher or artist page can be the clearest source for a particular mix version.</p>
+        <p>The Qbic Pulse list links to Apple Music, SoundCloud and Spotify because the goal is to point to the identified recording, not force every result onto one service. A publisher or artist page can be the clearest source for a particular mix version.</p>
         <p>Links may require a platform account or have regional availability limits. If a destination changes or becomes unavailable, report the track and its timestamp through the ${link("legal/copyright/", "site contact page")} rather than substituting a similarly named song.</p></section>
         <section><h2>What an ID does and does not tell you</h2>
         <p>“ID” is commonly used when a track’s identifying or release information is not fully public. The first Qbic Pulse selection is named “Initiate” and marked as an unreleased ID. That label is not a release date, an invitation to redistribute audio or proof that a platform search result belongs to the same recording.</p>
-        <p>The ${post("initiate-unreleased-id-guide", "Initiate article")} collects the specific information supplied for that selection. The ${post("qbic-pulse-listening-route", "three-stage set guide")} provides a broader route through the fifteen takeover points.</p></section>
+        <p>The ${post("initiate-unreleased-id-guide", "Initiate article")} collects the specific information supplied for that selection. The ${post("qbic-pulse-listening-route", "three-stage set guide")} provides a broader route through the ${n} takeover points.</p></section>
         <section><h2>A tracklist is identification, not a streaming counter</h2>
         <p>A website playing a continuous DJ mix does not automatically credit the underlying recordings as plays on external music services. If you want to listen through a featured artist’s platform page, open the original-recording link and use that service. Credits and listening links also do not establish the permissions needed to publish a mix.</p></section>`,
     },
@@ -318,7 +342,7 @@ export function createPosts({ internal: link, external: ext, next }) {
         <p>His supplied biography describes work across techno, melodic techno, acid and progressive sounds. Those categories are a starting vocabulary, rather than a complete description of every recording. The ${post("acnd-techno-melodic-acid-progressive", "musical-directions guide")} offers concrete things to listen for without inventing studio techniques or equipment.</p></section>
         <section><h2>Second stop: hear a shared set</h2>
         <p>Qbic Pulse brings ACND together with অপূর্ব, the project of Khalid Bin Alam from Cumilla. The set is presented for Hong Kong Community Radio and begins with their unreleased collaboration “Initiate”. A shared programme is a way to explore how artists connect their own work with music by other producers.</p>
-        <p>The ${mix()} identifies fifteen selections. Use the ${post("qbic-pulse-listening-route", "listening route")} to move through the sequence, or open the full player and follow the timestamps. The list credits featured tracks to their original artists; inclusion does not make them ACND productions.</p></section>
+        <p>The ${mix()} identifies ${n} selections. Use the ${post("qbic-pulse-listening-route", "listening route")} to move through the sequence, or open the full player and follow the timestamps. The list credits featured tracks to their original artists; inclusion does not make them ACND productions.</p></section>
         <section><h2>Third stop: follow a release collaboration</h2>
         <p>“Down In Bossa” is credited to Ash Army &amp; ACND and presented as Afro House via Profi Music, released 30 October 2026. The ${release()} point to the label’s current information and smart link.</p>
         <p>Comparing a continuous DJ set with a specifically credited release gives you two different views of a musician’s work. One foregrounds selection and sequencing; the other provides a recording to explore on its own terms. Neither requires a sweeping claim that one artist represents all Bangladeshi electronic music.</p></section>
@@ -352,9 +376,9 @@ export function createPosts({ internal: link, external: ext, next }) {
         <p>The ${release()} bring those details together, while the ${post("down-in-bossa-collaboration-credits", "collaboration guide")} explains the artist line. Availability can differ by platform and territory, so the smart link is the safest route.</p></section>
         <section><h2>For the remix and shared set</h2>
         <p>The listed “Nitol Paye Electric” remix video is ${ext("https://youtu.be/om5QGreRaYg", "on YouTube")}. The remix credit used on this site is ACND (Ahmed Masum). Read the ${post("nitol-paye-electric-acnd-remix-credit", "remix-credit guide")} if you are citing or identifying that version.</p>
-        <p>For ACND and অপূর্ব together, open ${mix("Qbic Pulse’s timestamped tracklist")} and follow its link to the continuous player. The list includes the opening unreleased ID “Initiate” and fourteen further selections, with original-recording destinations.</p></section>
+        <p>For ACND and অপূর্ব together, open ${mix("Qbic Pulse’s timestamped tracklist")} and follow its link to the continuous player. The list includes the opening unreleased ID “Initiate” and ${n - 1} further selections, ${linked} of them with original-recording links.</p></section>
         <section><h2>What counts as a platform stream?</h2>
-        <p>Playing this site’s self-hosted mix does not automatically create plays for its underlying tracks on Spotify, Apple Music or SoundCloud. Following a link also does not guarantee a counted play: each platform applies its own playback and eligibility rules. To listen on a service, open its destination and use its player normally.</p>
+        <p>Playing the mix in this site’s Mixcloud player does not create plays for its underlying tracks on Spotify, Apple Music or SoundCloud. Following a link also does not guarantee a counted play: each platform applies its own playback and eligibility rules. To listen on a service, open its destination and use its player normally.</p>
         <p>No page here asks you to simulate plays or loop tracks to manipulate counts. Explore the music because you want to hear it, and use the ${link("legal/privacy/", "privacy notice")} for information about this site’s storage and external links.</p></section>`,
     },
   ];

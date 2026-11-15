@@ -12,13 +12,13 @@ import './home.css';
 import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
-import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
-import { onState, playSet, upNext } from './audio';
+import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, onSetChange, type ArtistId } from './data';
+import { isPlaying, onState, playSet, roomForExtras, slowLink, toggle, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
-import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
+import { announce, asset, autoplay, bn, esc, focusView, mountGate, reducedMotion } from './ui';
 import { ROOT, interceptLinks, link, parse, retireSequencer, routeHref, upgradeLegacyHash } from './router';
 import { entry, initHistory, push, rememberScroll, restoreScroll, stamp } from './history';
 import { mountBack } from './back';
@@ -47,13 +47,24 @@ const teardown = (): void => {
  * home. A new page opens at the top; Back and Forward (`restore`) reopen a
  * page where the visitor left it.
  */
+/** Set once the first view has rendered: later views move focus and announce themselves. */
+let booted = false;
+/** The next content page to load in the frame came from a route change, not the first render. */
+let announceDoc = false;
+
+/** Fixed controls get a solid backing once content scrolls under them. */
+const markScrolled = (y: number): void => void document.body.classList.toggle('scrolled', y > 8);
+window.addEventListener('scroll', () => document.body.dataset.view !== 'doc' && markScrolled(scrollY), { passive: true });
+
 const route = (restore = false): void => {
   const { artist, page, doc } = parse();
   const { y, fy } = restore ? entry() : { y: 0, fy: 0 };
+  announceDoc = booted && !!doc;
   // Moving between content pages reuses the open frame.
   if (doc && showDoc(doc, fy)) return void window.dispatchEvent(new Event('routechange'));
   teardown();
   window.scrollTo({ top: 0, behavior: 'instant' });
+  markScrolled(0);
   if (doc) cleanup.push(renderDoc(doc, fy));
   else if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
   else renderHome();
@@ -62,6 +73,12 @@ const route = (restore = false): void => {
   // Content pages report their view once their frame has loaded (renderDoc).
   if (!doc) trackPage();
   window.dispatchEvent(new Event('routechange'));
+  // Keyboard and screen-reader users land on the new page and hear its title.
+  if (booted && !doc) {
+    focusView(app);
+    announce(document.title);
+  }
+  booted = true;
 };
 
 /** The content frame's own scroll position, when one is open. */
@@ -116,7 +133,14 @@ function renderDoc(path: string, y = 0): () => void {
   app.innerHTML = `<iframe class="doc-frame" title="Page" src="${esc(path)}"></iframe>`;
   const f = app.querySelector<HTMLIFrameElement>('.doc-frame')!;
   frame = f;
+  // Player listeners for the page in the frame; dropped when it loads another page or closes.
+  let unwatch: Array<() => void> = [];
+  const dropWatch = (): void => {
+    unwatch.forEach((u) => u());
+    unwatch = [];
+  };
   f.addEventListener('load', () => {
+    dropWatch();
     const d = f.contentDocument;
     if (!d) return;
     d.documentElement.classList.add('in-shell');
@@ -130,7 +154,7 @@ function renderDoc(path: string, y = 0): () => void {
         const on = b.dataset.playSet === CURRENT.slug;
         b.dataset.label ??= b.textContent ?? 'Play this set';
         b.classList.toggle('on-air', on);
-        b.textContent = on ? 'On air · playing' : b.dataset.label;
+        b.textContent = on && isPlaying() ? 'On air · playing' : b.dataset.label;
       });
     d.addEventListener('click', (e) => {
       const b = (e.target as Element | null)?.closest?.<HTMLElement>('[data-play-set]');
@@ -140,7 +164,7 @@ function renderDoc(path: string, y = 0): () => void {
       playSet(b.dataset.playSet);
       mark();
     }, true);
-    mark();
+    unwatch = [onSetChange(mark), onState(mark)];
     interceptLinks(navigate, d);
     trackOutbound(d);
     trackPage(framePath(f).replace(/#.*$/, ''), d.title);
@@ -149,12 +173,20 @@ function renderDoc(path: string, y = 0): () => void {
     if (pendingFrameY) restoreScroll(pendingFrameY, win);
     pendingFrameY = 0;
     win.addEventListener('scroll', saveSoon, { passive: true });
+    markScrolled(win.scrollY);
+    win.addEventListener('scroll', () => markScrolled(win.scrollY), { passive: true });
     // A navigation the shell didn't route (a form, a typed URL): follow it.
     const at = framePath(f);
     if (at && at !== location.pathname + location.hash) stamp({}, at);
     window.dispatchEvent(new Event('routechange'));
+    if (announceDoc) {
+      announceDoc = false;
+      focusView(app);
+      announce(document.title);
+    }
   });
   return () => {
+    dropWatch();
     frame = null;
   };
 }
@@ -188,25 +220,38 @@ function renderHome(): void {
       </header>
       <a class="news" href="${link('music/down-in-bossa/')}">
         <b class="news-k">New</b>
-        <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong> · ${esc(NEXT_RELEASE.artist)}</span>
+        <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong><span class="news-a"> · ${esc(NEXT_RELEASE.artist)}</span></span>
         <span class="news-d">Out now</span>
         <span class="news-go">Details →</span>
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Down In Bossa out on</span> Profi Music</p>
+      <div class="home-intro">
+        <p class="home-who mono">ACND &amp; <span class="bn" lang="bn">অপূর্ব</span> · electronic music from Bangladesh</p>
+        <button type="button" class="home-play mono"><span class="home-play-i" aria-hidden="true">▶</span><span class="home-play-t">Play Qbic Pulse</span></button>
+      </div>
 
       <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba">
-        ${logo(A, 'side-logo')}
-        <span class="side-name bn">${esc(A.name)}</span>
-        <span class="side-cta mono">Enter →</span>
+        ${mark(A)}
+        <span class="side-name bn" lang="bn">${esc(A.name)}</span>
+        <span class="side-cta mono">Enter <span aria-hidden="true">→</span></span>
       </a>
 
       <a class="side side-light" href="${routeHref('acnd')}" data-side="acnd">
-        ${logo(C, 'side-logo')}
+        ${mark(C)}
         <span class="side-name">${esc(C.name)}</span>
-        <span class="side-cta mono">← Enter</span>
+        <span class="side-cta mono"><span aria-hidden="true">←</span> Enter</span>
       </a>
 
     </main>`;
+
+  // One way to start the set from the hero: the same play / pause as the bar.
+  const heroPlay = app.querySelector<HTMLButtonElement>('.home-play')!;
+  heroPlay.addEventListener('click', toggle);
+  const stopHeroState = onState((on) => {
+    heroPlay.querySelector('.home-play-i')!.textContent = on ? '❚❚' : '▶';
+    heroPlay.querySelector('.home-play-t')!.textContent = on ? 'Pause Qbic Pulse' : 'Play Qbic Pulse';
+  });
+  cleanup.push(() => void stopHeroState());
 
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
@@ -250,14 +295,28 @@ function renderHome(): void {
   });
   let pinned: ArtistId | null = null;
 
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
   app.querySelectorAll<HTMLAnchorElement>('.side').forEach((el) => {
     const side = el.dataset.side === 'apurba' ? -1 : 1;
-    el.addEventListener('pointerenter', (e) => {
-      if (e.pointerType === 'touch') return;
+    // Lean only on a real hover: a mouse that moves over the half. A pointer
+    // left resting where the gate's button was must not favour either artist.
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !fine.matches || (!e.movementX && !e.movementY)) return;
+      if (document.body.classList.contains('gated') || document.body.dataset.lean === el.dataset.side) return;
       fx.lean(-side);
       document.body.dataset.lean = el.dataset.side;
     });
     el.addEventListener('pointerleave', () => {
+      fx.lean(0);
+      delete document.body.dataset.lean;
+    });
+    // A keyboard visitor sees the same lean as a pointer hovering that half.
+    el.addEventListener('focus', () => {
+      if (!el.matches(':focus-visible')) return;
+      fx.lean(-side);
+      document.body.dataset.lean = el.dataset.side;
+    });
+    el.addEventListener('blur', () => {
       fx.lean(0);
       delete document.body.dataset.lean;
     });
@@ -285,6 +344,9 @@ function renderHome(): void {
 
 }
 
+/** The hero logo: decorative, since the link already carries the artist's name. */
+const mark = (a: (typeof ARTISTS)[ArtistId]): string => logo(a, 'side-logo').replace(/ alt="[^"]*"/, ' alt=""');
+
 /** The window into one artist's world shown beside the emblem. */
 function peekCard(id: ArtistId): HTMLElement {
   const a = ARTISTS[id];
@@ -294,16 +356,16 @@ function peekCard(id: ArtistId): HTMLElement {
   el.className = `peek peek-${id}`;
   el.setAttribute('aria-hidden', 'true');
   el.innerHTML = `
-    <header class="peek-bar"><span class="${id === 'apurba' ? 'bn' : ''}">${esc(a.name)}</span><span>Sneak peek</span></header>
+    <header class="peek-bar"><span>${bn(a.name)}</span><span>Sneak peek</span></header>
     <div class="peek-body">
       <img src="${asset(next ? NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp') : r.cover ?? a.hero)}" alt="" width="84" height="84" />
       <div>
         <span class="peek-k">${next ? `Out now · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
         <b>${esc(next ? NEXT_RELEASE.title : r.title)}</b>
-        <span class="peek-sub">${esc(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
+        <span class="peek-sub">${bn(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
       </div>
     </div>
-    <p class="peek-summary">${esc(a.about?.summary ?? a.bio[0])}</p>
+    <p class="peek-summary">${bn(a.about?.summary ?? a.bio[0])}</p>
     <footer class="peek-foot"><span>${esc(a.origin)}</span><span class="peek-go">Click to enter →</span></footer>`;
   return el;
 }
@@ -326,11 +388,36 @@ onState((playing) => {
   }
   wasPlaying = playing;
 });
-// Only a first visit to the home page asks about sound; every other page
-// simply starts the mix (or waits for the first tap if autoplay is blocked).
+// While the visitor is at the door (or idles on the hero), fetch what the next
+// click needs at the lowest priority: both artist pages' hero photos and logos.
+// Only after the page has loaded and the mix's opening is buffered, so neither
+// the first paint nor the sound waits on it.
+window.addEventListener(
+  'load',
+  () => {
+    if (slowLink()) return;
+    const warm = (): void => {
+      if (!roomForExtras()) return void window.setTimeout(warm, 500);
+      for (const a of Object.values(ARTISTS)) {
+        for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}-640.webp`)]) {
+          const l = document.createElement('link');
+          l.rel = 'prefetch';
+          l.as = 'image';
+          l.href = href;
+          document.head.append(l);
+        }
+      }
+    };
+    window.setTimeout(warm, 800);
+  },
+  { once: true },
+);
+
+// Only a first visit to the home page asks about sound. Other pages resume the
+// mix only for a visitor who chose sound before; a first visit there stays
+// silent until the play button is pressed.
 if (parse().artist || parse().doc) autoplay();
 else void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
   line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',
-  cta: 'Click to enter',
 });

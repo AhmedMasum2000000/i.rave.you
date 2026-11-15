@@ -185,3 +185,18 @@ body[data-page='home'] .a-nav.solid { background: var(--bg); color: var(--fg); }
   .ah-hero .ah-mark { scale: none; }
   .ah-card-art img, .ah-other-c { transition: none; }
 }
+
+/* ACND's portrait on phones held upright: the photo keeps its full height at
+   the top and the logo starts below the hand, over the dark shirt, so the
+   face and the mark both stay clear. */
+@media (max-width: 700px) and (orientation: portrait) {
+  body[data-artist='acnd'] .ah-bg { inset: 0 0 auto; height: auto; aspect-ratio: 3 / 4; object-position: 50% 0; -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+  body[data-artist='acnd'] .ah-in { padding-top: max(132px, 78vw); }
+  body[data-artist='acnd'] .ah-hero .ah-mark { width: min(42vw, 190px); }
+}
+/* Phones on their side: a smaller mark, so it and the intro clear the bar. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ah-in { padding-top: 76px; gap: 12px; }
+  .ah-hero .ah-mark { width: min(26svh, 110px); }
+  .ah-sum { font-size: 16px; }
+}

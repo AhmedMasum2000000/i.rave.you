@@ -35,21 +35,34 @@ const FAQ = [
   ["Where can I listen to Down In Bossa?", "“Down In Bossa” by Ash Army & ACND is out now on Profi Music, released on 30 October 2026 and distributed by ADA Central Europe, Warner Music Group’s distribution arm. The official smart link opens it on your streaming service."],
 ];
 
-/** The calendar: confirmed dates from data.ts, plus each set's broadcast. */
-export const calendar = (events, sets) =>
+/** A dated thing is over once its end (or, without one, its start) has passed. */
+const endOf = (e) => Date.parse(e.end ?? e.start);
+/**
+ * The calendar: confirmed dates from data.ts, plus any set no dated broadcast
+ * covers. Upcoming or past is worked out from the dates, never hand-set: here
+ * at build time, and again in the browser (src/home.ts), so a page built
+ * before a broadcast never goes on calling it the next one.
+ */
+export const calendar = (events, sets, now = Date.now()) =>
   [
     ...events,
-    ...sets.map((s) => ({
-      title: `${s.show} ${s.volume} published on I Rave You`.replace(/\s+/g, " "),
-      start: `${s.date}T12:00:00Z`,
-      when: day(s.date),
-      detail: `${s.hosts}. ${s.description}`,
-      href: setPath(s),
-      cta: "Tracklist & player",
-    })),
+    ...sets
+      .filter((s) => !events.some((e) => e.set === s.slug))
+      .map((s) => ({
+        title: `${s.show} ${s.volume} on ${s.station}`.replace(/\s+/g, " "),
+        start: `${s.date}T12:00:00Z`,
+        when: day(s.date),
+        detail: `${s.hosts}. ${s.description}`,
+        href: setPath(s),
+        cta: "Tracklist & player",
+        set: s.slug,
+      })),
   ]
-    // Upcoming or past is worked out from the date at build time, never hand-set.
-    .map((e) => ({ ...e, status: Date.parse(e.start) > Date.now() ? "scheduled" : "done" }))
+    .map((e) => {
+      const done = endOf(e) <= now;
+      // Once aired, a broadcast points at its recording rather than at the station.
+      return { ...e, status: done ? "done" : "scheduled", ...(done && e.aired ? e.aired : {}) };
+    })
     .sort((a, b) => (a.status === b.status ? (a.status === "scheduled" ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)) : a.status === "scheduled" ? -1 : 1));
 
 const setPath = (set) => (set.slug === "qbic-pulse-vol-1" ? "mixes/qbic-pulse/" : `mixes/${set.slug}/`);
@@ -67,8 +80,9 @@ export function catalogue({ artists, next, sets }) {
       cover: "img/mix-art.jpg", play: s.slug, page: setPath(s), tag: s.station,
     })),
     {
+      // ACND made the remix; the original song is not his, so the structured data names it as a remix (homeExtraGraph).
       title: "Nitol Paye Electric", by: "ACND (Ahmed Masum) Remix", when: "YouTube", artist: ["acnd"], type: "remix",
-      logo: "img/logo-acnd.webp", href: "https://youtu.be/om5QGreRaYg", tag: "Remix · YouTube",
+      logo: "img/logo-acnd.webp", href: "https://youtu.be/om5QGreRaYg", tag: "Remix · YouTube", remixer: "ACND (Ahmed Masum)",
     },
     ...A.releases.map((r) => ({
       title: r.title, by: r.artists, year: r.year, artist: /ACND/.test(r.artists) ? ["apurba", "acnd"] : ["apurba"],
@@ -81,8 +95,27 @@ export function catalogue({ artists, next, sets }) {
   return items;
 }
 
+/**
+ * The broadcast beside the intro. Upcoming, it counts down (src/home.ts) and
+ * says where to tune in; once its end has passed, in the browser as much as at
+ * build time, it reads "Latest broadcast" and links its recording instead,
+ * from the <template>. Nothing past is ever called next.
+ */
+const nextBlock = (e, link) => {
+  const after = e.aired ?? { detail: e.detail, href: e.href, cta: e.cta };
+  const body = (d) => `<p class="f-next-d">${bnw(d.detail)}</p>
+        ${d.href ? link(d.href, d.cta) : ""}`;
+  const upcoming = e.status === "scheduled";
+  return `<div class="f-next" data-broadcast data-start="${esc(e.start)}" data-end="${esc(e.end ?? e.start)}">
+        <p class="k-label" data-b-label>${upcoming ? "Next broadcast" : "Latest broadcast"}</p>
+        <p class="f-next-t">${bnw(e.title)}</p>
+        <p class="f-next-when"><time datetime="${esc(e.start)}">${esc(e.when)}</time><span data-cd-text>${upcoming ? "" : " · aired"}</span></p>
+        ${upcoming ? `<div data-b-body>${body(e)}</div><template data-b-aired>${body(after)}</template>` : `<div data-b-body>${body(after)}</div>`}
+      </div>`;
+};
+
 /** Escape, then wrap each run of Bengali in .bn, so only those words change face. */
-const bnw = (s) => esc(s).replace(/[ঀ-৿‌‍]+/g, (m) => `<span class="bn">${m}</span>`);
+const bnw = (s) => esc(s).replace(/[ঀ-৿‌‍]+/g, (m) => `<span class="bn" lang="bn">${m}</span>`);
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const isExt = (href) => /^https?:/.test(href);
 
@@ -134,20 +167,13 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   const C = artists.acnd;
   const set = sets[0];
   const items = catalogue({ artists, next, sets });
-  const [nx, ...later] = events.filter((e) => e.status === "scheduled");
+  const upcoming = events.filter((e) => e.status === "scheduled");
+  const [nx, ...later] = upcoming;
+  // With nothing booked, the block shows the latest broadcast as what it is: past.
+  const broadcast = nx ?? events.find((e) => e.status === "done" && e.set);
 
   // The story, then every dated thing that has happened (and anything booked after the next date).
-  const dated = [
-    ...confirmed.filter((e) => Date.parse(e.start) <= Date.now()),
-    ...sets.map((s) => ({
-      title: `${s.show} ${s.volume.replace(/ /g, " ")} published on I Rave You`,
-      start: `${s.date}T12:00:00Z`,
-      when: day(s.date),
-      detail: s.description,
-      href: setPath(s),
-      cta: "Tracklist & player",
-    })),
-  ].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const dated = events.filter((e) => e.status === "done").sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
   const story = [
     { y: "2016", t: "অপূর্ব begins", s: "Khalid Bin Alam starts producing in Cumilla, self-taught across production, DJing, mixing and sound design." },
     { y: "2018–23", t: "Euphonic", s: "An open production lab on YouTube: future house, synthwave and remixes." },
@@ -175,20 +201,14 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   <section class="f-intro" aria-labelledby="discovery-title">
     <div class="k-fade" data-reveal>
       <p class="k-label">Dhaka &amp; Cumilla · Bangladesh</p>
-      <h1 id="discovery-title" class="f-h1">I Rave You — ACND&nbsp;&amp;&nbsp;<span class="bn">অপূর্ব</span>, electronic music from Bangladesh</h1>
+      <h1 id="discovery-title" class="f-h1">I Rave You — ACND&nbsp;&amp;&nbsp;<span class="bn" lang="bn">অপূর্ব</span>, electronic music from Bangladesh</h1>
     </div>
     <div class="f-intro-cols k-fade" data-reveal>
       <div>
-        <p class="f-lede">Two producers, one frequency. <a class="n-acnd" href="acnd/">ACND</a> (Ahmed Masum) moves through techno, melodic techno, acid and progressive; <a class="n-apurba" href="apurba/"><span class="bn">অপূর্ব</span></a> (Khalid Bin Alam) through psychedelic, melodic and bass-driven sound. Together they host <a href="mixes/qbic-pulse/">Qbic Pulse</a> on Hong Kong Community Radio. Press play: the set runs here, end to end.</p>
+        <p class="f-lede">Two producers, one frequency. <a class="n-acnd" href="acnd/">ACND</a> (Ahmed Masum) moves through techno, melodic techno, acid and progressive; <a class="n-apurba" href="apurba/"><span class="bn" lang="bn">অপূর্ব</span></a> (Khalid Bin Alam) through psychedelic, melodic and bass-driven sound. Together they host <a href="mixes/qbic-pulse/">Qbic Pulse</a> on Hong Kong Community Radio. Press play: the set runs here, end to end.</p>
         ${set ? `<div class="f-acts"><button class="k-btn f-play" type="button" data-play-set="${esc(set.slug)}" data-cta="intro-play" aria-pressed="false"><span aria-hidden="true">▶</span> Play ${esc(set.show)}</button><span class="f-eq" data-pulse aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>` : ""}
       </div>
-      ${nx ? `<div class="f-next">
-        <p class="k-label">Next broadcast</p>
-        <p class="f-next-t">${bnw(nx.title)}</p>
-        <p class="f-next-when" data-countdown="${esc(nx.start)}"><time datetime="${esc(nx.start)}">${esc(nx.when)}</time><span data-cd-text></span></p>
-        <p class="f-next-d">${bnw(nx.detail)}</p>
-        ${nx.href ? link(nx.href, nx.cta) : ""}
-      </div>` : ""}
+      ${broadcast ? nextBlock(broadcast, link) : ""}
     </div>
   </section>
 
@@ -216,7 +236,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
     <div class="k-tabs f-tabs" role="group" aria-label="Filter releases and sets">
       <button type="button" class="k-tab on" data-filter="all" aria-pressed="true">All<sup>${items.length}</sup></button>
       <button type="button" class="k-tab" data-filter="acnd" aria-pressed="false">ACND<sup>${count("acnd")}</sup></button>
-      <button type="button" class="k-tab" data-filter="apurba" aria-pressed="false"><span class="bn">অপূর্ব</span><sup>${count("apurba")}</sup></button>
+      <button type="button" class="k-tab" data-filter="apurba" aria-pressed="false"><span class="bn" lang="bn">অপূর্ব</span><sup>${count("apurba")}</sup></button>
       <button type="button" class="k-tab" data-filter="release" aria-pressed="false">Releases<sup>${count("release")}</sup></button>
       <button type="button" class="k-tab" data-filter="set" aria-pressed="false">Sets<sup>${count("set")}</sup></button>
       <button type="button" class="k-tab" data-filter="remix" aria-pressed="false">Remixes<sup>${count("remix")}</sup></button>
@@ -275,7 +295,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
             .filter((p) => p !== lead)
             .map((p) => `<li><a href="journal/${esc(p.slug)}/"><span class="k-label">${esc(p.category)} · ${esc(day(p.date))}</span><h3>${bnw(p.title)}</h3></a></li>`)
             .join("\n          ")}
-          <li><a href="frequency-unity/"><span class="k-label">Feature</span><h3>Frequency &amp; Unity — <span class="bn">অপূর্ব</span> × ACND</h3></a></li>
+          <li><a href="frequency-unity/"><span class="k-label">Feature</span><h3>Frequency &amp; Unity — <span class="bn" lang="bn">অপূর্ব</span> × ACND</h3></a></li>
         </ul>
         <a class="k-link" href="journal/" data-cta="journal-all">All ${posts.length} articles →</a>
       </div>
@@ -290,9 +310,9 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   </section>
 
   <footer class="f-foot">
-    <div class="f-foot-id"><b>I Rave You</b><span>ACND &amp; <span class="bn">অপূর্ব</span> · electronic music from Bangladesh</span><p>Stream the records on your platform, follow both artists so the next one finds you, or keep Qbic Pulse running here while you read.</p></div>
-    <nav aria-label="Site"><span class="k-label">Site</span><a href="acnd/">ACND</a><a href="apurba/"><span class="bn">অপূর্ব</span></a><a href="radio/">Qbic Pulse Radio</a><a href="music/down-in-bossa/">Down In Bossa</a><a href="journal/">Journal</a><a href="acnd/press/">Press kit</a><a href="frequency-unity/">Feature</a></nav>
-    <nav aria-label="Listen"><span class="k-label">Listen</span><a href="${esc(C.listen.url)}" ${ext}>ACND · Spotify</a><a href="https://soundcloud.com/acndlovestoes" ${ext}>ACND · SoundCloud</a><a href="${esc(A.listen.url)}" ${ext}><span class="bn">অপূর্ব</span> · Spotify</a><a href="https://soundcloud.com/youmeiyou" ${ext}><span class="bn">অপূর্ব</span> · SoundCloud</a></nav>
+    <div class="f-foot-id"><b>I Rave You</b><span>ACND &amp; <span class="bn" lang="bn">অপূর্ব</span> · electronic music from Bangladesh</span><p>Stream the records on your platform, follow both artists so the next one finds you, or keep Qbic Pulse running here while you read.</p></div>
+    <nav aria-label="Site"><span class="k-label">Site</span><a href="acnd/">ACND</a><a href="apurba/"><span class="bn" lang="bn">অপূর্ব</span></a><a href="radio/">Qbic Pulse</a><a href="music/down-in-bossa/">Down In Bossa</a><a href="journal/">Journal</a><a href="acnd/press/">Press kit</a><a href="frequency-unity/">Feature</a></nav>
+    <nav aria-label="Listen"><span class="k-label">Listen</span><a href="${esc(C.listen.url)}" ${ext}>ACND · Spotify</a><a href="https://soundcloud.com/acndlovestoes" ${ext}>ACND · SoundCloud</a><a href="${esc(A.listen.url)}" ${ext}><span class="bn" lang="bn">অপূর্ব</span> · Spotify</a><a href="https://soundcloud.com/youmeiyou" ${ext}><span class="bn" lang="bn">অপূর্ব</span> · SoundCloud</a></nav>
     <nav aria-label="Follow"><span class="k-label">Follow</span><a href="https://www.instagram.com/acnd_music/" ${ext}>ACND · Instagram</a><a href="https://instagram.com/i.rave.you" ${ext}>I Rave You · Instagram</a></nav>
     <div class="f-foot-end"><nav class="legal-links" aria-label="Legal information"><a href="legal/terms/">Terms of use</a><a href="legal/privacy/">Privacy notice</a><a href="legal/copyright/">Copyright contact</a></nav></div>
   </footer>
@@ -309,6 +329,17 @@ export const credited = (by, origin) =>
     .filter((n) => n && n !== "Various Artists")
     .map((n) => (/^ACND$/i.test(n) ? { "@id": `${origin}/acnd/#artist` } : n === "অপূর্ব" ? { "@id": `${origin}/apurba/#artist` } : { "@type": "Person", name: n }));
 
+/** Down In Bossa as one recording node, shared by the home, music, artist and release pages. */
+export const releaseRecording = (next, origin, byArtist) => ({
+  "@type": "MusicRecording",
+  "@id": `${origin}/music/down-in-bossa/#recording`,
+  name: next.title,
+  url: `${origin}/music/down-in-bossa/`,
+  byArtist,
+  datePublished: "2026-10-30",
+  image: `${origin}/${next.cover}`,
+});
+
 export function homeExtraGraph({ artists, next, sets, events: confirmed, origin }) {
   const events = calendar(confirmed, sets);
   const id = (a) => `${origin}/${a}/#artist`;
@@ -324,33 +355,41 @@ export function homeExtraGraph({ artists, next, sets, events: confirmed, origin 
         const image = it.cover ? { image: `${origin}/${it.cover}` } : {};
         if (it.type === "set")
           return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicPlaylist", name: it.title, url, creator: by.length ? by : [{ "@id": id("acnd") }, { "@id": id("apurba") }], ...image } };
-        if (it.title === next.title)
+        // The same node as the release page's recording (music/down-in-bossa/), so every page agrees.
+        if (it.title === next.title) return { "@type": "ListItem", position: i + 1, item: releaseRecording(next, origin, by) };
+        // A remix: the recording is the remixer's version of someone else's song.
+        if (it.remixer)
           return {
             "@type": "ListItem",
             position: i + 1,
             item: {
-              "@type": "MusicAlbum", name: it.title, url, byArtist: by, ...image,
-              albumReleaseType: "https://schema.org/SingleRelease", datePublished: "2026-10-30",
-              albumRelease: { "@type": "MusicRelease", name: it.title, recordLabel: { "@type": "Organization", name: next.label, url: "https://www.profimusic.com/" }, copyrightNotice: "℗ 2026 profimusic, distributed by ADA Central Europe" },
+              "@type": "MusicRecording", name: `${it.title} (${it.remixer.replace(/\s*\(.*\)/, "")} Remix)`, url, byArtist: by, ...image,
+              description: `Remix by ${it.remixer}.`,
+              recordingOf: { "@type": "MusicComposition", name: it.title },
             },
           };
         return { "@type": "ListItem", position: i + 1, item: { "@type": "MusicRecording", name: it.title, url, ...(by.length ? { byArtist: by } : {}), ...image } };
       }),
     },
+    // Only broadcasts still to come, each with its end, so the markup never offers a past slot as scheduled.
     ...events
-      .filter((e) => e.status === "scheduled")
-      .map((e) => ({
-        "@type": "MusicEvent",
-        name: e.title,
-        startDate: e.start,
-        eventStatus: "https://schema.org/EventScheduled",
-        eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-        location: { "@type": "VirtualLocation", url: e.href },
-        performer: [{ "@id": id("acnd") }, { "@id": id("apurba") }],
-        organizer: { "@type": "Organization", name: "Hong Kong Community Radio", url: "https://hkcr.live/" },
-        description: e.detail,
-        image: `${origin}/img/mix-art.jpg`,
-      })),
+      .filter((e) => e.status === "scheduled" && e.set && e.end)
+      .map((e) => {
+        const set = sets.find((s) => s.slug === e.set);
+        return {
+          "@type": "MusicEvent",
+          name: e.title,
+          startDate: e.start,
+          endDate: e.end,
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+          location: { "@type": "VirtualLocation", url: e.href },
+          performer: set ? credited(set.hosts, origin) : [{ "@id": id("acnd") }, { "@id": id("apurba") }],
+          organizer: { "@type": "Organization", name: "Hong Kong Community Radio", url: "https://hkcr.live/" },
+          description: e.detail,
+          image: `${origin}/${set?.cover?.replace(/\.webp$/, ".jpg") ?? "img/mix-art.jpg"}`,
+        };
+      }),
     {
       "@type": "FAQPage",
       "@id": `${origin}/#faq`,

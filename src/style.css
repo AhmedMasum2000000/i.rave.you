@@ -295,7 +295,7 @@ body[data-artist='acnd'] .logo img {
 .side-logo {
   width: clamp(150px, 19vw, 300px);
   aspect-ratio: 1;
-  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.9s;
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.9s, opacity 0.6s;
 }
 .side-logo .logo-text {
   display: none !important;
@@ -341,9 +341,21 @@ body[data-artist='acnd'] .logo img {
 .side:hover .side-cta::after {
   transform: scaleX(1);
 }
-body[data-lean='apurba'] .side-light,
-body[data-lean='acnd'] .side-dark {
+/* Leaning toward one half dims only the other half's mark; its name and way in stay legible. */
+body[data-lean='apurba'] .side-light .side-logo,
+body[data-lean='acnd'] .side-dark .side-logo {
   opacity: 0.45;
+}
+/* Keyboard focus on a half: an inset ring, and its pill lit as on hover. */
+.home .side:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: -10px;
+}
+.home .side:focus-visible .side-cta {
+  opacity: 1;
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  transform: translateY(-1px);
 }
 .home-release {
   position: absolute;
@@ -480,6 +492,19 @@ html.guard input,
 html.guard textarea {
   -webkit-user-select: text;
   user-select: text;
+}
+/* Reading text stays selectable for select-to-speak, Look Up and translation
+   (the READING and CHROME lists in src/guard.ts); the interface does not. */
+html.guard :is(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article) {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+html.guard :is(button, [role='button'], nav, .fbar, .home, .gate),
+html.guard :is(button, [role='button'], nav, .fbar, .home, .gate) * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 html.guard img,
 html.guard a {
@@ -651,18 +676,18 @@ html.curtain .guard-curtain {
 }
 .vibe-fine {
   margin: 0;
-  color: #5f5f5f;
-  font-size: 9px;
+  color: #8f8f8f;
+  font-size: 11px;
 }
 /* Content pages: the same card, as a non-blocking banner. */
 
 .gate-credit,
 .credit {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6a6a6a;
+  color: #8f8f8f;
 }
 .gate-credit {
   margin: 14px 0 0;
@@ -722,3 +747,13 @@ body[data-view='home'] #app { min-height: 100vh; min-height: 100svh; }
 
 /* The home feed is static in index.html; it shows on the home view only. */
 body:not([data-view='home']) #home-feed { display: none; }
+
+/* ── Accessibility helpers ── */
+/* Read by screen readers, not shown. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* A view's heading takes focus on arrival without drawing a ring around it. */
+[data-route-focus]:focus { outline: 0; }
+
+/* Small print on black reaches WCAG AA (4.5:1). */
+.home .home-cred span { color: rgba(255, 255, 255, 0.62); }
+.fbar .fbar-mix-t { color: #ff4d57; }

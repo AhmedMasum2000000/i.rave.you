@@ -5,12 +5,17 @@
  * a recording of the speaker output. What it can do is close every easy
  * route, and black the page out at the moments capture tools usually strike:
  *
- *  - no selecting, copying, cutting, right-click, long-press or dragging
- *  - save / view-source / print / select-all / devtools shortcuts swallowed
+ *  - no dragging or saving images; no selecting, copying or long-press menu
+ *    on the interface (buttons, the hero, the player)
+ *  - reading text (paragraphs, headings, lists, the articles) stays
+ *    selectable, with its context menu, so select-to-speak, Look Up and
+ *    translate-selection work; copying it out is still swallowed
+ *  - save / view-source / print / devtools shortcuts swallowed
  *  - printing produces a blank page
- *  - the page blacks out while the tab or window is not focused (snipping
- *    tools and screen recorders take focus), on Print Screen and on the
- *    macOS screenshot chord (⌘⇧3/4/5), and the clipboard is wiped
+ *  - the page blacks out while it is hidden (tab switched, window minimised,
+ *    screen off), on Print Screen and on the macOS screenshot chord
+ *    (⌘⇧3/4/5), and the clipboard is wiped. Losing focus alone (find in page,
+ *    the address bar, an extension popup) never covers it.
  *  - other sites cannot frame the page
  *  - the same blockers on the journal, music and mix pages the shell shows in
  *    its frame (guardDocument); opened directly, those pages run no script and
@@ -23,6 +28,20 @@ const CURTAIN_MS = 1500;
 const editable = (t: EventTarget | null): boolean =>
   !!(t as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"]');
 
+/**
+ * Text people read, which assistive tools must be able to select: prose in the
+ * artist pages, articles and discovery pages. Kept in step with the
+ * `user-select: text` rules in src/style.css and public/seo.css.
+ */
+export const READING =
+  'p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article';
+/** Interface, never selectable even where it holds a paragraph or a list. */
+const CHROME = 'button, [role="button"], nav, .fbar, .home, .gate';
+const readable = (t: EventTarget | null): boolean => {
+  const el = (t as Node | null)?.nodeType === 3 ? (t as Node).parentElement : (t as Element | null);
+  return !!el?.closest?.(READING) && !el.closest?.(CHROME);
+};
+
 /** What the shell does when a capture shortcut is pressed (black out, wipe the clipboard). */
 let onCapture = (): void => {};
 
@@ -32,6 +51,8 @@ export function guardDocument(doc: Document): void {
   if (!win) return;
   const block = (e: Event): void => {
     if (editable(e.target)) return;
+    // Selecting reading text, and its context menu, stay with the visitor.
+    if ((e.type === 'selectstart' || e.type === 'contextmenu') && readable(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
   };
@@ -59,7 +80,8 @@ export function guardDocument(doc: Document): void {
         (mod && e.shiftKey && ['i', 'j', 'c', 'k'].includes(k)) ||
         (e.metaKey && e.altKey && ['i', 'j', 'c', 'u'].includes(k));
       const saving = mod && ['s', 'u', 'p'].includes(k);
-      const copying = mod && ['c', 'x', 'a'].includes(k) && !editable(e.target);
+      // Select-all is left alone: it is how keyboard users hand text to a reader.
+      const copying = mod && ['c', 'x'].includes(k) && !editable(e.target);
       if (devtools || saving || copying || screenshotChord) {
         e.preventDefault();
         e.stopPropagation();
@@ -117,7 +139,7 @@ export function installGuard(): void {
   const flash = (): void => {
     cover(true);
     clearTimeout(flashTimer);
-    flashTimer = window.setTimeout(() => cover(!document.hasFocus() || document.hidden), CURTAIN_MS);
+    flashTimer = window.setTimeout(() => cover(document.hidden), CURTAIN_MS);
   };
   const wipeClipboard = (): void => {
     void navigator.clipboard?.writeText('').catch(() => undefined);
@@ -129,11 +151,9 @@ export function installGuard(): void {
   };
   guardDocument(document);
 
-  // Black out whenever the page is not the thing in focus.
-  const sync = (): void => cover(document.hidden || !document.hasFocus());
-  // Focus moving into the content frame is still this page: re-check a tick later.
-  window.addEventListener('blur', () => window.setTimeout(sync, 0));
-  window.addEventListener('focus', () => window.setTimeout(sync, 120));
+  // Black out only while the page is hidden. A visible page that merely lost
+  // focus (find in page, an assistive extension's popup) stays readable.
+  const sync = (): void => cover(document.hidden);
   document.addEventListener('visibilitychange', sync);
   window.addEventListener('beforeprint', () => cover(true));
   window.addEventListener('afterprint', sync);

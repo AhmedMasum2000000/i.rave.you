@@ -1,5 +1,5 @@
 import { ARTISTS, NEXT_RELEASE, SETS, type Artist } from './data';
-import { asset, esc } from './ui';
+import { asset, bn, esc } from './ui';
 
 /** Route links resolve from the site root, so the menu works on nested pages too. */
 const route = (path: string): string => `${document.documentElement.dataset.root ?? ''}${path}`;
@@ -64,7 +64,7 @@ const row = (n: number, title: string, href: string, subs: [string, string][], c
       <a class="m-big" href="${href}" data-close>${title}</a>
       ${subs.length ? `<button type="button" class="m-plus" aria-expanded="false" aria-controls="m-sub-${n}" aria-label="More under ${title.replace(/<[^>]+>/g, '')}">+</button>` : ''}
     </div>
-    ${subs.length ? `<div class="m-sub" id="m-sub-${n}"><ul>${subs.map(([label, to]) => `<li><a href="${to}"${to.startsWith('http') ? ' target="_blank" rel="noopener"' : ' data-close'}>${label}</a></li>`).join('')}</ul></div>` : ''}
+    ${subs.length ? `<div class="m-sub" id="m-sub-${n}" inert><ul>${subs.map(([label, to]) => `<li><a href="${to}"${to.startsWith('http') ? ' target="_blank" rel="noopener"' : ' data-close'}>${bn(label)}</a></li>`).join('')}</ul></div>` : ''}
   </li>`;
 
 const artistSubs = (a: Artist): [string, string][] => [
@@ -89,7 +89,7 @@ export function mountChrome(): void {
   menu.setAttribute('aria-label', 'Site menu');
   menu.setAttribute('aria-hidden', 'true');
   menu.inert = true;
-  const band = `I RAVE YOU ◐ ACND ◐ <span class="bn">অপূর্ব</span> ◐ QBIC PULSE ◐ `;
+  const band = `I RAVE YOU ◐ ACND ◐ <span class="bn" lang="bn">অপূর্ব</span> ◐ QBIC PULSE ◐ `;
   menu.innerHTML = `
     <div class="m-band" aria-hidden="true"><span class="m-band-run">${band.repeat(8)}</span></div>
     <div class="m-inner">
@@ -99,11 +99,11 @@ export function mountChrome(): void {
             ['Feature: Beyond the Capital', route('frequency-unity/')],
             ['Down In Bossa', route('music/down-in-bossa/')],
           ])}
-          ${row(1, 'Qbic Pulse Radio', route('radio/'), [
+          ${row(1, 'Qbic Pulse', route('radio/'), [
             ['All sets · newest first', route('radio/')],
             ...SETS.map((set, i): [string, string] => [`${i === 0 ? 'Latest · ' : ''}${set.show} ${set.volume}`, route(set.slug === 'qbic-pulse-vol-1' ? 'mixes/qbic-pulse/' : `mixes/${set.slug}/`)]),
           ], 'm-radio')}
-          ${row(2, `<span class="bn">${esc(ARTISTS.apurba.name)}</span>`, route('apurba/'), artistSubs(ARTISTS.apurba), 'm-apurba')}
+          ${row(2, bn(ARTISTS.apurba.name), route('apurba/'), artistSubs(ARTISTS.apurba), 'm-apurba')}
           ${row(3, esc(ARTISTS.acnd.name), route('acnd/'), artistSubs(ARTISTS.acnd), 'm-acnd')}
           ${row(4, 'Journal', route('journal/'), [])}
           ${row(5, 'Legal', route('legal/terms/'), [
@@ -131,7 +131,11 @@ export function mountChrome(): void {
     menu.querySelectorAll<HTMLButtonElement>('.m-plus').forEach((b) => {
       const on = b === plus && open;
       b.setAttribute('aria-expanded', String(on));
-      b.closest('.m-row')!.classList.toggle('m-open', on);
+      const r = b.closest('.m-row')!;
+      r.classList.toggle('m-open', on);
+      // A folded list is out of the Tab order; an open one is in it.
+      const sub = r.querySelector<HTMLElement>('.m-sub');
+      if (sub) sub.inert = !on;
     });
   });
 
@@ -148,6 +152,8 @@ export function mountChrome(): void {
       menu.querySelectorAll('.m-open').forEach((r) => {
         r.classList.remove('m-open');
         r.querySelector('.m-plus')?.setAttribute('aria-expanded', 'false');
+        const sub = r.querySelector<HTMLElement>('.m-sub');
+        if (sub) sub.inert = true;
       });
     if (open) menu.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
     else if (menu.contains(document.activeElement)) btn.focus({ preventScroll: true });
@@ -160,7 +166,10 @@ export function mountChrome(): void {
     if (!document.body.classList.contains('menu-open')) return;
     if (e.key === 'Escape') set(false);
     if (e.key !== 'Tab') return;
-    const controls = [btn, ...Array.from(menu.querySelectorAll<HTMLElement>('summary, a[href], button:not(:disabled)')).filter((control) => control.getClientRects().length > 0)];
+    // Only what can really take focus: not a folded list, not anything hidden.
+    const controls = [btn, ...Array.from(menu.querySelectorAll<HTMLElement>('summary, a[href], button:not(:disabled)')).filter(
+      (c) => !c.closest('[inert]') && c.getClientRects().length > 0 && getComputedStyle(c).visibility !== 'hidden',
+    )];
     const index = controls.indexOf(document.activeElement as HTMLElement);
     const next = (index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length;
     e.preventDefault();

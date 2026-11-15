@@ -1,4 +1,4 @@
-import { bufferedAhead, isPlaying, pause, prepare, start } from './audio';
+import { bufferedAhead, outsideTheClub, pause, prepare, start, walkIn } from './audio';
 
 export const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -17,21 +17,27 @@ const prompt = (): string => `
   <div class="vibe" role="group" aria-labelledby="vibe-title">
     <p class="vibe-kicker mono">Sound on your terms</p>
     <p class="vibe-title" id="vibe-title">One mix. Your volume.</p>
-    <p class="vibe-body">But we do give some <b>sexy frequencies</b>. Forty-five minutes of them, fresh from Hong Kong Community Radio.</p>
+    <p class="vibe-body">But we do give some <b>sexy frequencies</b>. An hour of them, fresh from Hong Kong Community Radio.</p>
     <div class="vibe-actions">
       <button type="button" class="vibe-yes" data-enter>Enter with sound</button>
       <button type="button" class="vibe-yes vibe-alt" data-quiet>Browse quietly</button>
     </div>
     <p class="vibe-meter mono" aria-live="polite"><span class="vibe-bar"><i></i></span><span class="vibe-status">Warming up the decks…</span></p>
-    <p class="vibe-fine">Audio controls only. <a data-legal-link href="${asset('legal/privacy/')}">Privacy</a> · <a data-legal-link href="${asset('legal/terms/')}">Terms of use</a> · <a data-legal-link href="${asset('legal/copyright/')}">Rights contact</a></p>
+    <p class="vibe-fine">Audio controls only. ${legal('legal/privacy/', 'Privacy')} · ${legal('legal/terms/', 'Terms of use')} · ${legal('legal/copyright/', 'Rights contact')}</p>
   </div>`;
+
+/**
+ * The notices open in a new tab, so they can be read before choosing: the
+ * shell behind the gate never navigates while the gate is up.
+ */
+const legal = (path: string, label: string): string =>
+  `<a data-legal-link href="${asset(path)}" target="_blank" rel="noopener">${label}<span class="sr-only"> (opens in a new tab)</span></a>`;
 
 /** Fill the meter from what the player has already buffered while the visitor reads. */
 function meter(root: HTMLElement): () => void {
-  // Let the page's own images and fonts load first, then warm up the mix.
+  // Let the page's own images and fonts load first, then connect Mixcloud's player.
   const warm = (): void => {
-    prepare();
-    start();
+    void prepare().catch(() => {});
   };
   if (document.readyState === 'complete') warm();
   else window.addEventListener('load', warm, { once: true });
@@ -40,7 +46,8 @@ function meter(root: HTMLElement): () => void {
   const id = window.setInterval(() => {
     const p = Math.min(1, bufferedAhead() / 30);
     bar.style.transform = `scaleX(${Math.max(0.04, p)})`;
-    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Choose sound or browse quietly.' : 'Buffering the mix… Sound is optional.';
+    // Nothing plays while the gate is up; the line only reports the connection.
+    status.textContent = p >= 1 ? 'Ready when you are. Choose sound or browse quietly.' : 'Connecting to Mixcloud… Sound is optional.';
     root.classList.toggle('vibe-ready', p >= 1);
   }, 200);
   return () => clearInterval(id);
@@ -63,18 +70,48 @@ function rememberedEntry(): 'sound' | 'quiet' | null {
 }
 
 /**
- * The mix starts by itself on every page once the page has loaded. If the
- * browser blocks audible autoplay, the visitor's first tap or key starts it.
- * Only someone who chose to browse quietly is left in silence.
+ * Only a visitor who chose sound before has the mix resume by itself. A first
+ * visit that lands on any page but home stays silent until the play button is
+ * pressed; someone who chose to browse quietly is left in silence.
  */
 export function autoplay(): boolean {
-  if (rememberedEntry() === 'quiet') return false;
+  if (rememberedEntry() !== 'sound') return false;
   if (document.readyState === 'complete') start();
   else window.addEventListener('load', () => start(), { once: true });
   return true;
 }
 
-export function mountGate(opts: { kicker: string; line: string; cta: string }): Promise<void> {
+/** Escape, and mark only the Bengali runs, so screen readers voice them in Bangla and just those words change face. */
+export const bn = (s: string): string => esc(s).replace(/[\u0980-\u09FF\u200C\u200D]+/g, (m) => `<span class="bn" lang="bn">${m}</span>`);
+
+/**
+ * Where a new view starts for keyboard and screen-reader users: its first
+ * heading, else its main region. Focus moves without scrolling.
+ */
+export function focusView(root: ParentNode = document): void {
+  const target = root.querySelector<HTMLElement>('h1') ?? root.querySelector<HTMLElement>('main, .doc-frame');
+  if (!target) return;
+  if (target.tabIndex < 0 && !target.matches('iframe')) target.tabIndex = -1;
+  target.dataset.routeFocus = '';
+  target.focus({ preventScroll: true });
+}
+
+let status: HTMLElement | null = null;
+/** Say the new page's title once, politely, after a route change. */
+export function announce(text: string): void {
+  if (!status) {
+    status = document.createElement('p');
+    status.className = 'sr-only';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    document.body.append(status);
+  }
+  const el = status;
+  el.textContent = '';
+  window.setTimeout(() => (el.textContent = text), 60);
+}
+
+export function mountGate(opts: { kicker: string; line: string; /** Unused: the record now shares "Enter with sound". */ cta?: string }): Promise<void> {
   // Returning visitors are not asked again: sound resumes and quiet stays quiet.
   if (rememberedEntry()) {
     autoplay();
@@ -83,20 +120,30 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
   return new Promise((resolve) => {
     const gate = document.createElement('div');
     gate.className = 'gate';
+    gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
+    gate.setAttribute('aria-labelledby', 'vibe-title');
+    // The record is a larger target for "Enter with sound", for the pointer only.
     gate.innerHTML = `
-      <button class="gate-record" data-enter aria-label="${esc(opts.cta)}">
+      <button type="button" class="gate-record" data-enter tabindex="-1" aria-hidden="true">
         <span class="gate-sleeve">
           <span class="gate-sleeve-word">I RAVE YOU</span>
-          <span class="gate-sleeve-sub">অপূর্ব ◐ ACND</span>
+          <span class="gate-sleeve-sub">${bn('অপূর্ব ◐ ACND')}</span>
         </span>
         <span class="gate-disc"><span class="gate-disc-label">◐</span></span>
       </button>
-      <p class="gate-kicker">${esc(opts.kicker)}</p>
-      <p class="gate-line">${esc(opts.line)}</p>
+      <p class="gate-kicker">${bn(opts.kicker)}</p>
+      <p class="gate-line">${bn(opts.line)}</p>
       ${prompt()}
       <p class="gate-credit">Site by ACND</p>`;
+    // Everything behind the gate is out of reach until the visitor chooses.
+    const behind = [...document.body.children].filter((el): el is HTMLElement => el instanceof HTMLElement && !el.inert && el.tagName !== 'SCRIPT');
+    behind.forEach((el) => (el.inert = true));
     document.body.append(gate);
     document.body.classList.add('gated');
+    gate.querySelector<HTMLElement>('.vibe-yes[data-enter]')?.focus({ preventScroll: true });
+    // Behind the door, the mix (if the browser lets it start) sounds as if from inside.
+    outsideTheClub();
     const stop = meter(gate);
     let done = false;
     const enter = (quiet = false): void => {
@@ -108,10 +155,19 @@ export function mountGate(opts: { kicker: string; line: string; cta: string }): 
       } catch {
         /* private mode: the gate simply shows again next time */
       }
-      if (quiet) pause();
-      else start();
-      gate.classList.add('gate-out');
       document.body.classList.remove('gated');
+      if (quiet) {
+        walkIn(0);
+        pause();
+      } else {
+        // Walking in: the sound opens up as the hero and its visualizer fade in.
+        start();
+        walkIn(2.4);
+      }
+      behind.forEach((el) => (el.inert = false));
+      gate.classList.add('gate-out');
+      gate.inert = true;
+      focusView(document.getElementById('app') ?? document);
       setTimeout(() => gate.remove(), 1100);
       resolve();
     };
