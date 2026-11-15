@@ -182,7 +182,7 @@ document.body.dataset.artist = id;
 document.body.dataset.view = 'pitch';
 
 const mark = m.logo
-  ? `<span class="logo p-logo"><img src="${asset(m.logo)}" alt="${esc(m.name)} logo" onerror="this.parentNode.classList.add('nologo')" /><span class="logo-text">${esc(m.name)}</span></span>`
+  ? `<span class="logo p-logo"><img src="${asset(m.logo)}" alt="${esc(m.name)} logo" onerror="this.parentNode.classList.add('nologo')" /><span class="logo-text"${/[\u0980-\u09FF]/.test(m.name) ? ' lang="bn"' : ''}>${esc(m.name)}</span></span>`
   : m.photo
     ? `<img class="p-photo" src="${asset(m.photo)}" alt="${esc(m.name)}" onerror="this.remove()" />`
     : '';

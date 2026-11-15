@@ -13,15 +13,16 @@ body {
   line-height: 1.7;
 }
 a {
-  color: #a9cbff;
+  color: #fff;
+  text-decoration: underline;
   text-underline-offset: 4px;
 }
 a:hover {
-  color: #fff;
+  color: #ff4d57;
 }
 a:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #93beff;
+  outline: 3px solid #ff4d57;
   outline-offset: 5px;
 }
 header,
@@ -92,7 +93,7 @@ section {
   align-items: center;
   min-height: 48px;
   padding: 10px 20px;
-  border: 1px solid #80adf1;
+  border: 1px solid #fff;
   border-radius: 4px;
   margin: 8px 0;
   font-weight: 650;
@@ -132,7 +133,7 @@ section {
 .timestamp {
   padding-top: 17px;
   font-variant-numeric: tabular-nums;
-  color: #a9cbff;
+  color: #bdbdbd;
 }
 .cover {
   width: min(100%, 440px);
@@ -234,7 +235,7 @@ figcaption {
 }
 .article-answer {
   padding-left: 20px;
-  border-left: 3px solid #93beff;
+  border-left: 3px solid #d4202b;
 }
 .article-figure {
   margin: 32px 0;
@@ -364,7 +365,7 @@ figcaption {
 }
 .press-bio {
   padding: 20px;
-  border-left: 3px solid #93beff;
+  border-left: 3px solid #d4202b;
   background: #151515;
 }
 @media (max-width: 600px) {
@@ -405,6 +406,9 @@ h1 { line-height: 1.02; }
   letter-spacing: 0.08em;
 }
 .breadcrumb { letter-spacing: 0.02em; }
+/* A date inside a sentence reads as part of it; mono stays for dates in labels. */
+p time, dd time, li time { font: inherit; letter-spacing: inherit; }
+.eyebrow time, .byline time { font: 500 12px ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.08em; }
 .button { border-radius: 2px; }
 .journal-card { border-radius: 0; }
 /* An odd card out spans the row instead of leaving a hole beside it. */

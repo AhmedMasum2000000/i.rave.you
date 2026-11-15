@@ -27,7 +27,7 @@ const logoSet = (a: Artist): string => {
   return `${asset(`${base}-320.webp`)} 320w, ${asset(`${base}-640.webp`)} 640w, ${asset(`${base}.webp`)} 800w`;
 };
 export const logo = (a: Artist, cls: string): string =>
-  `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${logoSet(a)}" sizes="${LOGO_SIZES[cls] ?? '(max-width: 560px) 100vw, 480px'}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" fetchpriority="high" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text">${esc(a.name)}</span></span>`;
+  `<span class="logo ${cls}${exists(a.logo) ? '' : ' nologo'}"><picture class="pic"><source srcset="${logoSet(a)}" sizes="${LOGO_SIZES[cls] ?? '(max-width: 560px) 100vw, 480px'}" type="image/webp" /><img src="${asset(a.logo)}" alt="${esc(a.name)} logo" fetchpriority="high" decoding="async" onerror="this.closest('.logo').classList.add('nologo')" /></picture><span class="logo-text"${/[\u0980-\u09FF]/.test(a.name) ? ' lang="bn"' : ''}>${esc(a.name)}</span></span>`;
 
 const href = (a: Artist, page: Page): string => routeHref(a.id, page);
 
@@ -219,7 +219,7 @@ function homePage(a: Artist): string {
         <p class="ah-sum">${bn(a.about?.summary ?? a.bio[0])}</p>
         <div class="ah-ctas">
           <a class="k-btn k-primary" href="${esc(lead.href)}" target="_blank" rel="noopener" data-cta="artist-lead">${esc(cta)}</a>
-          <a class="k-link" href="${esc(a.listen.url)}" target="_blank" rel="noopener" data-cta="artist-follow">Follow on ${esc(a.listen.label)} ↗</a>
+          <a class="k-link" href="${esc(a.listen.url)}" target="_blank" rel="noopener" data-cta="artist-follow">${esc(a.listen.label)} profile ↗</a>
         </div>
       </div>
     </section>

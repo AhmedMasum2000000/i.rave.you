@@ -199,8 +199,8 @@ function armRetry(): void {
     if (playing || userPaused) return off();
     if (document.body.classList.contains('gated')) return;
     if (event instanceof KeyboardEvent && (event.key !== 'Enter' && event.key !== ' ')) return;
-    // The play button and the quiet / legal links handle their own taps.
-    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play, .gate')) return;
+    // The play buttons and the quiet / legal links handle their own taps.
+    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play, .home-play, .gate')) return;
     off();
     void widget?.play();
   }

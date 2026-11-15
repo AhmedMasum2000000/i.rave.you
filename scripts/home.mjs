@@ -115,7 +115,7 @@ const nextBlock = (e, link) => {
 };
 
 /** Escape, then wrap each run of Bengali in .bn, so only those words change face. */
-const bnw = (s) => esc(s).replace(/[ঀ-৿‌‍]+/g, (m) => `<span class="bn">${m}</span>`);
+const bnw = (s) => esc(s).replace(/[ঀ-৿‌‍]+/g, (m) => `<span class="bn" lang="bn">${m}</span>`);
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const isExt = (href) => /^https?:/.test(href);
 
@@ -201,11 +201,11 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   <section class="f-intro" aria-labelledby="discovery-title">
     <div class="k-fade" data-reveal>
       <p class="k-label">Dhaka &amp; Cumilla · Bangladesh</p>
-      <h1 id="discovery-title" class="f-h1">I Rave You — ACND&nbsp;&amp;&nbsp;<span class="bn">অপূর্ব</span>, electronic music from Bangladesh</h1>
+      <h1 id="discovery-title" class="f-h1">I Rave You — ACND&nbsp;&amp;&nbsp;<span class="bn" lang="bn">অপূর্ব</span>, electronic music from Bangladesh</h1>
     </div>
     <div class="f-intro-cols k-fade" data-reveal>
       <div>
-        <p class="f-lede">Two producers, one frequency. <a class="n-acnd" href="acnd/">ACND</a> (Ahmed Masum) moves through techno, melodic techno, acid and progressive; <a class="n-apurba" href="apurba/"><span class="bn">অপূর্ব</span></a> (Khalid Bin Alam) through psychedelic, melodic and bass-driven sound. Together they host <a href="mixes/qbic-pulse/">Qbic Pulse</a> on Hong Kong Community Radio. Press play: the set runs here, end to end.</p>
+        <p class="f-lede">Two producers, one frequency. <a class="n-acnd" href="acnd/">ACND</a> (Ahmed Masum) moves through techno, melodic techno, acid and progressive; <a class="n-apurba" href="apurba/"><span class="bn" lang="bn">অপূর্ব</span></a> (Khalid Bin Alam) through psychedelic, melodic and bass-driven sound. Together they host <a href="mixes/qbic-pulse/">Qbic Pulse</a> on Hong Kong Community Radio. Press play: the set runs here, end to end.</p>
         ${set ? `<div class="f-acts"><button class="k-btn f-play" type="button" data-play-set="${esc(set.slug)}" data-cta="intro-play" aria-pressed="false"><span aria-hidden="true">▶</span> Play ${esc(set.show)}</button><span class="f-eq" data-pulse aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>` : ""}
       </div>
       ${broadcast ? nextBlock(broadcast, link) : ""}
@@ -236,7 +236,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
     <div class="k-tabs f-tabs" role="group" aria-label="Filter releases and sets">
       <button type="button" class="k-tab on" data-filter="all" aria-pressed="true">All<sup>${items.length}</sup></button>
       <button type="button" class="k-tab" data-filter="acnd" aria-pressed="false">ACND<sup>${count("acnd")}</sup></button>
-      <button type="button" class="k-tab" data-filter="apurba" aria-pressed="false"><span class="bn">অপূর্ব</span><sup>${count("apurba")}</sup></button>
+      <button type="button" class="k-tab" data-filter="apurba" aria-pressed="false"><span class="bn" lang="bn">অপূর্ব</span><sup>${count("apurba")}</sup></button>
       <button type="button" class="k-tab" data-filter="release" aria-pressed="false">Releases<sup>${count("release")}</sup></button>
       <button type="button" class="k-tab" data-filter="set" aria-pressed="false">Sets<sup>${count("set")}</sup></button>
       <button type="button" class="k-tab" data-filter="remix" aria-pressed="false">Remixes<sup>${count("remix")}</sup></button>
@@ -295,7 +295,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
             .filter((p) => p !== lead)
             .map((p) => `<li><a href="journal/${esc(p.slug)}/"><span class="k-label">${esc(p.category)} · ${esc(day(p.date))}</span><h3>${bnw(p.title)}</h3></a></li>`)
             .join("\n          ")}
-          <li><a href="frequency-unity/"><span class="k-label">Feature</span><h3>Frequency &amp; Unity — <span class="bn">অপূর্ব</span> × ACND</h3></a></li>
+          <li><a href="frequency-unity/"><span class="k-label">Feature</span><h3>Frequency &amp; Unity — <span class="bn" lang="bn">অপূর্ব</span> × ACND</h3></a></li>
         </ul>
         <a class="k-link" href="journal/" data-cta="journal-all">All ${posts.length} articles →</a>
       </div>
@@ -310,9 +310,9 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   </section>
 
   <footer class="f-foot">
-    <div class="f-foot-id"><b>I Rave You</b><span>ACND &amp; <span class="bn">অপূর্ব</span> · electronic music from Bangladesh</span><p>Stream the records on your platform, follow both artists so the next one finds you, or keep Qbic Pulse running here while you read.</p></div>
-    <nav aria-label="Site"><span class="k-label">Site</span><a href="acnd/">ACND</a><a href="apurba/"><span class="bn">অপূর্ব</span></a><a href="radio/">Qbic Pulse</a><a href="music/down-in-bossa/">Down In Bossa</a><a href="journal/">Journal</a><a href="acnd/press/">Press kit</a><a href="frequency-unity/">Feature</a></nav>
-    <nav aria-label="Listen"><span class="k-label">Listen</span><a href="${esc(C.listen.url)}" ${ext}>ACND · Spotify</a><a href="https://soundcloud.com/acndlovestoes" ${ext}>ACND · SoundCloud</a><a href="${esc(A.listen.url)}" ${ext}><span class="bn">অপূর্ব</span> · Spotify</a><a href="https://soundcloud.com/youmeiyou" ${ext}><span class="bn">অপূর্ব</span> · SoundCloud</a></nav>
+    <div class="f-foot-id"><b>I Rave You</b><span>ACND &amp; <span class="bn" lang="bn">অপূর্ব</span> · electronic music from Bangladesh</span><p>Stream the records on your platform, follow both artists so the next one finds you, or keep Qbic Pulse running here while you read.</p></div>
+    <nav aria-label="Site"><span class="k-label">Site</span><a href="acnd/">ACND</a><a href="apurba/"><span class="bn" lang="bn">অপূর্ব</span></a><a href="radio/">Qbic Pulse</a><a href="music/down-in-bossa/">Down In Bossa</a><a href="journal/">Journal</a><a href="acnd/press/">Press kit</a><a href="frequency-unity/">Feature</a></nav>
+    <nav aria-label="Listen"><span class="k-label">Listen</span><a href="${esc(C.listen.url)}" ${ext}>ACND · Spotify</a><a href="https://soundcloud.com/acndlovestoes" ${ext}>ACND · SoundCloud</a><a href="${esc(A.listen.url)}" ${ext}><span class="bn" lang="bn">অপূর্ব</span> · Spotify</a><a href="https://soundcloud.com/youmeiyou" ${ext}><span class="bn" lang="bn">অপূর্ব</span> · SoundCloud</a></nav>
     <nav aria-label="Follow"><span class="k-label">Follow</span><a href="https://www.instagram.com/acnd_music/" ${ext}>ACND · Instagram</a><a href="https://instagram.com/i.rave.you" ${ext}>I Rave You · Instagram</a></nav>
     <div class="f-foot-end"><nav class="legal-links" aria-label="Legal information"><a href="legal/terms/">Terms of use</a><a href="legal/privacy/">Privacy notice</a><a href="legal/copyright/">Copyright contact</a></nav></div>
   </footer>

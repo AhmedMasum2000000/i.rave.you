@@ -124,8 +124,9 @@ body[data-view='artist'] { --dim: #a8a8a8; }
 @media (max-width: 900px), (max-height: 500px) and (pointer: coarse) {
   /* Section tabs: a plain segmented bar, the active page underlined in the
      artist's colour. Full opacity and 15px, so they read as live controls. */
-  body .a-links { gap: 0; border-bottom: 1px solid #262626; }
-  body .a-links a { border: 0; border-radius: 0; font-size: 15px; opacity: 1; color: var(--k-mute); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  /* Tabs sit on the page gutter with a fixed gap, as on desktop. */
+  body .a-links { gap: 28px; grid-auto-columns: max-content; justify-content: start; border-bottom: 1px solid #262626; }
+  body .a-links a { padding: 8px 0; border: 0; border-radius: 0; font-size: 15px; opacity: 1; color: var(--k-mute); border-bottom: 2px solid transparent; margin-bottom: -1px; }
   body .a-links a.on { background: none; color: var(--k-paper); border-bottom-color: var(--glow); }
   body .a-links a.on::before { content: none; }
   body .a-nav { border-bottom: 0; padding-bottom: 0; }

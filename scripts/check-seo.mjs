@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { bnLang } from "./lang.mjs";
 const origin = "https://iraveyou.online";
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(resolve(dir, d.name)) : [resolve(dir, d.name)]));
 const root = resolve("dist");
@@ -240,12 +241,12 @@ const releasePage = readFileSync(
   "utf8",
 );
 assert.match(releasePage, /<h1>Down In Bossa<\/h1>/);
-assert.match(releasePage, /Ibiza-inspired house playlist/);
+assert.doesNotMatch(releasePage, /Ibiza/, "no off-topic playlist padding on the release page");
+assert.match(releasePage, /distributed by ADA Central Europe\. Released 30 October 2026/);
 assert.match(
   releasePage,
   /genre supplied for “Down In Bossa” is <strong>Afro House/,
 );
-assert.match(releasePage, /not a report of Ibiza airplay/);
 const recordingGraph = JSON.parse(
   releasePage.match(
     /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
@@ -258,7 +259,7 @@ assert.equal(
   "Afro House",
 );
 console.log(
-  "PASS expanded Down In Bossa page: single canonical release, Ibiza playlist context, preserved factual genre and credits",
+  "PASS expanded Down In Bossa page: single canonical release, factual description, preserved factual genre and credits",
 );
 const firstTrack = list.match(/<li>([\s\S]*?)<\/li>/)[1];
 assert.doesNotMatch(firstTrack, /<a\b/);
@@ -341,6 +342,19 @@ console.log(
   assert.ok(!existsSync(resolve(root, "audio")) || readdirSync(resolve(root, "audio")).length === 0, "no self-hosted audio");
   for (const f of walk(root).filter((f) => f.endsWith(".html")))
     assert.doesNotMatch(readFileSync(f, "utf8"), /<script(?![^>]*\bsrc=)(?! type="application\/ld\+json")[^>]*>/, `inline script in ${f}`);
-  assert.match(readFileSync(resolve(root, "seo.css"), "utf8"), /user-select: none/);
-  console.log(`PASS security: headers, Mixcloud player allowed, no self-hosted audio, no inline scripts, static copy guard`);
+  // Static copy guard: the interface is not selectable, reading text is (select-to-speak, translation).
+  const seoCss = readFileSync(resolve(root, "seo.css"), "utf8");
+  assert.match(seoCss, /html \{\s*-webkit-user-select: none;\s*user-select: none;/, "static pages: interface not selectable");
+  assert.match(seoCss, /:is\(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article\) \{\s*-webkit-user-select: text;\s*user-select: text;/, "static pages: reading text selectable");
+  console.log(`PASS security: headers, Mixcloud player allowed, no self-hosted audio, no inline scripts, static copy guard (reading text selectable)`);
+}
+
+// Language of parts: every run of Bengali text in a page's body sits inside a lang="bn" element.
+{
+  const pages = walk(root).filter((f) => f.endsWith(".html"));
+  for (const f of pages) {
+    const html = readFileSync(f, "utf8");
+    assert.equal(bnLang(html), html, `Bengali text outside lang="bn" in ${f}`);
+  }
+  console.log(`PASS language of parts: Bengali text marked lang="bn" on ${pages.length} pages`);
 }

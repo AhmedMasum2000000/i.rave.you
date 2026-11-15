@@ -8,7 +8,7 @@ button, a, summary { -webkit-tap-highlight-color: transparent; touch-action: man
   body .a-nav { grid-template-columns: 1fr; gap: 8px; padding: calc(58px + var(--safe-top)) var(--gutter) 10px; background: #0b0b0b; border-bottom: 1px solid #262626; }
   body .a-brand { top: calc(10px + var(--safe-top)); min-height: 44px; }
   body .a-info { display: none; }
-  body .a-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; padding: 0; font-size: 13px; }
+  body .a-links { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; width: 100%; padding: 0; font-size: 13px; }
   body .a-links a { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 8px; border: 1px solid #292929; border-radius: 6px; }
   body .a-links a.on { background: #202020; border-color: var(--glow); }
   body .a-links a.on::before { content: '●'; font-size: 8px; }

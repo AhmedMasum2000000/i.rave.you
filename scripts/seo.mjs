@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createPosts, PUBLICATION_DATE } from "../content/posts.mjs";
+import { bnLang } from "./lang.mjs";
 import { catalogue, credited, homeExtraGraph, homeFeed, releaseRecording } from "./home.mjs";
 /** Static discovery pages share the portfolio's facts and verified music URLs. */
 export const ORIGIN = "https://iraveyou.online";
@@ -179,9 +180,30 @@ function head({
   const og = shareImage(image, imageAlt ?? title);
   return `<title>${esc(title)}</title><meta name="description" content="${esc(description)}"><meta name="robots" content="index, follow, max-image-preview:large"><link rel="canonical" href="${url}"><meta property="og:type" content="${ogType}"><meta property="og:site_name" content="I Rave You"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ORIGIN}/${og.src}"><meta property="og:image:width" content="${og.w}"><meta property="og:image:height" content="${og.h}"><meta property="og:image:alt" content="${esc(og.alt)}"><meta name="twitter:card" content="${og.card}"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${ORIGIN}/${og.src}"><meta name="twitter:image:alt" content="${esc(og.alt)}"><script type="application/ld+json">${json(graph)}</script>`;
 }
+/** The newest Qbic Pulse set: the static pages' play strip opens the app on it. */
+let NEWEST = null;
+const bnName = (text) => esc(text).replace(/অপূর্ব/g, '<span lang="bn">অপূর্ব</span>');
+/**
+ * Every static page shares the app's frame without its script: the wordmark
+ * left and a MENU right (a <details> disclosure, so it needs none), and a slim
+ * strip along the bottom that opens the player on the newest set.
+ */
 function shell(page, body) {
   const root = "../".repeat(page.path.split("/").filter(Boolean).length);
-  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css">${analyticsTag(root)}</head><body class="discovery"><a class="skip" href="#content">Skip to content</a><header><a class="brand" href="${root}">I Rave You</a><nav aria-label="Main navigation"><a href="${root}acnd/">ACND</a><a href="${root}apurba/">অপূর্ব</a><a href="${root}mixes/qbic-pulse/">Mix &amp; tracklist</a><a href="${root}journal/">Journal</a></nav></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer></body></html>`;
+  const menu = [
+    ["", "Home"],
+    ["radio/", "Qbic Pulse"],
+    ["acnd/", "ACND"],
+    ["apurba/", '<span lang="bn">অপূর্ব</span>'],
+    ["music/", "Music"],
+    ["journal/", "Journal"],
+  ]
+    .map(([path, label]) => `<a href="${root}${path}"${path === page.path ? ' aria-current="page"' : ""}>${label}</a>`)
+    .join("");
+  const strip = NEWEST
+    ? `<a class="play-strip" href="${root}?set=${esc(NEWEST.slug)}"><span class="ps-i" aria-hidden="true">▶</span><span class="ps-t">Play ${esc(NEWEST.show)}</span><span class="ps-v">${esc(NEWEST.volume)} · ${bnName(NEWEST.hosts)}</span><span class="ps-go" aria-hidden="true">Open the player →</span></a>`
+    : "";
+  return bnLang(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0b0b">${head(page)}<link rel="icon" href="${root}favicon.svg"><link rel="stylesheet" href="${root}fonts/brand.css"><link rel="stylesheet" href="${root}seo.css">${analyticsTag(root)}</head><body class="discovery${strip ? " has-strip" : ""}"><a class="skip" href="#content">Skip to content</a><header class="site-bar"><a class="brand" href="${root}">I Rave You</a><details class="site-menu"><summary><span class="menu-icon" aria-hidden="true"><i></i><i></i></span>Menu</summary><nav aria-label="Main navigation">${menu}</nav></details></header><main id="content"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="${root}">Home</a><span aria-hidden="true"> / </span><span>${esc(page.label)}</span></nav>${body}</main><footer><nav aria-label="Legal information"><a href="${root}legal/terms/">Terms of use</a><a href="${root}legal/privacy/">Privacy notice</a><a href="${root}legal/copyright/">Copyright contact</a></nav><p>I Rave You · ACND &amp; অপূর্ব · Electronic music from Bangladesh</p></footer>${strip ? `<aside aria-label="Player">${strip}</aside>` : ""}</body></html>`);
 }
 const pageGraph = (page, entities = [], type = "WebPage") => ({
   "@context": "https://schema.org",
@@ -259,7 +281,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
     label: "Down In Bossa",
     title: "Down In Bossa — Ash Army & ACND | Afro House",
     description:
-      "Down In Bossa by Ash Army & ACND: Afro House via Profi Music. Find release details, official listening links and context for an Ibiza-inspired house playlist.",
+      "Down In Bossa by Ash Army & ACND: Afro House on Profi Music, distributed by ADA Central Europe. Released 30 October 2026, with official listening links and credits.",
     image: next.cover,
     lastmod: "2026-10-30",
   };
@@ -300,7 +322,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
   ]);
   release.html = shell(
     release,
-    `<p class="eyebrow">${esc(next.genre)} · ${esc(next.label)}</p><h1>Down In Bossa</h1><p class="intro">Ash Army &amp; ACND · Afro House via Profi Music</p><p>“Down In Bossa” is the Ash Army &amp; ACND collaboration, out now on Profi Music since <time datetime="2026-10-30">30 October 2026</time> and distributed by ADA Central Europe, Warner Music Group’s distribution arm. Stream it through the official label links, then find a route into its Afro House context.</p><picture><source srcset="../../${next.cover.replace(/\.jpg$/, ".webp")}" type="image/webp"><img class="cover" src="../../${next.cover}" alt="Down In Bossa — Ash Army and ACND cover artwork" width="650" height="650" fetchpriority="high"></picture><nav class="platforms" aria-label="Official release links"><a class="button" href="${esc(next.presave)}" target="_blank" rel="noopener">Listen now via the label ↗</a><a href="${esc(next.page)}" target="_blank" rel="noopener">Profi Music release page ↗</a></nav><section><h2>Down In Bossa: release facts</h2><dl class="fact-list"><div><dt>Artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Genre</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Distribution</dt><dd>ADA Central Europe (Warner Music Group)</dd></div><div><dt>Released</dt><dd>30 October 2026</dd></div><div><dt>℗ line</dt><dd>℗ 2026 profimusic, distributed by ADA Central Europe</dd></div></dl><p>ACND is Ahmed Masum, the producer, DJ and composer based in Dhaka, Bangladesh. Ash Army is the separately credited collaborator. The artist line should remain Ash Army &amp; ACND when sharing the recording.</p><p>The label controls availability and streaming destinations by platform and territory; follow the official links above for the current list.</p></section><section><h2>Bossa in the title, Afro House in the release information</h2><p>“Bossa” is part of this recording’s title. The genre supplied for “Down In Bossa” is <strong>Afro House</strong>. A word in a title does not, by itself, establish an instrument, sample source or musical influence.</p><p>Bossa nova is a Brazilian musical tradition with a different history from house music. If you arrived looking for bossa nova, use the recording’s actual genre and listen to the full track before deciding whether it matches what you want to hear. This page does not have an artist statement explaining the title’s origin.</p><p>For a practical introduction to the stated genre, explore the <a href="../../journal/afro-house-listening-guide/">Afro House listening guide</a>, which focuses on rhythm, percussion, bass and space.</p></section><section><h2>Down In Bossa for an Ibiza-inspired house playlist</h2><p>Ibiza is associated internationally with dance music, DJ culture and house listening. An Ibiza-inspired playlist can be a personal way to explore that musical setting, rather than a list of recordings tied to a particular venue or event.</p><p>If you are exploring Afro House for such a playlist, “Down In Bossa” is a release to check through its official label destination. Hear the complete recording and decide how it fits the energy and pacing of your own selection. This is a listening suggestion, not a report of Ibiza airplay, a performance booking or a venue endorsement.</p><ol><li><strong>Start with the full recording.</strong> Use the label’s listening destination so you can assess the arrangement beyond a short preview.</li><li><strong>Follow the groove.</strong> Pay attention to how percussion and bass relate, using the <a href="../../journal/afro-house-listening-guide/">listening exercise</a> if the genre is new to you.</li><li><strong>Choose the transition.</strong> Compare the recording with the track before and after it. A playlist’s flow depends on the actual music, not the destination named in its title.</li><li><strong>Preserve the credit.</strong> Add the Ash Army &amp; ACND recording linked by the label, and keep its artist and version information intact.</li></ol></section><section><h2>Meet ACND: Ahmed Masum</h2><p>${esc(artists.acnd.about.paragraphs[0])}</p><p>His broader portfolio moves through techno, melodic techno, acid and progressive sounds. This Afro House collaboration is one specific project within that work. Read <a href="../../acnd/">Ahmed Masum’s ACND artist profile</a> or explore the <a href="../../journal/acnd-techno-melodic-acid-progressive/">guide to his musical directions</a>.</p></section><section><h2>Quick answers</h2><h3>Who made Down In Bossa?</h3><p>The recording is credited to Ash Army &amp; ACND. ACND is Ahmed Masum; those names identify the same artist.</p><h3>Is Down In Bossa bossa nova?</h3><p>The release information supplied here identifies it as Afro House. “Bossa” is part of the title and does not establish a bossa nova classification or sample.</p><h3>Where can I listen?</h3><p>Use the official Profi Music page and smart link above. It was released on 30 October 2026; availability by platform and territory is controlled by the label.</p><h3>How can it fit an Ibiza-inspired playlist?</h3><p>Explore it as an Afro House selection, then use the full recording to judge pacing and transitions. The playlist context does not imply a confirmed Ibiza performance or endorsement.</p></section><section><h2>More from this project</h2><p><a href="../../journal/down-in-bossa-out-now-profi-music/">Down In Bossa is out now on Profi Music</a> · <a href="../../journal/down-in-bossa-collaboration-credits/">Understanding the collaboration credits</a> · <a href="../../journal/afro-house-listening-guide/">An Afro House listening guide</a> · <a href="../../mixes/qbic-pulse/">ACND &amp; অপূর্ব’s Qbic Pulse tracklist</a></p></section>`,
+    `<p class="eyebrow">${esc(next.genre)} · ${esc(next.label)}</p><h1>Down In Bossa</h1><p class="intro">Ash Army &amp; ACND · Afro House via Profi Music</p><p>“Down In Bossa” is the Ash Army &amp; ACND collaboration, out now on Profi Music since <time datetime="2026-10-30">30 October 2026</time> and distributed by ADA Central Europe, Warner Music Group’s distribution arm. Stream it through the official label links, then find a route into its Afro House context.</p><picture><source srcset="../../${next.cover.replace(/\.jpg$/, ".webp")}" type="image/webp"><img class="cover" src="../../${next.cover}" alt="Down In Bossa — Ash Army and ACND cover artwork" width="650" height="650" fetchpriority="high"></picture><nav class="platforms" aria-label="Official release links"><a class="button" href="${esc(next.presave)}" target="_blank" rel="noopener">Listen now via the label ↗</a><a href="${esc(next.page)}" target="_blank" rel="noopener">Profi Music release page ↗</a></nav><section><h2>Down In Bossa: release facts</h2><dl class="fact-list"><div><dt>Artists</dt><dd>Ash Army &amp; ACND</dd></div><div><dt>Title</dt><dd>Down In Bossa</dd></div><div><dt>Genre</dt><dd>Afro House</dd></div><div><dt>Label</dt><dd>Profi Music</dd></div><div><dt>Distribution</dt><dd>ADA Central Europe (Warner Music Group)</dd></div><div><dt>Released</dt><dd>30 October 2026</dd></div><div><dt>℗ line</dt><dd>℗ 2026 profimusic, distributed by ADA Central Europe</dd></div></dl><p>ACND is Ahmed Masum, the producer, DJ and composer based in Dhaka, Bangladesh. Ash Army is the separately credited collaborator. The artist line should remain Ash Army &amp; ACND when sharing the recording.</p><p>The label controls availability and streaming destinations by platform and territory; follow the official links above for the current list.</p></section><section><h2>Bossa in the title, Afro House in the release information</h2><p>“Bossa” is part of this recording’s title. The genre supplied for “Down In Bossa” is <strong>Afro House</strong>. A word in a title does not, by itself, establish an instrument, sample source or musical influence.</p><p>Bossa nova is a Brazilian musical tradition with a different history from house music. If you arrived looking for bossa nova, use the recording’s actual genre and listen to the full track before deciding whether it matches what you want to hear. This page does not have an artist statement explaining the title’s origin.</p><p>For a practical introduction to the stated genre, explore the <a href="../../journal/afro-house-listening-guide/">Afro House listening guide</a>, which focuses on rhythm, percussion, bass and space.</p></section><section><h2>Meet ACND: Ahmed Masum</h2><p>${esc(artists.acnd.about.paragraphs[0])}</p><p>His broader portfolio moves through techno, melodic techno, acid and progressive sounds. This Afro House collaboration is one specific project within that work. Read <a href="../../acnd/">Ahmed Masum’s ACND artist profile</a> or explore the <a href="../../journal/acnd-techno-melodic-acid-progressive/">guide to his musical directions</a>.</p></section><section><h2>Quick answers</h2><h3>Who made Down In Bossa?</h3><p>The recording is credited to Ash Army &amp; ACND. ACND is Ahmed Masum; those names identify the same artist.</p><h3>Is Down In Bossa bossa nova?</h3><p>The release information supplied here identifies it as Afro House. “Bossa” is part of the title and does not establish a bossa nova classification or sample.</p><h3>Where can I listen?</h3><p>Use the official Profi Music page and smart link above. It was released on 30 October 2026; availability by platform and territory is controlled by the label.</p></section><section><h2>More from this project</h2><p><a href="../../journal/down-in-bossa-out-now-profi-music/">Down In Bossa is out now on Profi Music</a> · <a href="../../journal/down-in-bossa-collaboration-credits/">Understanding the collaboration credits</a> · <a href="../../journal/afro-house-listening-guide/">An Afro House listening guide</a> · <a href="../../mixes/qbic-pulse/">ACND &amp; অপূর্ব’s Qbic Pulse tracklist</a></p></section>`,
   );
   pages.push(release);
   const mix = {
@@ -448,7 +470,7 @@ export function journalPages(artists, next, tracks) {
     );
     page.html = shell(
       page,
-      `<article class="journal-article"><p class="eyebrow">${esc(post.category)} · Artist journal</p><h1>${esc(post.title)}</h1><p class="byline">By <a href="../#editorial">I Rave You editorial</a> · <time datetime="${post.date ?? PUBLICATION_DATE}">${longDate(post.date ?? PUBLICATION_DATE)}</time></p><p class="intro article-answer">${esc(post.answer)}</p><figure class="article-figure">${picture("../../", post.image, post.imageAlt, 'fetchpriority="high"')}<figcaption>Image from the existing I Rave You artist portfolio.</figcaption></figure><nav class="contents" aria-label="In this article"><strong>In this article</strong><ol>${toc}</ol></nav>${body}<aside class="source-note"><h2>About this article</h2><p>Published by I Rave You, this artist portfolio. Artist identity, biography and project credits are based on information supplied for this website. External music and label links identify listening destinations; they are not independent verification of every biographical statement. Genre and listening explanations are editorial guidance.</p></aside><section class="related"><h2>Related reading</h2><ul>${related}</ul><p>${internal("acnd/", "ACND artist profile")} · ${internal("journal/", "All journal posts")}</p></section></article>`,
+      `<article class="journal-article"><p class="eyebrow">${esc(post.category)} · Artist journal</p><h1>${esc(post.title)}</h1><p class="byline">By <a href="../#editorial">I Rave You editorial</a> · <time datetime="${post.date ?? PUBLICATION_DATE}">${longDate(post.date ?? PUBLICATION_DATE)}</time></p><p class="intro article-answer">${esc(post.answer)}</p><figure class="article-figure">${picture("../../", post.image, post.imageAlt, 'fetchpriority="high"')}<figcaption>Image from the existing I Rave You artist portfolio.</figcaption></figure><nav class="contents" aria-label="In this article"><strong>In this article</strong><ol>${toc}</ol></nav>${body}<section class="source-note"><h2>About this article</h2><p>Published by I Rave You, this artist portfolio. Artist identity, biography and project credits are based on information supplied for this website. External music and label links identify listening destinations; they are not independent verification of every biographical statement. Genre and listening explanations are editorial guidance.</p></section><section class="related"><h2>Related reading</h2><ul>${related}</ul><p>${internal("acnd/", "ACND artist profile")} · ${internal("journal/", "All journal posts")}</p></section></article>`,
     );
     return page;
   });
@@ -501,7 +523,7 @@ function writeRoute(dir, index, path, headHtml, content) {
   const tags = [
     ...index.matchAll(/<script type="module"[^>]*><\/script>|<link rel="(?:modulepreload|stylesheet|icon)"[^>]*>/g),
   ].map((m) => rebase(m[0]));
-  const html = `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000">${headHtml}${tags.join("")}</head><body data-view="home"><div id="app"></div>${content ? `<section class="discovery-home discovery-profile">${content}</section>` : ""}</body></html>`;
+  const html = bnLang(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000">${headHtml}${tags.join("")}</head><body data-view="home"><div id="app"></div>${content ? `<section class="discovery-home discovery-profile">${content}</section>` : ""}</body></html>`);
   mkdirSync(resolve(dir, path), { recursive: true });
   writeFileSync(resolve(dir, path, "index.html"), html);
 }
@@ -653,6 +675,7 @@ function sitemap(pages) {
 
 export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "" }) {
   GA4 = ga4;
+  NEWEST = sets[0] ?? null;
   // The home feed links journal articles from the site root.
   const homePosts = createPosts({
     internal: (path, label) => `<a href="${esc(path)}">${esc(label)}</a>`,
@@ -692,12 +715,12 @@ export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "
       order: "pre",
       handler(html, ctx) {
         if (ctx.path === "/index.html" || ctx.path === "/")
-          return html
+          return bnLang(html
             .replace("<!-- discovery-content -->", feed)
             .replace(
               "<!-- structured-data -->",
               `<script type="application/ld+json">${json(homeGraph(artists, extraGraph))}</script>`,
-            );
+            ));
         if (ctx.path.startsWith("/afw26/")) return html;
         html = html.replace("<!-- analytics-notice -->", analyticsNotice());
         const path = ctx.path.replace(/^\//, "").replace(/index\.html$/, "");
@@ -705,7 +728,7 @@ export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "
         html = html
           .replace(/<link\b[^>]*rel="canonical"[^>]*>/g, "")
           .replace(/<meta\b[^>]*property="og:url"[^>]*>/g, "");
-        return html
+        return bnLang(html)
           .replace(
             "</head>",
             `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}"></head>`,

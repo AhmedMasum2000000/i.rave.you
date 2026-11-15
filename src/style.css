@@ -493,6 +493,19 @@ html.guard textarea {
   -webkit-user-select: text;
   user-select: text;
 }
+/* Reading text stays selectable for select-to-speak, Look Up and translation
+   (the READING and CHROME lists in src/guard.ts); the interface does not. */
+html.guard :is(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article) {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+html.guard :is(button, [role='button'], nav, .fbar, .home, .gate),
+html.guard :is(button, [role='button'], nav, .fbar, .home, .gate) * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 html.guard img,
 html.guard a {
   -webkit-user-drag: none;

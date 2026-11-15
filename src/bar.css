@@ -592,3 +592,16 @@ body.flooding .peek { opacity: 0 !important; }
   /* No room for the words: the volume on air keeps a red dot (and aria-pressed says it). */
   .tid-vol-on { width: 7px; height: 7px; margin: 0 0 0 auto; padding: 0; overflow: hidden; border-radius: 50%; background: #ff4d57; color: transparent; align-self: center; flex: none; }
 }
+
+/* Short screens (phones on their side): the window ends above the bar and
+   scrolls as a whole, so the volumes and the tracks stay reachable. */
+@media (max-height: 500px) {
+  .tid { bottom: calc(var(--fbar-h) + 8px); display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .tid-bar { position: sticky; top: 0; z-index: 1; background: var(--bar-paper); }
+  .tid-list { overflow: visible; }
+  .tid-hero-s, .tid-hero-link { display: none; }
+}
+/* Narrow phones: the hosts take two lines rather than lose a name. */
+@media (max-width: 420px) {
+  .tid-vol-h { white-space: normal; text-overflow: clip; line-height: 1.2; }
+}

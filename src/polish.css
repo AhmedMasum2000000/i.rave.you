@@ -57,6 +57,12 @@ html.fx .news {
   0% { box-shadow: 0 0 0 0 rgba(212, 32, 43, 0.7); }
   100% { box-shadow: 0 0 0 16px rgba(212, 32, 43, 0); }
 }
+/* The bar's pill sits on the viewport's edge: its ring is drawn inside, so it is never cut off. */
+html.fx .fbar-cta { animation-name: btn-ping-in; }
+@keyframes btn-ping-in {
+  0% { box-shadow: inset 0 0 0 2px rgba(212, 32, 43, 0.9); }
+  100% { box-shadow: inset 0 0 0 8px rgba(212, 32, 43, 0); }
+}
 
 /* Home entry buttons: solid on their own side's ground. */
 .side-cta { padding: 13px 24px; font-size: 14px; }
@@ -206,4 +212,79 @@ body.flooding .news, body.peeking .news { opacity: 0; pointer-events: none; tran
 }
 @media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
   .news { top: calc(14px + var(--safe-top, 0px)); left: 50%; right: auto; translate: -50% 0; }
+}
+
+/* ── Home: who this is, and one way to start the set ──
+   Under the emblem on wide screens; on phones, the empty corner of the white
+   half beside ACND's way in. The line inverts against whatever is under it. */
+/* No z-index or transform on the group: the line must blend with the hero
+   itself, so the group cannot be a stacking context of its own. */
+.home-intro {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin-inline: auto;
+  top: calc(50% + 19.5vmin + 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.home-who {
+  position: relative;
+  z-index: 4;
+  margin: 0;
+  color: #fff;
+  mix-blend-mode: difference;
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.home-who .bn { font-family: var(--bn); letter-spacing: 0; text-transform: none; font-size: 13px; }
+.home-play {
+  position: relative;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.home-play-i { color: var(--red-hi); font-size: 11px; letter-spacing: 0; }
+.home-play:hover { border-color: var(--red-hi); }
+.home-play:focus-visible { outline: 2px solid var(--red-hi); outline-offset: 3px; }
+body.flooding .home-intro, body.peeking .home-intro { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+@media (max-width: 760px) {
+  .home-intro {
+    left: var(--gutter);
+    right: auto;
+    margin: 0;
+    top: auto;
+    bottom: 36px;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: calc(100% - var(--gutter) * 2 - 150px);
+    text-align: left;
+  }
+  .home-who { white-space: normal; font-size: 10px; }
+  .home-play { min-height: 40px; padding: 0 14px 0 12px; gap: 8px; font-size: 11px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .home-intro { left: 0; right: 0; margin-inline: auto; top: auto; bottom: 14px; align-items: center; max-width: none; }
+  .home-who { display: none; }
 }

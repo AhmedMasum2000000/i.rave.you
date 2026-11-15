@@ -12,8 +12,8 @@ import './home.css';
 import './nav.css';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
-import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, type ArtistId } from './data';
-import { onState, playSet, roomForExtras, slowLink, upNext } from './audio';
+import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, onSetChange, type ArtistId } from './data';
+import { isPlaying, onState, playSet, roomForExtras, slowLink, toggle, upNext } from './audio';
 import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
@@ -133,7 +133,14 @@ function renderDoc(path: string, y = 0): () => void {
   app.innerHTML = `<iframe class="doc-frame" title="Page" src="${esc(path)}"></iframe>`;
   const f = app.querySelector<HTMLIFrameElement>('.doc-frame')!;
   frame = f;
+  // Player listeners for the page in the frame; dropped when it loads another page or closes.
+  let unwatch: Array<() => void> = [];
+  const dropWatch = (): void => {
+    unwatch.forEach((u) => u());
+    unwatch = [];
+  };
   f.addEventListener('load', () => {
+    dropWatch();
     const d = f.contentDocument;
     if (!d) return;
     d.documentElement.classList.add('in-shell');
@@ -147,7 +154,7 @@ function renderDoc(path: string, y = 0): () => void {
         const on = b.dataset.playSet === CURRENT.slug;
         b.dataset.label ??= b.textContent ?? 'Play this set';
         b.classList.toggle('on-air', on);
-        b.textContent = on ? 'On air · playing' : b.dataset.label;
+        b.textContent = on && isPlaying() ? 'On air · playing' : b.dataset.label;
       });
     d.addEventListener('click', (e) => {
       const b = (e.target as Element | null)?.closest?.<HTMLElement>('[data-play-set]');
@@ -157,7 +164,7 @@ function renderDoc(path: string, y = 0): () => void {
       playSet(b.dataset.playSet);
       mark();
     }, true);
-    mark();
+    unwatch = [onSetChange(mark), onState(mark)];
     interceptLinks(navigate, d);
     trackOutbound(d);
     trackPage(framePath(f).replace(/#.*$/, ''), d.title);
@@ -179,6 +186,7 @@ function renderDoc(path: string, y = 0): () => void {
     }
   });
   return () => {
+    dropWatch();
     frame = null;
   };
 }
@@ -217,6 +225,10 @@ function renderHome(): void {
         <span class="news-go">Details →</span>
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Down In Bossa out on</span> Profi Music</p>
+      <div class="home-intro">
+        <p class="home-who mono">ACND &amp; <span class="bn" lang="bn">অপূর্ব</span> · electronic music from Bangladesh</p>
+        <button type="button" class="home-play mono"><span class="home-play-i" aria-hidden="true">▶</span><span class="home-play-t">Play Qbic Pulse</span></button>
+      </div>
 
       <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba">
         ${mark(A)}
@@ -231,6 +243,15 @@ function renderHome(): void {
       </a>
 
     </main>`;
+
+  // One way to start the set from the hero: the same play / pause as the bar.
+  const heroPlay = app.querySelector<HTMLButtonElement>('.home-play')!;
+  heroPlay.addEventListener('click', toggle);
+  const stopHeroState = onState((on) => {
+    heroPlay.querySelector('.home-play-i')!.textContent = on ? '❚❚' : '▶';
+    heroPlay.querySelector('.home-play-t')!.textContent = on ? 'Pause Qbic Pulse' : 'Play Qbic Pulse';
+  });
+  cleanup.push(() => void stopHeroState());
 
   const canvas = app.querySelector<HTMLCanvasElement>('.home-canvas')!;
   const fx: DualityHandle = mountDuality(canvas, reducedMotion());
