@@ -2,6 +2,22 @@
   "about": "The releases the player bar's release button can point to. scripts/releases.mjs adds new ones from Apple Music on its own (every 30 minutes, via .github/workflows/releases.yml). Entries marked \"source\": \"manual\" are never overwritten: add one by hand for a pre-save or a smart link. Fields: title, artists, date (ISO 8601 with offset; the moment it is out), url (where Listen goes), presave (optional: where the button goes before the date), cover (path under public/ or https URL), label, genre.",
   "releases": [
     {
+      "id": "inna-inna",
+      "title": "Inna Inna",
+      "artists": "Ash Army, ACND & অপূর্ব",
+      "for": [
+        "acnd",
+        "apurba"
+      ],
+      "date": "2026-12-04T00:00:00+06:00",
+      "url": "https://profimusic.lnk.to/InnaInna",
+      "presave": "https://profimusic.lnk.to/InnaInna",
+      "cover": "img/inna-inna.webp",
+      "label": "Profi Music",
+      "genre": "Afro House",
+      "source": "manual"
+    },
+    {
       "id": "down-in-bossa",
       "title": "Down In Bossa",
       "artists": "Ash Army & ACND",
