@@ -99,7 +99,7 @@ export function mountChrome(): void {
             ['Feature: Beyond the Capital', route('frequency-unity/')],
             ['Down In Bossa', route('music/down-in-bossa/')],
           ])}
-          ${row(1, 'Qbic Pulse Radio', route('radio/'), [
+          ${row(1, 'Qbic Pulse', route('radio/'), [
             ['All sets · newest first', route('radio/')],
             ...SETS.map((set, i): [string, string] => [`${i === 0 ? 'Latest · ' : ''}${set.show} ${set.volume}`, route(set.slug === 'qbic-pulse-vol-1' ? 'mixes/qbic-pulse/' : `mixes/${set.slug}/`)]),
           ], 'm-radio')}

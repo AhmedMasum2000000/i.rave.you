@@ -1,17 +1,45 @@
 import { CURRENT, MIX, TRACKLIST, onSetChange, selectSet, type MixTrack } from './data';
-import { asset } from './paths';
-import { attachStream, type Stream } from './stream';
 
 /**
- * The Qbic Pulse set for Hong Kong Community Radio plays in the background of
- * every page. Browsers refuse audible autoplay until the visitor interacts with
- * the page once. The prompt attempts playback and retries on its first click; after
- * that it runs, loops and resumes where it left off on the next visit. The
- * visitor can pause, seek and skip between tracks (see `toggle`, `seek`, `skip`).
+ * The Qbic Pulse sets play through Mixcloud's own player, the widget in the
+ * player bar. Mixcloud streams the audio, so the site ships none, and the
+ * widget stays visible as Mixcloud requires. Everything else on the site (the
+ * play button, tracklist jumps, prev / next, the visuals) drives that one
+ * widget through its JavaScript API (widget.mixcloud.com/media/js/widgetApi.js).
+ *
+ * Browsers refuse audible autoplay until the visitor interacts with the page.
+ * "Enter with sound" is that interaction: it asks the widget to play, and the
+ * iframe is allowed to autoplay on the page's behalf. Where a browser still
+ * refuses (Safari can), the widget's own play button is right there.
  */
 
+interface MixcloudWidget {
+  ready: Promise<void>;
+  load(key: string, startPlaying?: boolean): Promise<void>;
+  play(): Promise<void>;
+  pause(): Promise<void>;
+  togglePlay(): Promise<void>;
+  seek(sec: number): Promise<boolean>;
+  getPosition(): Promise<number>;
+  getDuration(): Promise<number>;
+  getIsPaused(): Promise<boolean>;
+  events: Record<'progress' | 'buffering' | 'play' | 'pause' | 'ended' | 'error', { on(fn: (...args: number[]) => void): void }>;
+}
+declare global {
+  interface Window {
+    Mixcloud?: { PlayerWidget(frame: HTMLIFrameElement): MixcloudWidget };
+  }
+}
+
+const API = 'https://widget.mixcloud.com/media/js/widgetApi.js';
+/** The widget for a set, as Mixcloud's own embed code builds it: the set's full URL, encoded once more. */
+const feed = (key: string): string =>
+  `https://player-widget.mixcloud.com/widget/iframe/?feed=${encodeURIComponent(`https://www.mixcloud.com${key}`)}&mini=1&light=1&hide_cover=1&hide_artwork=1`;
+/** The set's key as Mixcloud's API gives it (/user/slug/, URL-encoded). */
+const keyOf = (): string => CURRENT.mixcloud ?? '';
+
 /** Where each set was left; the first set keeps the original key. */
-const posKey = (): string => (CURRENT.slug === 'qbic-pulse-vol-1' ? 'iry:mix-pos' : `iry:mix-pos:${CURRENT.slug}`);
+const posKey = (slug = CURRENT.slug): string => (slug === 'qbic-pulse-vol-1' ? 'iry:mix-pos' : `iry:mix-pos:${slug}`);
 const savedPos = (): number => {
   try {
     const saved = Number(localStorage.getItem(posKey())) || 0;
@@ -21,584 +49,232 @@ const savedPos = (): number => {
   }
 };
 
-let el: HTMLAudioElement | null = null;
-let ctx: AudioContext | null = null;
-let master: GainNode | null = null;
-/** Separate from `master` so ducking and transport fades never fight. */
-let focusGain: GainNode | null = null;
-let pauseTimer = 0;
+let frame: HTMLIFrameElement | null = null;
+let widget: MixcloudWidget | null = null;
+let ready: Promise<MixcloudWidget> | null = null;
+let started = false;
+let playing = false;
+let buffering = false;
 /** True when the visitor paused; nothing but the visitor resumes it. */
 let userPaused = false;
-const stateListeners = new Set<(playing: boolean) => void>();
-let analyser: AnalyserNode | null = null;
-let freq: Uint8Array<ArrayBuffer> = new Uint8Array(0);
-let started = false;
+/** Last position Mixcloud reported, and when: time() runs on between reports. */
+let pos = 0;
+let posAt = 0;
+let dur = 0;
+/** A jump asked for before Mixcloud would take it (it only seeks while playing). */
+let pendingSeek: number | null = null;
 let lastIndex = -1;
+/** The set the widget has loaded. */
+let loadedKey = '';
+const stateListeners = new Set<(playing: boolean) => void>();
 const trackListeners = new Set<(t: MixTrack, i: number) => void>();
-/** Each deck (media element) has its own fader into the shared analyser. */
-const deckGain = new Map<HTMLAudioElement, GainNode>();
-/** The idle deck: a jump to an unbuffered spot loads here while the set plays on. */
-let spare: HTMLAudioElement | null = null;
-/** A jump being loaded on the spare deck. */
-let cue: { target: number; timer: number } | null = null;
-let stallTimer = 0;
-/**
- * A pause keeps the player running silently for a minute, remembering where it
- * stopped: pressing play again then sounds at once instead of waiting for the
- * media pipeline to restart.
- */
-let holdAt: number | null = null;
-let stream: Stream | null = null;
-/** A jump waiting for its audio to arrive; the set plays on meanwhile. */
-let jumpTo: number | null = null;
-let holdTimer = 0;
 
 export const isStarted = (): boolean => started;
 
-let prepared = false;
-/** Attaches the on-air event handlers to a deck (set once the audio graph exists). */
-let wire: (deck: HTMLAudioElement) => void = () => {};
-
-/**
- * Attach and start buffering the set without playing it. Needs no user
- * gesture, so pages call it on load: by the time the visitor clicks, the
- * opening fragments are already fetched, decrypted and buffered.
- */
-export function prepare(): void {
-  if (prepared) return;
-  prepared = true;
-  // Fetch only the header until the visitor wants sound: a 45-minute mix must
-  // not compete with the page's own images and scripts on a phone connection.
-  el = makeDeck();
-  el.preload = 'metadata';
-
-  stream = attachStream(el, savedPos());
-
-  listen(el);
-}
-
-function makeDeck(): HTMLAudioElement {
-  const media = document.createElement('audio');
-  media.loop = true;
-  media.hidden = true;
-  media.setAttribute('controlslist', 'nodownload noplaybackrate');
-  media.addEventListener('contextmenu', (e) => e.preventDefault());
-  document.body.append(media);
-  return media;
-}
-
-/** Events count only from the deck that is on air. */
-function onAir(media: HTMLAudioElement, type: string, fn: () => void): void {
-  media.addEventListener(type, () => {
-    if (media === el) fn();
+function loadApi(): Promise<void> {
+  if (window.Mixcloud) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = API;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Mixcloud widget API failed to load'));
+    document.head.append(s);
   });
 }
 
-function listen(media: HTMLAudioElement): void {
-  onAir(media, 'timeupdate', onTime);
-  onAir(media, 'play', emitState);
-  onAir(media, 'pause', emitState);
+/** The slot in the player bar the widget lives in. */
+let slot: HTMLElement | null = null;
+export function mountWidget(el: HTMLElement): void {
+  slot = el;
+  if (frame && frame.parentElement !== el) el.append(frame);
 }
-
-/** Route a deck through its own fader into the analyser. */
-function connectDeck(media: HTMLAudioElement, level: number): void {
-  if (!ctx || !analyser) return;
-  const gain = ctx.createGain();
-  gain.gain.value = level;
-  ctx.createMediaElementSource(media).connect(gain);
-  gain.connect(analyser);
-  deckGain.set(media, gain);
-}
-
-/** When the player last received audio data from the network. */
-let lastProgress = 0;
-document.addEventListener('progress', () => { lastProgress = performance.now(); }, true);
 
 /**
- * A dead connection (a phone switching networks, a dropped socket) can leave
- * the player waiting forever. Only when no data has arrived for 8 s, ask again
- * from the same spot. A slow but working download is never interrupted:
- * restarting it would throw away the progress and make the wait longer.
+ * Create the widget and connect to it, without playing. Needs no gesture:
+ * pages call it once they have loaded, so the player is ready by the click.
  */
-function watchStall(): void {
-  clearTimeout(stallTimer);
-  // The streaming loader retries its own requests; a nudge would only restart them.
-  if (stream?.mse) return;
-  stallTimer = window.setTimeout(() => {
-    if (!el || userPaused || el.paused || el.readyState >= 3 || !navigator.onLine) return;
-    if (performance.now() - lastProgress > 8000) el.currentTime = el.currentTime;
-    watchStall();
-  }, 4000);
+export function prepare(): Promise<MixcloudWidget> {
+  if (ready) return ready;
+  frame = document.createElement('iframe');
+  frame.className = 'mc-frame';
+  frame.title = `Mixcloud player: ${MIX.show} ${MIX.volume}`;
+  frame.allow = 'autoplay; encrypted-media';
+  loadedKey = keyOf();
+  frame.src = feed(loadedKey);
+  (slot ?? document.body).append(frame);
+  ready = loadApi()
+    .then(() => {
+      const w = window.Mixcloud!.PlayerWidget(frame!);
+      return w.ready.then(() => w);
+    })
+    .then((w) => {
+      widget = w;
+      wire(w);
+      // Another set was chosen while the widget was connecting.
+      if (loadedKey !== keyOf()) {
+        loadedKey = keyOf();
+        void w.load(loadedKey, started && !userPaused);
+      }
+      return w;
+    });
+  ready.catch(() => emitState());
+  return ready;
 }
 
-/** Stop an idle deck downloading, so it never takes bandwidth from the deck on air. */
-function free(deck: HTMLAudioElement): void {
-  deck.pause();
-  deck.removeAttribute('src');
-  deck.load();
-}
-
-/** Seconds of audio ready in front of the playhead (0 until prepared). */
-export function bufferedAhead(): number {
-  if (!el) return 0;
-  const t = el.currentTime;
-  for (let i = 0; i < el.buffered.length; i++) {
-    if (el.buffered.start(i) <= t + 0.25 && el.buffered.end(i) > t) return el.buffered.end(i) - t;
-  }
-  return 0;
-}
-
-/** Attempt playback now; a later real gesture retries if autoplay is blocked. */
-export function start(): void {
-  if (started) {
-    play();
-    return;
-  }
-  started = true;
-  prepare();
-  const media = el!;
-  media.preload = 'auto';
-  stream?.activate();
-
-  // 'interactive' asks for the smallest output buffers the device allows, so
-  // sound follows a click at once and stays in step with the visuals.
-  ctx = new AudioContext({ latencyHint: 'interactive' });
-  master = ctx.createGain();
-  master.gain.value = 1;
-  analyser = ctx.createAnalyser();
-  analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.6;
-  // A mastered club mix lives near full scale: widen the window so the bytes
-  // keep their shape instead of pinning at 255 (the defaults are -100..-30 dB).
-  analyser.minDecibels = -80;
-  analyser.maxDecibels = -6;
-  freq = new Uint8Array(analyser.frequencyBinCount);
-  focusGain = ctx.createGain();
-  connectDeck(media, 1);
-  analyser.connect(master);
-  master.connect(focusGain);
-  focusGain.connect(ctx.destination);
-  if (inside) shutDoor();
-
-  // A browser may reject the initial autoplay. Recover both the media element
-  // and suspended AudioContext on a real gesture; never claim it is playing early.
-  const retry = (event: Event): void => {
-    // The play button handles its own tap; retrying here as well would undo it.
-    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play')) return;
-    if (!userPaused && !isPlaying()) play();
-  };
-  const removeRetry = (): void => {
-    if (!isPlaying()) return;
-    window.removeEventListener('pointerdown', retry);
-    window.removeEventListener('keydown', retry);
-  };
-  window.addEventListener('pointerdown', retry);
-  window.addEventListener('keydown', retry);
-  wire = (deck) => {
-    onAir(deck, 'playing', () => { clearTimeout(stallTimer); emitState(); removeRetry(); });
-    onAir(deck, 'waiting', () => { watchStall(); emitState(); });
-    onAir(deck, 'stalled', watchStall);
-    onAir(deck, 'error', emitState);
-  };
-  wire(media);
-  ctx.addEventListener('statechange', () => { emitState(); removeRetry(); });
-  // Back online: pick the set up again without waiting for the stall timer.
-  window.addEventListener('online', () => {
-    if (!el || userPaused) return;
-    if (el.readyState < 3 && !stream?.mse) el.currentTime = el.currentTime;
-    play();
+function wire(w: MixcloudWidget): void {
+  w.events.progress.on((position, duration) => {
+    pos = position;
+    posAt = performance.now();
+    if (duration > 0) dur = duration;
+    if (playing) buffering = false;
+    onTime();
   });
-  play();
-
-  window.addEventListener('pagehide', savePos);
-  setInterval(savePos, 4000);
-  mountMediaSession();
-}
-
-function savePos(): void {
-  if (!el) return;
-  try {
-    localStorage.setItem(posKey(), String(time()));
-  } catch {
-    /* ignore */
-  }
-}
-
-function emitState(): void {
-  stateListeners.forEach((fn) => fn(isPlaying()));
-}
-
-/* ───────────── The entrance: the mix heard from outside the club ───────────── */
-
-let inside = false;
-/** While the gate is up: a muffled copy of the mix (the club through its door) instead of the dry one. */
-let door: { filter: BiquadFilterNode; wet: GainNode; dry: GainNode } | null = null;
-
-function shutDoor(): void {
-  if (!ctx || !master || !focusGain || door) return;
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 320;
-  filter.Q.value = 0.9;
-  const wet = ctx.createGain();
-  const dry = ctx.createGain();
-  dry.gain.value = 0;
-  wet.gain.value = 0.85;
-  master.disconnect(focusGain);
-  master.connect(dry).connect(focusGain);
-  master.connect(filter).connect(wet).connect(focusGain);
-  door = { filter, wet, dry };
-}
-
-/**
- * The gate is the club's door: if the mix starts behind it, it sounds as if
- * from inside (low-passed). Call before `start()`.
- */
-export function outsideTheClub(): void {
-  inside = true;
-  shutDoor();
-}
-
-/**
- * Walk in: the door opens over `seconds` (the filter sweeps open while the dry
- * mix fades up), then the muffled path is removed, so from here on the sound
- * is exactly the untouched mix. Safe to call when nothing is muffled.
- */
-export function walkIn(seconds = 2.4): void {
-  inside = false;
-  const d = door;
-  if (!d || !ctx || !master) return;
-  door = null;
-  const t = ctx.currentTime;
-  const end = t + Math.max(0.05, seconds);
-  d.filter.frequency.setValueAtTime(d.filter.frequency.value, t);
-  d.filter.frequency.exponentialRampToValueAtTime(18000, end);
-  d.wet.gain.setValueAtTime(d.wet.gain.value, t);
-  d.wet.gain.linearRampToValueAtTime(0, end);
-  d.dry.gain.setValueAtTime(0, t);
-  d.dry.gain.linearRampToValueAtTime(1, end);
-  // Remove the muffled path on the audio clock, after its fade has really
-  // finished: a context that is slow to start would leave a wall-clock timer
-  // cutting it while still audible (a click at the end of the entrance).
-  const clock = ctx.createConstantSource();
-  clock.offset.value = 0;
-  clock.connect(d.wet);
-  clock.onended = () => {
-    try {
-      master?.disconnect(d.filter);
-      d.filter.disconnect();
-      d.wet.disconnect();
-      clock.disconnect();
-    } catch {
-      /* already gone */
+  w.events.buffering.on(() => {
+    buffering = true;
+    emitState();
+  });
+  w.events.play.on(() => {
+    playing = true;
+    buffering = false;
+    started = true;
+    userPaused = false;
+    posAt = performance.now();
+    if (pendingSeek !== null) {
+      const t = pendingSeek;
+      pendingSeek = null;
+      void w.seek(t);
     }
-  };
-  clock.start(t);
-  clock.stop(end + 0.1);
+    emitState();
+  });
+  w.events.pause.on(() => {
+    pos = time();
+    playing = false;
+    savePos();
+    emitState();
+  });
+  w.events.ended.on(() => {
+    playing = false;
+    pos = 0;
+    savePos();
+    emitState();
+  });
+  w.events.error.on(() => {
+    playing = false;
+    emitState();
+  });
+  window.addEventListener('pagehide', savePos);
+  setInterval(() => playing && savePos(), 4000);
 }
 
-/**
- * Whether the connection has room for extras (the hero visualizer, prefetched
- * images) without touching the mix: a fast enough link, and either no mix
- * running or 20 s of it buffered ahead. Loading never takes the audio's share.
- */
+/** Play now (the visitor's click lets the widget autoplay); resumes where this visitor left the set. */
+export function start(): void {
+  const first = !started;
+  started = true;
+  userPaused = false;
+  const resumeAt = first && pos === 0 ? savedPos() : 0;
+  void prepare().then((w) => {
+    if (userPaused) return;
+    if (resumeAt) pendingSeek = resumeAt;
+    void w.play();
+    // A browser that refused to start without a gesture: the visitor's first tap or key starts it.
+    if (first) window.setTimeout(armRetry, 1500);
+  }).catch(() => {});
+  emitState();
+}
+
+function armRetry(): void {
+  if (playing || userPaused) return;
+  const retry = (event: Event): void => {
+    // The play button and the quiet / legal links handle their own taps.
+    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play')) return;
+    window.removeEventListener('pointerdown', retry, true);
+    window.removeEventListener('keydown', retry, true);
+    if (!playing && !userPaused) void widget?.play();
+  };
+  window.addEventListener('pointerdown', retry, true);
+  window.addEventListener('keydown', retry, true);
+}
+
+/** The entrance effect needed direct access to the audio; Mixcloud plays the set as it is. */
+export function outsideTheClub(): void {}
+export function walkIn(_seconds = 2.4): void {}
+
+/** Seconds ready ahead. Mixcloud buffers for itself: report ready once connected. */
+export const bufferedAhead = (): number => (widget ? 30 : 0);
+
+/** Whether the connection is slow; the extras wait for a fast link. */
 export function slowLink(): boolean {
   const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string; downlink?: number } }).connection;
   return !!c && (!!c.saveData || /(^|-)(2g|3g)$/.test(c.effectiveType ?? '') || (typeof c.downlink === 'number' && c.downlink > 0 && c.downlink < 1.5));
 }
-export function roomForExtras(): boolean {
-  if (!started || !el) return true;
-  if (el.error) return false;
-  return bufferedAhead() >= 20 || (Number.isFinite(el.duration) && bufferedAhead() >= el.duration - el.currentTime - 1);
-}
+/** Extras load while Mixcloud is not catching up. */
+export const roomForExtras = (): boolean => !buffering;
 
-/** Report actual audible playback, including autoplay rejection or suspension. */
-export const isPlaying = (): boolean => !!el && !el.paused && !el.ended && !el.error && ctx?.state === 'running' && !userPaused;
+export const isPlaying = (): boolean => playing && !userPaused;
 
 export function onState(fn: (playing: boolean) => void): () => void {
   stateListeners.add(fn);
   fn(isPlaying());
   return () => stateListeners.delete(fn);
 }
-
-export function play(): void {
-  if (!started) {
-    start();
-    emitState();
-    return;
-  }
-  if (!el || !ctx || !focusGain) return;
-  userPaused = false;
-  clearTimeout(pauseTimer);
-  void ctx.resume();
-  const g = focusGain.gain;
-  if (holdAt !== null && !el.paused) {
-    // Still running silently: step back to where it paused, then fade in.
-    clearTimeout(holdTimer);
-    const media = el;
-    let up = false;
-    const fadeIn = (): void => {
-      if (up || userPaused || !ctx || !focusGain) return;
-      up = true;
-      focusGain.gain.cancelScheduledValues(ctx.currentTime);
-      focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.015);
-    };
-    media.addEventListener('seeked', fadeIn, { once: true });
-    window.setTimeout(fadeIn, 250);
-    media.currentTime = holdAt;
-    holdAt = null;
-    emitState();
-    return;
-  }
-  holdAt = null;
-  // Resume from silence and ramp in, so playback never starts on a click.
-  g.cancelScheduledValues(ctx.currentTime);
-  if (el.paused) g.setValueAtTime(0, ctx.currentTime);
-  g.setTargetAtTime(1, ctx.currentTime, 0.015);
-  void el.play().then(emitState).catch(emitState);
-  emitState();
+function emitState(): void {
+  stateListeners.forEach((fn) => fn(isPlaying()));
 }
 
-/** Fade out over ~120 ms, then pause: stopping mid-waveform pops in headphones. */
+export function play(): void {
+  if (!started || !widget) return start();
+  userPaused = false;
+  void widget.play();
+}
+
 export function pause(): void {
-  if (!el) return;
-  cancelCue();
-  // Already holding silently: keep the spot it paused at.
-  if (holdAt !== null) {
-    userPaused = true;
-    emitState();
-    return;
-  }
   userPaused = true;
-  clearTimeout(pauseTimer);
-  if (ctx && focusGain && !el.paused && ctx.state === 'running') {
-    const g = focusGain.gain;
-    g.cancelScheduledValues(ctx.currentTime);
-    g.setValueAtTime(g.value, ctx.currentTime);
-    g.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
-    pauseTimer = window.setTimeout(() => {
-      if (!el) return;
-      holdAt = el.currentTime;
-      savePos();
-      clearTimeout(holdTimer);
-      holdTimer = window.setTimeout(() => {
-        if (!el || holdAt === null) return;
-        el.pause();
-        el.currentTime = holdAt;
-        holdAt = null;
-      }, 60000);
-    }, 140);
-  } else {
-    el.pause();
-    savePos();
-  }
+  pos = time();
+  if (widget) void widget.pause();
+  savePos();
   emitState();
 }
 
 export const toggle = (): void => (isPlaying() ? pause() : play());
 
-let seekTarget: number | null = null;
-
-/**
- * Jump in the mix. While audible, dip the output for a few milliseconds around
- * the jump so it lands without a click; rapid scrubbing collapses into one dip.
- */
+/** Jump in the set. Mixcloud seeks only while playing, so an earlier jump waits for play. */
 export function seek(sec: number): void {
-  prepare();
-  const media = el!;
-  const target = Math.max(0, Math.min(sec, duration() - 0.5));
-  if (holdAt !== null) {
-    holdAt = target;
-    jumpTo = null;
-    // Fetch it now, so play sounds there at once.
-    if (stream?.mse) void stream.ensure(target);
-    onTime();
-    savePos();
-    return;
-  }
-  if (!ctx || !focusGain || !isPlaying()) {
-    jumpTo = null;
-    media.currentTime = target;
-    onTime();
-    savePos();
-    return;
-  }
-  // Streaming: fetch the spot it lands on while the set plays on, then jump.
-  if (stream?.mse) {
-    if (jumpTo !== null || !stream.ready(target)) {
-      jumpTo = target;
-      onTime();
-      void stream.ensure(target).then((ok) => {
-        if (ok && jumpTo === target) landJump(target);
-      });
-      return;
-    }
-  } else if (cue || !isBuffered(target)) {
-    // Not loaded yet: fetch it on the other deck while this one plays on.
-    cueDeck(target);
-    return;
-  }
-  dipSeek(target);
-}
-
-/** Land the newest requested jump: its audio has arrived. */
-function landJump(target: number): void {
-  jumpTo = null;
-  if (isPlaying()) dipSeek(target);
-  else if (el) {
-    if (holdAt !== null) holdAt = target;
-    else el.currentTime = target;
-    onTime();
-    savePos();
-  }
-}
-
-/** Jump on the playing deck, dipping the output around it so it lands without a click. */
-function dipSeek(target: number): void {
-  if (!el || !ctx || !focusGain) return;
-  const media = el;
-  const pending = seekTarget !== null;
-  seekTarget = target;
-  if (pending) return;
-  const g = focusGain.gain;
-  g.cancelScheduledValues(ctx.currentTime);
-  g.setValueAtTime(g.value, ctx.currentTime);
-  g.linearRampToValueAtTime(0, ctx.currentTime + 0.03);
-  window.setTimeout(() => {
-    media.currentTime = seekTarget ?? target;
-    seekTarget = null;
-    onTime();
-    savePos();
-    let restored = false;
-    const restore = (): void => {
-      if (restored || !ctx || !focusGain) return;
-      restored = true;
-      if (userPaused) return;
-      focusGain.gain.cancelScheduledValues(ctx.currentTime);
-      focusGain.gain.setTargetAtTime(1, ctx.currentTime, 0.04);
-    };
-    media.addEventListener('seeked', restore, { once: true });
-    window.setTimeout(restore, 700);
-  }, 35);
-}
-
-/** True when the audio at `sec` (and a moment after it) is already downloaded. */
-function isBuffered(sec: number): boolean {
-  if (!el) return false;
-  for (let i = 0; i < el.buffered.length; i++) {
-    if (el.buffered.start(i) <= sec && el.buffered.end(i) >= Math.min(sec + 3, duration() - 0.5)) return true;
-  }
-  return false;
-}
-
-function cancelCue(): void {
-  if (!cue) return;
-  clearTimeout(cue.timer);
-  cue = null;
-  if (spare) free(spare);
-}
-
-/**
- * Like a DJ cueing the next record: load the jump on the idle deck while the
- * set keeps playing, then crossfade once it can play. Nothing goes silent while
- * the network catches up.
- */
-function cueDeck(target: number): void {
-  if (!ctx || !el) return;
-  if (!spare) {
-    spare = makeDeck();
-    spare.preload = 'auto';
-    spare.src = el.currentSrc || el.src;
-    listen(spare);
-    wire(spare);
-    connectDeck(spare, 0);
-  }
-  const next = spare;
-  if (!next.getAttribute('src')) next.src = el.currentSrc || el.src;
-  if (cue) {
-    cue.target = target;
-    if (next.readyState >= 1) next.currentTime = target;
-    onTime();
-    return;
-  }
-  // Give up after a long wait and seek the playing deck instead.
-  cue = { target, timer: window.setTimeout(() => {
-    const t = cue?.target ?? target;
-    cancelCue();
-    plainSeek(t);
-  }, 15000) };
-  onTime();
-  const go = (): void => {
-    if (!cue || spare !== next) return;
-    next.currentTime = cue.target;
-    const ready = (): void => {
-      if (!cue || spare !== next) return;
-      if (next.readyState < 3 || Math.abs(next.currentTime - cue.target) > 1) {
-        next.addEventListener('canplay', ready, { once: true });
-        return;
-      }
-      void next.play().then(() => crossfade(next)).catch(() => {
-        // No permission to start a second player here (no tap): seek in place.
-        const t = cue?.target ?? target;
-        cancelCue();
-        plainSeek(t);
-      });
-    };
-    next.addEventListener('seeked', ready, { once: true });
-  };
-  if (next.readyState >= 1) go();
-  else next.addEventListener('loadedmetadata', go, { once: true });
-}
-
-function crossfade(next: HTMLAudioElement): void {
-  if (!ctx || !el || !cue) return;
-  clearTimeout(cue.timer);
-  cue = null;
-  const prev = el;
-  const now = ctx.currentTime;
-  const fade = (media: HTMLAudioElement, to: number): void => {
-    const g = deckGain.get(media)!.gain;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(to, now + 0.25);
-  };
-  fade(prev, 0);
-  fade(next, 1);
-  el = next;
-  spare = prev;
-  window.setTimeout(() => {
-    if (spare === prev && !cue) free(prev);
-  }, 300);
+  const target = Math.max(0, Math.min(sec, duration() - 1));
+  pos = target;
+  posAt = performance.now();
   onTime();
   savePos();
-  emitState();
-  if ('mediaSession' in navigator) syncPosition();
-}
-
-/** Jump on the playing deck (used when the second deck can't help). */
-function plainSeek(target: number): void {
-  if (!el) return;
-  el.currentTime = target;
-  onTime();
-  savePos();
+  if (!widget || !playing) {
+    pendingSeek = target;
+    return;
+  }
+  void widget.seek(target).then((ok) => {
+    if (!ok) pendingSeek = target;
+  });
 }
 
 /** Jump to the previous (-1) or next (+1) track ID. */
 export function skip(dir: -1 | 1): void {
+  if (TRACKLIST.length < 2) return;
   const i = trackIndexAt(time());
   // "Previous" restarts the current track unless we're near its start.
   const target = dir < 0 && time() - TRACKLIST[i].at > 4 ? i : i + dir;
   seek(TRACKLIST[(target + TRACKLIST.length) % TRACKLIST.length].at);
 }
 
-export const time = (): number => jumpTo ?? cue?.target ?? holdAt ?? el?.currentTime ?? 0;
-export const duration = (): number => (el && Number.isFinite(el.duration) ? el.duration : CURRENT.duration);
+/** The position, running on smoothly between Mixcloud's progress reports. */
+export const time = (): number => {
+  const t = isPlaying() && !buffering ? pos + Math.min(1.5, (performance.now() - posAt) / 1000) : pos;
+  return Math.min(t, duration());
+};
+export const duration = (): number => dur || CURRENT.duration;
 
 /**
  * The track that is playing, or the one Play will start: before the first
  * play that is the spot this visitor left the set at, not the first track.
  */
-export const upNext = (): number => trackIndexAt(el ? time() : savedPos());
+export const upNext = (): number => trackIndexAt(started ? time() : savedPos());
 
 export function trackIndexAt(sec: number): number {
   let i = 0;
@@ -608,59 +284,19 @@ export function trackIndexAt(sec: number): number {
 
 function onTime(): void {
   const i = trackIndexAt(time());
-  if (i !== lastIndex) {
+  if (i !== lastIndex && TRACKLIST[i]) {
     lastIndex = i;
     trackListeners.forEach((fn) => fn(TRACKLIST[i], i));
-    updateMediaSession();
   }
 }
 
-/* ─────────── lock screen, headphones and hardware media keys ─────────── */
-
-function updateMediaSession(): void {
-  if (!('mediaSession' in navigator) || lastIndex < 0) return;
-  const t = TRACKLIST[lastIndex];
-  const abs = (path: string): string => new URL(asset(path), location.href).href;
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: t.title,
-    artist: t.artist,
-    album: `ACND × অপূর্ব — ${MIX.show} ${MIX.volume} · ${MIX.station}`,
-    // The track's own cover where it has one, the set's artwork otherwise.
-    artwork: t.art ? [{ src: abs(t.art), sizes: '96x96', type: 'image/webp' }] : [{ src: abs('img/mix-art.jpg'), sizes: '512x512', type: 'image/jpeg' }],
-  });
-}
-
-function syncPosition(): void {
-  if (!('mediaSession' in navigator) || !el || !Number.isFinite(el.duration)) return;
-  navigator.mediaSession.playbackState = isPlaying() ? 'playing' : 'paused';
+function savePos(): void {
+  if (!started) return;
   try {
-    navigator.mediaSession.setPositionState({ duration: el.duration, position: Math.min(el.currentTime, el.duration), playbackRate: 1 });
+    localStorage.setItem(posKey(), String(time()));
   } catch {
-    /* older implementations */
+    /* ignore */
   }
-}
-
-function mountMediaSession(): void {
-  if (!('mediaSession' in navigator)) return;
-  const on = (action: MediaSessionAction, fn: MediaSessionActionHandler): void => {
-    try {
-      navigator.mediaSession.setActionHandler(action, fn);
-    } catch {
-      /* action unsupported here */
-    }
-  };
-  on('play', () => play());
-  on('pause', () => pause());
-  on('previoustrack', () => skip(-1));
-  on('nexttrack', () => skip(1));
-  on('seekbackward', (d) => seek(time() - (d.seekOffset ?? 10)));
-  on('seekforward', (d) => seek(time() + (d.seekOffset ?? 10)));
-  on('seekto', (d) => d.seekTime !== undefined && seek(d.seekTime));
-  stateListeners.add(syncPosition);
-  // Captured at the document so both decks report, whichever is on air.
-  document.addEventListener('seeked', syncPosition, true);
-  document.addEventListener('loadedmetadata', syncPosition, true);
-  updateMediaSession();
 }
 
 export function onTrack(fn: (t: MixTrack, i: number) => void): () => void {
@@ -669,115 +305,109 @@ export function onTrack(fn: (t: MixTrack, i: number) => void): () => void {
   return () => trackListeners.delete(fn);
 }
 
-/** Smoothed 0..1 levels for visuals: low end, mids, highs, overall, kick pulse. */
-export const levels = { low: 0, mid: 0, high: 0, all: 0, beat: 0, kick: 0 };
-let kickAvg = 0;
-let lastKick = 0;
-let lastSample = -1;
+/* ─────────── Visuals: a beat clock locked to the set's tempo and position ─────────── */
 
 /**
- * Several loops read the levels each frame; analyse once per frame so the
- * smoothing behaves the same however many visuals are on screen.
+ * The audio plays inside Mixcloud's frame, out of the page's reach, so the
+ * visuals cannot measure it. Instead they follow a clock at the set's BPM,
+ * phase-locked to the playing position: the kick lands on the beat, hats on
+ * the off-beat, and a slow swell over every 16 bars. Paused, it breathes gently.
  */
+export const levels = { low: 0, mid: 0, high: 0, all: 0, beat: 0, kick: 0 };
+const BINS = 1024;
+const freq = new Uint8Array(BINS);
+const empty = new Uint8Array(0);
+let lastSample = -1;
+let lastBeat = -1;
+/** Settles to 1 while playing and 0 when not, so the change is never a jump. */
+let live = 0;
+
 export function sample(): typeof levels {
   const now = performance.now();
   if (now - lastSample < 8) return levels;
   const dt = lastSample < 0 ? 1 : Math.min(3, (now - lastSample) / 16.7);
   lastSample = now;
-  if (!analyser || !isPlaying()) {
+  const k = (rate: number): number => 1 - (1 - rate) ** dt;
+  live += ((isPlaying() ? 1 : 0) - live) * k(0.06);
+  const bpm = MIX.bpm || 124;
+  if (live < 0.02) {
     // Before the mix plays, breathe gently at its tempo so visuals are never dead.
     const s = now / 1000;
-    const b = Math.max(0, Math.sin(s * Math.PI * (MIX.bpm / 60))) ** 8;
+    const b = Math.max(0, Math.sin(s * Math.PI * (bpm / 60))) ** 8;
     levels.low += (0.15 + b * 0.2 - levels.low) * 0.2;
     levels.mid += (0.12 - levels.mid) * 0.2;
     levels.high += (0.08 - levels.high) * 0.2;
     levels.all = (levels.low + levels.mid + levels.high) / 3;
     levels.beat = Math.max(levels.beat * 0.9 ** dt, b * 0.4);
+    levels.kick = levels.low;
     return levels;
   }
-  analyser.getByteFrequencyData(freq);
-  const band = (a: number, b: number): number => {
-    let sum = 0;
-    for (let i = a; i < b; i++) sum += freq[i];
-    return sum / ((b - a) * 255);
-  };
-  // 2048-point FFT at 44.1–48 kHz: ~23 Hz per bin.
-  const kick = band(2, 6); // ~45–140 Hz, where the kick lives
-  const low = band(1, 16);
-  const mid = band(16, 160);
-  const high = band(160, 600);
-  const k = (rate: number): number => 1 - (1 - rate) ** dt;
-  levels.low += (low - levels.low) * k(0.35);
-  levels.mid += (mid - levels.mid) * k(0.25);
-  levels.high += (high - levels.high) * k(0.25);
+  const beats = (time() * bpm) / 60;
+  const phase = beats % 1;
+  const bar16 = (beats / 64) % 1;
+  // A build over each 16 bars, dropping back at the top.
+  const swell = 0.75 + 0.25 * Math.sin(bar16 * Math.PI);
+  const kick = Math.exp(-phase * 7) * swell;
+  const hat = Math.exp(-Math.abs(phase - 0.5) * 14);
+  const shimmer = 0.5 + 0.5 * Math.sin(beats * Math.PI * 0.5);
+  levels.low += ((0.25 + kick * 0.6) * live - levels.low) * k(0.45);
+  levels.mid += ((0.25 + hat * 0.25 + shimmer * 0.15) * live - levels.mid) * k(0.3);
+  levels.high += ((0.15 + hat * 0.35) * live - levels.high) * k(0.3);
   levels.all = (levels.low + levels.mid + levels.high) / 3;
-  // Fast attack, slower release: an envelope that follows each kick.
-  levels.kick += (kick - levels.kick) * k(kick > levels.kick ? 0.6 : 0.18);
-  // A kick is energy well above its own recent average, at most ~4 per second.
-  kickAvg += (kick - kickAvg) * k(0.04);
+  levels.kick += (kick * live - levels.kick) * k(kick > levels.kick ? 0.6 : 0.18);
   levels.beat *= 0.88 ** dt;
-  if (kick > 0.3 && kick > kickAvg * 1.18 && now - lastKick > 240) {
-    lastKick = now;
-    levels.beat = Math.min(1, 0.55 + (kick - kickAvg) * 4);
+  const n = Math.floor(beats);
+  if (n !== lastBeat) {
+    lastBeat = n;
+    levels.beat = Math.min(1, (0.6 + 0.3 * swell) * live);
+  }
+  // A spectrum with the same shape: kick in the lowest bins, hats up top, a moving body.
+  const t = now / 1000;
+  for (let i = 0; i < BINS; i++) {
+    const f = i / BINS;
+    const bass = i < 16 ? kick * (1 - i / 20) : 0;
+    const body = Math.exp(-f * 6) * (0.45 + 0.25 * Math.sin(t * 1.3 + i * 0.07));
+    const top = f > 0.15 ? hat * 0.35 * (1 - f) : 0;
+    const grain = 0.08 * Math.sin(i * 12.9898 + t * 7.3) ** 2;
+    freq[i] = Math.max(0, Math.min(255, (bass * 0.9 + body * swell + top + grain) * 255 * live));
   }
   return levels;
 }
 
-export const spectrum = (): Uint8Array => freq;
+/** The beat clock's spectrum while a set plays; empty otherwise, so visuals breathe on their own. */
+export const spectrum = (): Uint8Array => (live >= 0.02 ? freq : empty);
 
-/* ─────────── Qbic Pulse Radio: put another set on air ─────────── */
+/* ─────────── Qbic Pulse: put another set on air ─────────── */
 
-/**
- * Play a set from the library. The outgoing set fades out, its download stops,
- * and the new one opens where the visitor last left it (or at the top).
- */
+/** Play a set from the library; the widget loads it and starts it. */
 export function playSet(slug: string): void {
   if (!selectSet(slug)) {
     play();
     return;
   }
-  play();
+  if (!widget) start();
 }
 
-onSetChange(() => {
-  if (!el) return;
-  const media = el;
-  const wasStarted = started;
-  savePosFor(media);
-  cancelCue();
-  jumpTo = null;
-  holdAt = null;
-  clearTimeout(holdTimer);
-  clearTimeout(pauseTimer);
-  stream?.destroy();
-  if (spare) free(spare);
-  const swap = (): void => {
-    media.pause();
-    stream = attachStream(media, savedPos());
-    if (wasStarted) stream.activate();
-    lastIndex = -1;
-    onTime();
-    if (wasStarted && !userPaused) play();
-    emitState();
-  };
-  // A short fade so the change never clicks.
-  if (ctx && focusGain && isPlaying()) {
-    const g = focusGain.gain;
-    g.cancelScheduledValues(ctx.currentTime);
-    g.setValueAtTime(g.value, ctx.currentTime);
-    g.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
-    window.setTimeout(swap, 220);
-  } else swap();
-});
-
-/** Remember the outgoing set's spot under its own key before switching. */
 let lastSlug = CURRENT.slug;
-function savePosFor(media: HTMLAudioElement): void {
+onSetChange(() => {
+  // Remember the outgoing set's spot under its own key.
   try {
-    const key = lastSlug === 'qbic-pulse-vol-1' ? 'iry:mix-pos' : `iry:mix-pos:${lastSlug}`;
-    localStorage.setItem(key, String(holdAt ?? media.currentTime));
+    if (started) localStorage.setItem(posKey(lastSlug), String(time()));
   } catch {
     /* ignore */
   }
   lastSlug = CURRENT.slug;
-}
+  pos = 0;
+  dur = 0;
+  playing = false;
+  pendingSeek = savedPos() || null;
+  lastIndex = -1;
+  userPaused = false;
+  if (frame) frame.title = `Mixcloud player: ${MIX.show} ${MIX.volume}`;
+  if (widget) {
+    loadedKey = keyOf();
+    void widget.load(loadedKey, true);
+  }
+  onTime();
+  emitState();
+});

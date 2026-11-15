@@ -3,7 +3,7 @@
 
 :root {
   --fbar-air: 30px;
-  --fbar-seek: 44px;
+  --fbar-seek: 62px;
   --fbar-row: 52px;
   --fbar-h: calc(var(--fbar-air) + var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
   --bar-ink: #000;
@@ -42,39 +42,18 @@
 .fbar a { color: inherit; text-decoration: none; }
 .fbar :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: 2px; }
 
-/* ── Seek row: time, hairline with the eye, total ── */
+/* ── Mixcloud row: the set's name (phones) and Mixcloud's own player ── */
 .fbar-seek {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
-  padding: 0 20px;
+  gap: 16px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--bar-ink);
+  overflow: hidden;
 }
-.fbar-time { font-variant-numeric: tabular-nums; min-width: 5ch; }
-.fbar-time:last-child { text-align: right; }
-.fbar-track { position: relative; height: 100%; cursor: pointer; touch-action: none; }
-.fbar-line { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--bar-ink); }
-.fbar-knob {
-  --kw: 44px;
-  position: absolute;
-  top: 50%;
-  /* The eye travels inside the line, never over the time labels. */
-  left: calc(var(--kw) / 2 + (100% - var(--kw)) * var(--p, 0));
-  width: var(--kw);
-  height: 24px;
-  translate: -50% -50%;
-  pointer-events: none;
-}
-.fbar-knob svg { display: block; width: 100%; height: 100%; }
-.fbar-pupil {
-  transform-origin: 22px 12px;
-  transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)) scale(calc(0.92 + var(--lv-low, 0) * 0.22));
-}
-.fbar.paused .fbar-pupil { transform: translate(calc(var(--ex, 0) * 1px), calc(var(--ey, 0) * 1px)); }
-.fbar-eye { transform-origin: 22px 12px; transition: transform 0.07s ease-in; }
-.fbar-eye.blink { transform: scaleY(0.08); }
-.fbar-track:focus-visible { outline-offset: -6px; }
+.fbar-mc { height: 60px; min-width: 0; }
+.fbar-mc .mc-frame { display: block; width: 100%; height: 60px; border: 0; }
 
 /* ── Control row: set name | cover + track + play | tracklist | wordmark | pills ── */
 .fbar-row {
@@ -447,9 +426,8 @@ body.flooding .peek { opacity: 0 !important; }
 @media (max-width: 760px) {
   .fbar-mix { display: none; }
   /* Phones: the mix's name takes the seek row's left side; the eye shows the position. */
-  .fbar-seek { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .fbar-seek .fbar-time[data-t] { display: none; }
-  .fbar-mix-m { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
+  .fbar-seek { grid-template-columns: minmax(0, 1fr); padding: 0 6px; }
+  .fbar-mix-m { display: none; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 12px; letter-spacing: 0; color: #000; }
   /* The tracklist sits below the header and above the menu button while open. */
@@ -468,8 +446,7 @@ body.flooding .peek { opacity: 0 !important; }
 }
 @media (min-width: 761px) and (max-width: 900px) {
   .fbar-mix, .fbar-share { display: none; }
-  .fbar-seek .fbar-time[data-t] { display: none; }
-  .fbar-mix-m { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
+  .fbar-mix-m { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; color: #000; }
 }

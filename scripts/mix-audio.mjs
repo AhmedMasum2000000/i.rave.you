@@ -211,7 +211,8 @@ export function mixAudioPlugin() {
     name: 'continuous-mix-audio',
     config(config) {
       root = resolve(config.root ?? process.cwd());
-      sets = loadSets(root).map((set) => ({
+      // A Mixcloud set is streamed by Mixcloud's player: the site ships no audio for it.
+      sets = loadSets(root).map((set) => set.mixcloud ? set : ({
         ...set,
         // Plain copy: only for players without Media Source Extensions.
         file: `audio/${set.audioName ?? set.slug}.${hash(bytes(set))}.m4a`,
@@ -225,6 +226,7 @@ export function mixAudioPlugin() {
     },
     generateBundle() {
       for (const set of sets) {
+        if (set.mixcloud) continue;
         this.emitFile({ type: 'asset', fileName: set.file, source: bytes(set) });
         this.emitFile({ type: 'asset', fileName: set.stream, source: delivery(set).bytes });
       }
@@ -232,7 +234,7 @@ export function mixAudioPlugin() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = req.url?.split('?')[0];
-        const set = sets.find((s) => path === `/${s.file}` || path === `/${s.stream}`);
+        const set = sets.find((s) => !s.mixcloud && (path === `/${s.file}` || path === `/${s.stream}`));
         if (!set || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
         const data = path === `/${set.stream}` ? delivery(set).bytes : bytes(set);
         let start = 0;

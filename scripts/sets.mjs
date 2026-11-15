@@ -8,7 +8,10 @@ const seconds = (mmss) => {
   const parts = String(mmss).split(":").map(Number);
   return parts.reduce((total, n) => total * 60 + n, 0);
 };
-const label = (url) => (!url ? "Unreleased" : url.includes("music.apple.com") ? "Apple Music" : url.includes("soundcloud.com") ? "SoundCloud" : url.includes("spotify.com") ? "Spotify" : url.includes("beatport.com") ? "Beatport" : url.includes("youtu") ? "YouTube" : "Listen");
+const label = (url, title = "") => (!url ? (/unreleased/i.test(title) ? "Unreleased" : "") : url.includes("music.apple.com") ? "Apple Music" : url.includes("soundcloud.com") ? "SoundCloud" : url.includes("spotify.com") ? "Spotify" : url.includes("beatport.com") ? "Beatport" : url.includes("youtu") ? "YouTube" : url.includes("mixcloud.com") ? "Mixcloud" : "Listen");
+
+/** The public page of a Mixcloud upload, from its key. */
+export const mixcloudUrl = (key) => (key ? `https://www.mixcloud.com${key}` : undefined);
 
 export function loadSets(root) {
   const dir = resolve(root, "sets");
@@ -22,8 +25,10 @@ export function loadSets(root) {
         slug: d.name,
         ...json,
         audioDir: resolve(dir, d.name, "audio"),
-        duration: existsSync(manifest) ? JSON.parse(readFileSync(manifest, "utf8")).t : 0,
-        tracklist: (json.tracklist ?? []).map((t) => ({ at: seconds(t.at), artist: t.artist, title: t.title, url: t.url, linkLabel: t.linkLabel ?? label(t.url), art: t.art })),
+        // A Mixcloud set states its own length; a self-hosted one takes it from the audio.
+        duration: json.duration ?? (existsSync(manifest) ? JSON.parse(readFileSync(manifest, "utf8")).t : 0),
+        tracklist: (json.tracklist?.length ? json.tracklist : [{ at: "00:00", artist: json.hosts, title: `${json.show} ${json.volume}`, url: mixcloudUrl(json.mixcloud), linkLabel: "Mixcloud" }])
+          .map((t) => ({ at: seconds(t.at), artist: t.artist, title: t.title, url: t.url, linkLabel: t.linkLabel ?? label(t.url, t.title), art: t.art })),
       };
     })
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || a.slug.localeCompare(b.slug));

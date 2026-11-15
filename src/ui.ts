@@ -17,7 +17,7 @@ const prompt = (): string => `
   <div class="vibe" role="group" aria-labelledby="vibe-title">
     <p class="vibe-kicker mono">Sound on your terms</p>
     <p class="vibe-title" id="vibe-title">One mix. Your volume.</p>
-    <p class="vibe-body">But we do give some <b>sexy frequencies</b>. Forty-five minutes of them, fresh from Hong Kong Community Radio.</p>
+    <p class="vibe-body">But we do give some <b>sexy frequencies</b>. An hour of them, fresh from Hong Kong Community Radio.</p>
     <div class="vibe-actions">
       <button type="button" class="vibe-yes" data-enter>Enter with sound</button>
       <button type="button" class="vibe-yes vibe-alt" data-quiet>Browse quietly</button>
@@ -28,10 +28,9 @@ const prompt = (): string => `
 
 /** Fill the meter from what the player has already buffered while the visitor reads. */
 function meter(root: HTMLElement): () => void {
-  // Let the page's own images and fonts load first, then warm up the mix.
+  // Let the page's own images and fonts load first, then connect Mixcloud's player.
   const warm = (): void => {
-    prepare();
-    start();
+    void prepare().catch(() => {});
   };
   if (document.readyState === 'complete') warm();
   else window.addEventListener('load', warm, { once: true });
@@ -40,7 +39,7 @@ function meter(root: HTMLElement): () => void {
   const id = window.setInterval(() => {
     const p = Math.min(1, bufferedAhead() / 30);
     bar.style.transform = `scaleX(${Math.max(0.04, p)})`;
-    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Choose sound or browse quietly.' : 'Buffering the mix… Sound is optional.';
+    status.textContent = isPlaying() ? 'The mix is playing. Welcome in.' : p >= 1 ? 'Ready. Choose sound or browse quietly.' : 'Connecting to Mixcloud… Sound is optional.';
     root.classList.toggle('vibe-ready', p >= 1);
   }, 200);
   return () => clearInterval(id);

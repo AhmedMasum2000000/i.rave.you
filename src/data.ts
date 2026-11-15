@@ -95,8 +95,14 @@ export interface RadioSet {
   date: string;
   bpm: number;
   description: string;
+  /** The set's own artwork; tracks without a cover show it. */
+  cover?: string;
+  /** The broadcast's page on the station's site. */
+  showUrl?: string;
+  /** The set's Mixcloud key (/user/slug/): Mixcloud's player streams it. */
+  mixcloud?: string;
   /** Hashed, long-cached audio file, plain: only for players without Media Source Extensions. */
-  file: string;
+  file?: string;
   /** The same audio AES-256-CTR encrypted: what the streaming player fetches (src/stream.ts). */
   stream?: string;
   /** Its key, hex. */
@@ -340,7 +346,7 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     listen: { label: 'Spotify', url: 'https://open.spotify.com/artist/5Ts3wXXRcpcnMXZmMwqgwY' },
     essay: {
       intro:
-        'Qbic Pulse is a radio show: ACND and অপূর্ব on Hong Kong Community Radio. For forty-five minutes the light half and the dark half pass the decks back and forth, until you stop being able to tell who is playing.',
+        'Qbic Pulse is a radio show: ACND and অপূর্ব on Hong Kong Community Radio. For an hour the light half and the dark half pass the decks back and forth, until you stop being able to tell who is playing.',
       blocks: [
         { label: '01', text: 'Their HKCR set opens on Initiate^1, the first thing ACND and অপূর্ব finished together. Still unreleased, and the reason this site exists.' },
         { label: '02', text: 'From there it climbs through melodic techno, acid and progressive, the corners ACND keeps coming back to.' },

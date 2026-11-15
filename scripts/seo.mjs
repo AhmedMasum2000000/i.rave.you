@@ -270,7 +270,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
   mix.html = shell(
     mix,
-    `<p class="eyebrow">ACND &amp; অপূর্ব · Hong Kong Community Radio</p><h1>Qbic Pulse: DJ mix &amp; tracklist</h1><p class="intro">A shared set by ACND and অপূর্ব, opening with their unreleased collaboration “Initiate”.</p><a class="button" href="../../">Open the mix player →</a><section><h2>Tracklist with original recording links</h2><p>Timestamps mark where each track takes over in the mix. Available links open the identified recording on Apple Music or SoundCloud. The opening unreleased track has no external link.</p><ol class="tracks">${tracks.map((t) => `<li><span class="timestamp">${stamp(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · Unreleased · No external link</span></div>`}</li>`).join("")}</ol></section><section><h2>Explore the set</h2><p><a href="../../journal/qbic-pulse-listening-route/">A route through Qbic Pulse</a> · <a href="../../journal/how-to-read-dj-mix-tracklist/">How to read takeover timestamps</a> · <a href="../../journal/initiate-unreleased-id-guide/">About the opening track, Initiate</a></p></section><section><h2>About the hosts</h2><p><a href="../../acnd/">ACND (Ahmed Masum)</a> is a producer and DJ based in Dhaka. <a href="../../apurba/">অপূর্ব (Opurbo / Apurba)</a> is the electronic music project of Khalid Bin Alam from Cumilla.</p><a href="https://hkcr.live/" target="_blank" rel="noopener">Hong Kong Community Radio ↗</a></section><section><h2>Listening links & music rights</h2><p>Playing this site’s mix does not count as a stream on the linked music platforms. Recording links and credits do not grant rights to copy, redistribute or otherwise use the music. For rights concerns, see our <a href="../../legal/copyright/">copyright contact page</a>.</p></section>`,
+    `<p class="eyebrow">ACND &amp; অপূর্ব · Hong Kong Community Radio</p><h1>Qbic Pulse: DJ mix &amp; tracklist</h1><p class="intro">A shared set by ACND and অপূর্ব, opening with their unreleased collaboration “Initiate”.</p><a class="button" href="../../?set=qbic-pulse-vol-1" data-play-set="qbic-pulse-vol-1">Play this set →</a> <a href="https://www.mixcloud.com/HKCR/frequency-unity-%E0%A6%85%E0%A6%AA%E0%A6%B0%E0%A6%AC-acnd-qbic-pulse-volume-01-06112026/" target="_blank" rel="noopener">Listen on Mixcloud ↗</a><section><h2>Tracklist with original recording links</h2><p>Timestamps follow Hong Kong Community Radio’s tracklist for the broadcast and mark where each track takes over in the mix. Available links open the identified recording. The opening unreleased track has no external link.</p><ol class="tracks">${tracks.map((t) => `<li><span class="timestamp">${stamp(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)}${/unreleased/i.test(t.title) ? " · Unreleased · No external link" : ""}</span></div>`}</li>`).join("")}</ol></section><section><h2>Explore the set</h2><p><a href="../../journal/qbic-pulse-listening-route/">A route through Qbic Pulse</a> · <a href="../../journal/how-to-read-dj-mix-tracklist/">How to read takeover timestamps</a> · <a href="../../journal/initiate-unreleased-id-guide/">About the opening track, Initiate</a></p></section><section><h2>About the hosts</h2><p><a href="../../acnd/">ACND (Ahmed Masum)</a> is a producer and DJ based in Dhaka. <a href="../../apurba/">অপূর্ব (Opurbo / Apurba)</a> is the electronic music project of Khalid Bin Alam from Cumilla.</p><a href="https://hkcr.live/" target="_blank" rel="noopener">Hong Kong Community Radio ↗</a></section><section><h2>Listening links & music rights</h2><p>The set streams through Mixcloud’s player. Recording links and credits do not grant rights to copy, redistribute or otherwise use the music. For rights concerns, see our <a href="../../legal/copyright/">copyright contact page</a>.</p></section>`,
   );
   pages.push(mix);
   return pages;
@@ -460,8 +460,8 @@ export function radioPages(sets) {
   const pages = [];
   const radio = {
     path: "radio/",
-    label: "Qbic Pulse Radio",
-    title: "Qbic Pulse Radio — DJ sets by ACND & অপূর্ব",
+    label: "Qbic Pulse",
+    title: "Qbic Pulse — DJ sets by ACND, অপূর্ব & guests",
     description: `Every Qbic Pulse DJ set by ACND & অপূর্ব, newest first: ${sets.length} set${sets.length === 1 ? "" : "s"} with full tracklists, play in the site player.`,
     lastmod: sets[0]?.date,
   };
@@ -469,7 +469,7 @@ export function radioPages(sets) {
     {
       "@type": "ItemList",
       "@id": `${ORIGIN}/radio/#sets`,
-      name: "Qbic Pulse Radio sets",
+      name: "Qbic Pulse sets",
       numberOfItems: sets.length,
       itemListElement: sets.map((set, i) => ({
         "@type": "ListItem",
@@ -479,13 +479,13 @@ export function radioPages(sets) {
     },
   ]);
   const card = (set, i) => `<article class="radio-set"><p class="eyebrow">${i === 0 ? "Latest set · " : ""}<time datetime="${esc(set.date)}">${esc(longDay(set.date))}</time> · ${esc(set.station)}</p><h2>${esc(set.show)} ${esc(set.volume)}</h2><p>${esc(set.description)}</p><dl class="fact-list"><div><dt>Hosts</dt><dd>${esc(set.hosts)}</dd></div><div><dt>Length</dt><dd>${clock(set.duration)}</dd></div><div><dt>Tracks</dt><dd>${set.tracklist.length}</dd></div></dl><p><a class="button" href="../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set</a> <a href="../${setPath(set)}">Full tracklist →</a></p><details><summary>Tracklist</summary><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span><div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)}</span></div></li>`).join("")}</ol></details></article>`;
-  radio.html = shell(radio, `<p class="eyebrow">ACND &amp; অপূর্ব · DJ sets</p><h1>Qbic Pulse Radio</h1><p class="intro">Every Qbic Pulse set, newest first. Press play to hear it in the site player; it keeps playing as you browse.</p>${sets.map(card).join("")}<section><h2>About Qbic Pulse</h2><p>Qbic Pulse is the shared DJ series of <a href="../acnd/">ACND (Ahmed Masum)</a> and <a href="../apurba/">অপূর্ব (Opurbo / Apurba)</a>, first made for Hong Kong Community Radio. Playing a set here does not count as a stream on the linked music platforms; for rights questions see the <a href="../legal/copyright/">copyright contact page</a>.</p></section>`);
+  radio.html = shell(radio, `<p class="eyebrow">ACND &amp; অপূর্ব · DJ sets</p><h1>Qbic Pulse</h1><p class="intro">Every Qbic Pulse set, newest first. Press play to hear it in the site player, streamed by Mixcloud; it keeps playing as you browse.</p>${sets.map(card).join("")}<section><h2>About Qbic Pulse</h2><p>Qbic Pulse is the shared DJ series of <a href="../acnd/">ACND (Ahmed Masum)</a> and <a href="../apurba/">অপূর্ব (Opurbo / Apurba)</a>, first made for Hong Kong Community Radio. The sets stream through Mixcloud’s player. For rights questions see the <a href="../legal/copyright/">copyright contact page</a>.</p></section>`);
   pages.push(radio);
   for (const set of sets.filter((x) => x.slug !== FIRST_SET)) {
     const page = {
       path: setPath(set),
       label: `${set.show} ${set.volume} tracklist`,
-      title: `${set.show} ${set.volume} Tracklist — ACND & অপূর্ব DJ Set`,
+      title: `${set.show} ${set.volume} Tracklist — ${set.hosts} DJ Set`,
       description: `${set.show} ${set.volume} by ${set.hosts}: ${set.tracklist.length} tracks with timestamps, ${clock(set.duration)} long, published ${longDay(set.date)}.`,
       lastmod: set.date,
     };
@@ -498,7 +498,7 @@ export function radioPages(sets) {
         itemListElement: set.tracklist.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: `${t.artist} — ${t.title}`, url: t.url })),
       },
     ]);
-    page.html = shell(page, `<p class="eyebrow">${esc(set.hosts)} · ${esc(set.station)}</p><h1>${esc(set.show)} ${esc(set.volume)}: DJ set &amp; tracklist</h1><p class="intro">${esc(set.description)}</p><a class="button" href="../../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set →</a><section><h2>Tracklist</h2><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)}</span></div>`}</li>`).join("")}</ol></section><p><a href="../../radio/">All Qbic Pulse Radio sets →</a></p>`);
+    page.html = shell(page, `<p class="eyebrow">${esc(set.hosts)} · ${esc(set.station)}</p><h1>${esc(set.show)} ${esc(set.volume)}: DJ set &amp; tracklist</h1><p class="intro">${esc(set.description)}</p><a class="button" href="../../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set →</a>${set.mixcloud ? ` <a href="https://www.mixcloud.com${esc(set.mixcloud)}" target="_blank" rel="noopener">Listen on Mixcloud ↗</a>` : ""}<section><h2>Tracklist</h2><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener"><strong>${esc(t.title)}</strong><span>${esc(t.artist)} · ${esc(t.linkLabel)} ↗</span></a>` : `<div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)}${t.linkLabel ? ` · ${esc(t.linkLabel)}` : ""}</span></div>`}</li>`).join("")}</ol></section><p><a href="../../radio/">All Qbic Pulse sets →</a></p>`);
     pages.push(page);
   }
   return pages;

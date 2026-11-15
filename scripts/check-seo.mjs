@@ -7,7 +7,7 @@ const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (
 const root = resolve("dist");
 const sitemap = readFileSync(resolve(root, "sitemap.xml"), "utf8");
 const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-assert.equal(urls.length, 28);
+assert.equal(urls.length, 29);
 assert.equal(new Set(urls).size, urls.length);
 const titles = new Set();
 for (const url of urls) {
@@ -65,8 +65,8 @@ assert.match(apurba, /Opurbo/);
 assert.match(apurba, /Cumilla/);
 const mix = readFileSync(resolve(root, "mixes/qbic-pulse/index.html"), "utf8");
 const list = mix.match(/<ol class="tracks">([\s\S]*?)<\/ol>/)[1];
-assert.equal([...list.matchAll(/<li>/g)].length, 15);
-assert.match(list, /43:19/);
+assert.equal([...list.matchAll(/<li>/g)].length, 21);
+assert.match(list, /58:21/);
 assert.match(list, /Vakabular Remix/);
 // Artist profiles are the interactive app at clean URLs, with the full
 // crawlable profile in the document; every sub-page exists as a real file.
@@ -119,7 +119,7 @@ assert.match(
   /Sitemap: https:\/\/iraveyou\.online\/sitemap\.xml/,
 );
 console.log(
-  "PASS identity credits, 15-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
+  "PASS identity credits, 21-track list, clean interactive artist routes, script-free discovery pages, private pitch exclusions and sitemap reference",
 );
 
 // Check the published cluster, including related links and in-page references.
@@ -263,9 +263,9 @@ console.log(
 const firstTrack = list.match(/<li>([\s\S]*?)<\/li>/)[1];
 assert.doesNotMatch(firstTrack, /<a\b/);
 assert.match(firstTrack, /Unreleased/);
-assert.equal([...list.matchAll(/<a\b/g)].length, 14);
+assert.equal([...list.matchAll(/<a\b/g)].length, 15);
 console.log(
-  "PASS unreleased opening track retains credit and timestamp without an external link; other 14 recording links remain",
+  "PASS unreleased opening track retains credit and timestamp without an external link; other 15 recording links remain",
 );
 
 // Legal: the domain, the contact, the licensing statement, and a privacy
@@ -313,10 +313,13 @@ console.log(
     assert.match(htaccess, new RegExp(`Header always set ${h} `), h);
   assert.match(htaccess, /microphone=\(\).*display-capture=\(\)/);
   assert.match(htaccess, /RewriteCond %\{HTTP_REFERER\} !\^https:\/\/\(\(www\\\.\)\?iraveyou/);
-  const bins = readdirSync(resolve(root, "audio")).filter((f) => f.endsWith(".bin"));
-  assert.ok(bins.length > 0, "encrypted stream copy");
+  // The sets stream through Mixcloud's player: its script and frame are allowed, and no audio ships.
+  assert.match(htaccess, /script-src [^;]*https:\/\/widget\.mixcloud\.com/, "Mixcloud widget API allowed");
+  assert.match(htaccess, /frame-src [^;]*https:\/\/player-widget\.mixcloud\.com/, "Mixcloud player frame allowed");
+  assert.match(htaccess, /autoplay=\(self \\"https:\/\/player-widget\.mixcloud\.com\\"\)/, "Mixcloud player may autoplay");
+  assert.ok(!existsSync(resolve(root, "audio")) || readdirSync(resolve(root, "audio")).length === 0, "no self-hosted audio");
   for (const f of walk(root).filter((f) => f.endsWith(".html")))
     assert.doesNotMatch(readFileSync(f, "utf8"), /<script(?![^>]*\bsrc=)(?! type="application\/ld\+json")[^>]*>/, `inline script in ${f}`);
   assert.match(readFileSync(resolve(root, "seo.css"), "utf8"), /user-select: none/);
-  console.log(`PASS security: headers, audio referer lock, ${bins.length} encrypted stream(s), no inline scripts, static copy guard`);
+  console.log(`PASS security: headers, Mixcloud player allowed, no self-hosted audio, no inline scripts, static copy guard`);
 }

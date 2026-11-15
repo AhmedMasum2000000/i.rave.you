@@ -1,0 +1,127 @@
+{
+  "title": "Qbic Pulse Vol. 02 on HKCR",
+  "show": "Qbic Pulse",
+  "volume": "Vol. 02",
+  "hosts": "Ash Army, ACND & অপূর্ব",
+  "station": "Hong Kong Community Radio",
+  "stationUrl": "https://hkcr.live/",
+  "showUrl": "https://hkcr.live/shows/qbic-pulse-vol-02-ash-army-acnd-qbic-pulse-dhaka-bangladesh-13-11-2026",
+  "date": "2026-11-13",
+  "bpm": 124,
+  "mixcloud": "/HKCR/qbic-pulse-vol-02-ash-army-acnd-%E0%A6%85%E0%A6%AA%E0%A6%B0%E0%A6%AC-qbic-pulse-dhaka-bangladesh-13112026/",
+  "duration": 3600,
+  "cover": "img/qbic-pulse-vol-2.webp",
+  "description": "Three artists, one shared frequency: Ash Army, ACND and অপূর্ব in a one-hour collective DJ mix for Hong Kong Community Radio, through tech house, funky house and bass house.",
+  "tracklist": [
+    {
+      "at": "00:00",
+      "artist": "Space Motion, SYNTHETIX (ofc)",
+      "title": "Ama"
+    },
+    {
+      "at": "03:07",
+      "artist": "Andrewboy, SHAZZE",
+      "title": "What You Gonna Do"
+    },
+    {
+      "at": "08:00",
+      "artist": "Eynka",
+      "title": "Narayan"
+    },
+    {
+      "at": "11:15",
+      "artist": "Jules Brand",
+      "title": "TAKE THAT FIGHT"
+    },
+    {
+      "at": "13:30",
+      "artist": "Trilium, Erika Krall",
+      "title": "Fall Into the Ache (Acrobatik Remix)"
+    },
+    {
+      "at": "16:00",
+      "artist": "Aveno",
+      "title": "Show Me"
+    },
+    {
+      "at": "18:45",
+      "artist": "CLOz, Saintglum",
+      "title": "Make Money, No Friends"
+    },
+    {
+      "at": "21:00",
+      "artist": "Andrewboy, Raidon",
+      "title": "Your Toy"
+    },
+    {
+      "at": "24:30",
+      "artist": "David Lindmer, A. Pierozzi, Osxan",
+      "title": "Time to Move"
+    },
+    {
+      "at": "26:56",
+      "artist": "Nosssia, Gueva",
+      "title": "Humo"
+    },
+    {
+      "at": "29:45",
+      "artist": "Coeus",
+      "title": "Think Too Much"
+    },
+    {
+      "at": "32:30",
+      "artist": "Goom Gum",
+      "title": "Pentada (Instrumental Mix)"
+    },
+    {
+      "at": "35:26",
+      "artist": "Stylo, Amethy, MOii",
+      "title": "Papi"
+    },
+    {
+      "at": "37:37",
+      "artist": "AYDEN LOYDE",
+      "title": "Eon"
+    },
+    {
+      "at": "40:11",
+      "artist": "Weekend Heroes, MOii",
+      "title": "Take Control"
+    },
+    {
+      "at": "42:33",
+      "artist": "Skuro (IT)",
+      "title": "Jaguar"
+    },
+    {
+      "at": "44:18",
+      "artist": "David Lindmer, ROZYO, Q.U.A.K.E",
+      "title": "Laser Beam"
+    },
+    {
+      "at": "46:48",
+      "artist": "Lampe",
+      "title": "Shining Tonight"
+    },
+    {
+      "at": "49:03",
+      "artist": "motherearth",
+      "title": "Compromised"
+    },
+    {
+      "at": "51:18",
+      "artist": "LOJAN",
+      "title": "Sube!"
+    },
+    {
+      "at": "54:22",
+      "artist": "Acrobatik, whatlewisdoes",
+      "title": "Lamazi (Extended Mix)"
+    },
+    {
+      "at": "57:00",
+      "artist": "Add-us",
+      "title": "End of Days (Edit)"
+    }
+  ]
+}
