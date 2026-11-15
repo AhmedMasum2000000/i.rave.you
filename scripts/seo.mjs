@@ -1,7 +1,7 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createPosts, PUBLICATION_DATE } from "../content/posts.mjs";
-import { catalogue, credited, homeExtraGraph, homeFeed } from "./home.mjs";
+import { catalogue, credited, homeExtraGraph, homeFeed, releaseRecording } from "./home.mjs";
 /** Static discovery pages share the portfolio's facts and verified music URLs. */
 export const ORIGIN = "https://iraveyou.online";
 const esc = (s) =>
@@ -109,16 +109,75 @@ export const homeGraph = (artists, extra = []) => ({
     ...extra,
   ],
 });
+/** Pixel size of an image in public/, read from its header (JPEG, PNG or WebP); null if unknown. */
+const PUBLIC = resolve(import.meta.dirname, "../public");
+const sizes = new Map();
+export function imageSize(path) {
+  if (sizes.has(path)) return sizes.get(path);
+  let size = null;
+  const file = resolve(PUBLIC, path);
+  if (existsSync(file)) {
+    const b = readFileSync(file);
+    if (b[0] === 0x89 && b.toString("ascii", 1, 4) === "PNG") size = { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+    else if (b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP") {
+      const kind = b.toString("ascii", 12, 16);
+      if (kind === "VP8 ") size = { w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff };
+      else if (kind === "VP8L") {
+        const v = b.readUInt32LE(21);
+        size = { w: (v & 0x3fff) + 1, h: ((v >> 14) & 0x3fff) + 1 };
+      } else if (kind === "VP8X") size = { w: b.readUIntLE(24, 3) + 1, h: b.readUIntLE(27, 3) + 1 };
+    } else if (b[0] === 0xff && b[1] === 0xd8) {
+      for (let i = 2; i < b.length - 9; ) {
+        if (b[i] !== 0xff) break;
+        const marker = b[i + 1];
+        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+          size = { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5) };
+          break;
+        }
+        i += 2 + b.readUInt16BE(i + 2);
+      }
+    }
+  }
+  sizes.set(path, size);
+  return size;
+}
+/** The WebP beside a JPG or PNG, when one exists. */
+const webpOf = (path) => {
+  const webp = path.replace(/\.(jpe?g|png)$/, ".webp");
+  return webp !== path && imageSize(webp) ? webp : null;
+};
+/** An <img>, offered as WebP first when a WebP of it exists, at its real size. */
+export const picture = (prefix, src, alt, attrs = "") => {
+  const size = imageSize(src);
+  const img = `<img src="${prefix}${esc(src)}" alt="${esc(alt)}"${size ? ` width="${size.w}" height="${size.h}"` : ""}${attrs ? ` ${attrs}` : ""}>`;
+  const webp = webpOf(src);
+  return webp ? `<picture><source srcset="${prefix}${esc(webp)}" type="image/webp">${img}</picture>` : img;
+};
+/** The shared default card: 1200 × 630, both artists, the Frequency & Unity artwork. */
+const SHARE_DEFAULT = { src: "img/og-frequency-unity.jpg", alt: "অপূর্ব and ACND logos from the Frequency & Unity artwork" };
+/**
+ * What a link preview shows. A page's own image is used when it is a JPEG or
+ * PNG large enough to stay sharp (600 px across or more); a wide one gets the
+ * large card, a square one the square card. A WebP, a small or a portrait
+ * image falls back to the 1200 × 630 default, which crops cleanly.
+ */
+const shareImage = (image, alt) => {
+  const size = image && /\.(jpe?g|png)$/.test(image) ? imageSize(image) : null;
+  if (size && size.w >= 600 && size.w >= size.h) return { src: image, alt, ...size, card: size.w / size.h >= 1.5 ? "summary_large_image" : "summary" };
+  return { ...SHARE_DEFAULT, ...imageSize(SHARE_DEFAULT.src), card: "summary_large_image" };
+};
 function head({
   title,
   description,
   path,
-  image = "img/og-frequency-unity.jpg",
+  image = SHARE_DEFAULT.src,
+  imageAlt,
   graph,
   ogType = "website",
 }) {
   const url = `${ORIGIN}/${path}`;
-  return `<title>${esc(title)}</title><meta name="description" content="${esc(description)}"><meta name="robots" content="index, follow, max-image-preview:large"><link rel="canonical" href="${url}"><meta property="og:type" content="${ogType}"><meta property="og:site_name" content="I Rave You"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ORIGIN}/${image}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${ORIGIN}/${image}"><script type="application/ld+json">${json(graph)}</script>`;
+  const og = shareImage(image, imageAlt ?? title);
+  return `<title>${esc(title)}</title><meta name="description" content="${esc(description)}"><meta name="robots" content="index, follow, max-image-preview:large"><link rel="canonical" href="${url}"><meta property="og:type" content="${ogType}"><meta property="og:site_name" content="I Rave You"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ORIGIN}/${og.src}"><meta property="og:image:width" content="${og.w}"><meta property="og:image:height" content="${og.h}"><meta property="og:image:alt" content="${esc(og.alt)}"><meta name="twitter:card" content="${og.card}"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${ORIGIN}/${og.src}"><meta name="twitter:image:alt" content="${esc(og.alt)}"><script type="application/ld+json">${json(graph)}</script>`;
 }
 function shell(page, body) {
   const root = "../".repeat(page.path.split("/").filter(Boolean).length);
@@ -190,7 +249,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
       .join("");
     page.artist = a;
     page.body = (
-      `<p class="eyebrow">${esc(a.origin)} · Artist profile</p><h1>${esc(page.label)}</h1><p class="intro">${esc(a.about.summary)}</p><section><h2>Biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>${a.id === "acnd" ? "Latest release" : "Releases & listening links"}</h2><ul class="recordings">${releases}</ul>${a.id === "acnd" ? '<p><a href="../music/down-in-bossa/">Down In Bossa — release details →</a></p>' : ""}</section>${a.id === "acnd" ? `<section><h2>Ahmed Masum / ACND: artist facts</h2><dl class="fact-list"><div><dt>Artist name</dt><dd>ACND, pronounced “Ascend”</dd></div><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Based in</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Work</dt><dd>Electronic music production, DJing and composition</dd></div><div><dt>Label</dt><dd>Independent, not signed to a label</dd></div></dl><p><a href="press/">Press kit, biographies &amp; credits →</a></p></section><section><h2>Artist guides &amp; listening notes</h2><p>Explore <a href="../journal/ahmed-masum-acnd-name-guide/">the Ahmed Masum / ACND name guide</a>, <a href="../journal/where-to-listen-acnd/">where to listen</a> and <a href="../journal/acnd-techno-melodic-acid-progressive/">his musical directions</a>.</p></section><section><h2>Nitol Paye Electric remix credit</h2><p>The “Nitol Paye Electric” remix is by ACND (Ahmed Masum).</p><a href="https://youtu.be/om5QGreRaYg" target="_blank" rel="noopener">Watch on YouTube ↗</a></section>` : ""}<section><h2>Listen & connect</h2><nav class="platforms" aria-label="${esc(a.name)} music profiles">${links}</nav></section><section><h2>Qbic Pulse with ${a.id === "acnd" ? "অপূর্ব" : "ACND"}</h2><p>Explore their shared DJ mix for Hong Kong Community Radio, with a timestamped tracklist and links to the original recordings.</p><a href="../mixes/qbic-pulse/">Read the Qbic Pulse tracklist →</a></section>`,
+      `<p class="eyebrow">${esc(a.origin)} · Artist profile</p><h1>${esc(page.label)}</h1><p class="intro">${esc(a.about.summary)}</p><section><h2>Biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>${a.id === "acnd" && a.releases.length === 1 ? "Latest release" : "Releases & listening links"}</h2><ul class="recordings">${releases}</ul>${a.id === "acnd" ? '<p><a href="../music/down-in-bossa/">Down In Bossa — release details →</a></p>' : ""}</section>${a.id === "acnd" ? `<section><h2>Ahmed Masum / ACND: artist facts</h2><dl class="fact-list"><div><dt>Artist name</dt><dd>ACND, pronounced “Ascend”</dd></div><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Based in</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Work</dt><dd>Electronic music production, DJing and composition</dd></div><div><dt>Label</dt><dd>Independent, not signed to a label</dd></div></dl><p><a href="press/">Press kit, biographies &amp; credits →</a></p></section><section><h2>Artist guides &amp; listening notes</h2><p>Explore <a href="../journal/ahmed-masum-acnd-name-guide/">the Ahmed Masum / ACND name guide</a>, <a href="../journal/where-to-listen-acnd/">where to listen</a> and <a href="../journal/acnd-techno-melodic-acid-progressive/">his musical directions</a>.</p></section><section><h2>Nitol Paye Electric remix credit</h2><p>The “Nitol Paye Electric” remix is by ACND (Ahmed Masum).</p><a href="https://youtu.be/om5QGreRaYg" target="_blank" rel="noopener">Watch on YouTube ↗</a></section>` : ""}<section><h2>Listen & connect</h2><nav class="platforms" aria-label="${esc(a.name)} music profiles">${links}</nav></section><section><h2>Qbic Pulse with ${a.id === "acnd" ? "অপূর্ব" : "ACND"}</h2><p>Explore their shared DJ mix for Hong Kong Community Radio, with a timestamped tracklist and links to the original recordings.</p><a href="../mixes/qbic-pulse/">Read the Qbic Pulse tracklist →</a></section>`,
     );
     page.html = shell(page, page.body);
     pages.push(page);
@@ -216,6 +275,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
       genre: next.genre,
       datePublished: "2026-10-30",
       duration: "PT2M26S",
+      sameAs: [next.page, next.presave],
       // The single, and the release of it: label and ℗ line as printed on the release.
       inAlbum: {
         "@type": "MusicAlbum",
@@ -232,7 +292,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
           url: next.page,
         },
       },
-      url: next.page,
+      url: `${ORIGIN}/${release.path}`,
       image: `${ORIGIN}/${next.cover}`,
       description: release.description,
     },
@@ -248,7 +308,7 @@ export function discoveryPages(artists, next, tracks, meta = {}) {
     label: "Qbic Pulse tracklist",
     title: "Qbic Pulse Tracklist — ACND & অপূর্ব DJ Mix | HKCR",
     description:
-      "The Qbic Pulse DJ mix by ACND & অপূর্ব for Hong Kong Community Radio: all 15 tracks, takeover timestamps and verified original recording links.",
+      `The Qbic Pulse DJ mix by ACND & অপূর্ব for Hong Kong Community Radio: all ${tracks.length} tracks, takeover timestamps and verified original recording links.`,
   };
   mix.graph = pageGraph(mix, [
     {
@@ -291,7 +351,7 @@ export function pressPage(a) {
   );
   page.html = shell(
     page,
-    `<p class="eyebrow">Artist reference · First-party press kit</p><h1>Ahmed Masum (ACND): press kit</h1><p class="intro">Biography, credits and reference links for publications, radio programmes and artist listings.</p><p><a class="button" href="../../press/acnd-artist-facts.txt" download>Download the artist facts &amp; short bio (.txt)</a></p><section><h2>Artist identification</h2><dl class="fact-list"><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Artist name</dt><dd>ACND</dd></div><div><dt>Pronunciation</dt><dd>Ascend</dd></div><div><dt>Location</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Roles</dt><dd>Producer, DJ and composer</dd></div></dl><p>Ahmed Masum and ACND identify the same artist. For a combined credit, use “ACND (Ahmed Masum)”. Use <a href="../">the artist profile</a> as the main website reference.</p></section><section><h2>Short biography</h2><p class="press-bio">Ahmed Masum, known as ACND (pronounced “Ascend”), is a producer, DJ and composer based in Dhaka, Bangladesh. His work moves through techno, melodic techno, acid and progressive sounds. His projects include Qbic Pulse with অপূর্ব and the Ash Army &amp; ACND collaboration “Down In Bossa”, released 30 October 2026 via Profi Music and distributed by ADA Central Europe, Warner Music Group’s distribution arm.</p></section><section><h2>Long biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>Credits to preserve</h2><ul><li><strong>Down In Bossa:</strong> Ash Army &amp; ACND · Afro House · Profi Music, distributed by ADA Central Europe (Warner Music Group) · released 30 October 2026. <a href="../../music/down-in-bossa/">Release information and label links</a>.</li><li><strong>Initiate:</strong> ACND × অপূর্ব · unreleased collaboration, opening the published Qbic Pulse set. <a href="../../journal/initiate-unreleased-id-guide/">Track context and listening link</a>.</li><li><strong>Nitol Paye Electric:</strong> remix by ACND (Ahmed Masum). <a href="../../journal/nitol-paye-electric-acnd-remix-credit/">Remix credit and video</a>.</li></ul><p>The credited remix artist is distinct from any underlying song or recording rights. This kit does not state unverified songwriting shares, sample clearances or ownership.</p></section><section><h2>Artist profiles</h2><nav class="platforms" aria-label="ACND artist profiles">${links.map((link) => `<a href="${esc(link.url)}" target="_blank" rel="noopener">${esc(link.label)} ↗</a>`).join("")}</nav></section><section><h2>Reference images</h2><div class="press-assets"><figure><img src="../../img/acnd-portrait.webp" alt="ACND portfolio artist image" width="1200" height="1600" loading="lazy"><figcaption><a href="../../img/acnd-portrait.webp">View the portfolio image</a></figcaption></figure><figure><img class="press-logo" src="../../img/logo-acnd.png" alt="ACND artist logo" width="800" height="800" loading="lazy"><figcaption><a href="../../img/logo-acnd.png">View the artist logo</a></figcaption></figure></div><p>These are existing portfolio assets shown for reference. Their inclusion does not grant a blanket reuse licence; confirm permission with the relevant rights holder for your intended use.</p></section><section><h2>Source and updates</h2><p>This kit is published by I Rave You from artist information supplied for this portfolio. It is not independent press coverage. For current release availability, follow the label links on the release page. For a website correction, use the <a href="../../legal/copyright/">site contact page</a>.</p><p><a href="../">Ahmed Masum / ACND artist profile →</a> · <a href="../../journal/ahmed-masum-acnd-name-guide/">Artist-name guide →</a></p></section>`,
+    `<p class="eyebrow">Artist reference · First-party press kit</p><h1>Ahmed Masum (ACND): press kit</h1><p class="intro">Biography, credits and reference links for publications, radio programmes and artist listings.</p><p><a class="button" href="../../press/acnd-artist-facts.txt" download>Download the artist facts &amp; short bio (.txt)</a></p><section><h2>Artist identification</h2><dl class="fact-list"><div><dt>Personal name</dt><dd>Ahmed Masum</dd></div><div><dt>Artist name</dt><dd>ACND</dd></div><div><dt>Pronunciation</dt><dd>Ascend</dd></div><div><dt>Location</dt><dd>Dhaka, Bangladesh</dd></div><div><dt>Roles</dt><dd>Producer, DJ and composer</dd></div></dl><p>Ahmed Masum and ACND identify the same artist. For a combined credit, use “ACND (Ahmed Masum)”. Use <a href="../">the artist profile</a> as the main website reference.</p></section><section><h2>Short biography</h2><p class="press-bio">Ahmed Masum, known as ACND (pronounced “Ascend”), is a producer, DJ and composer based in Dhaka, Bangladesh. His work moves through techno, melodic techno, acid and progressive sounds. His projects include Qbic Pulse with অপূর্ব and the Ash Army &amp; ACND collaboration “Down In Bossa”, released 30 October 2026 via Profi Music and distributed by ADA Central Europe, Warner Music Group’s distribution arm.</p></section><section><h2>Long biography</h2>${a.about.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("")}</section><section><h2>Credits to preserve</h2><ul><li><strong>Down In Bossa:</strong> Ash Army &amp; ACND · Afro House · Profi Music, distributed by ADA Central Europe (Warner Music Group) · released 30 October 2026. <a href="../../music/down-in-bossa/">Release information and label links</a>.</li><li><strong>Initiate:</strong> ACND × অপূর্ব · unreleased collaboration, opening the published Qbic Pulse set. <a href="../../journal/initiate-unreleased-id-guide/">Track context and listening link</a>.</li><li><strong>Opening:</strong> অপূর্ব, Hridnic, ACND (Ahmed Masum), Prothey · 2025. <a href="https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS" target="_blank" rel="noopener">Listen on Spotify ↗</a>.</li><li><strong>Nitol Paye Electric:</strong> remix by ACND (Ahmed Masum). <a href="../../journal/nitol-paye-electric-acnd-remix-credit/">Remix credit and video</a>.</li></ul><p>The credited remix artist is distinct from any underlying song or recording rights. This kit does not state unverified songwriting shares, sample clearances or ownership.</p></section><section><h2>Artist profiles</h2><nav class="platforms" aria-label="ACND artist profiles">${links.map((link) => `<a href="${esc(link.url)}" target="_blank" rel="noopener">${esc(link.label)} ↗</a>`).join("")}</nav></section><section><h2>Reference images</h2><div class="press-assets"><figure><img src="../../img/acnd-portrait.webp" alt="ACND portfolio artist image" width="1200" height="1600" loading="lazy"><figcaption><a href="../../img/acnd-portrait.webp">View the portfolio image</a></figcaption></figure><figure><img class="press-logo" src="../../img/logo-acnd.png" alt="ACND artist logo" width="800" height="800" loading="lazy"><figcaption><a href="../../img/logo-acnd.png">View the artist logo</a></figcaption></figure></div><p>These are existing portfolio assets shown for reference. Their inclusion does not grant a blanket reuse licence; confirm permission with the relevant rights holder for your intended use.</p></section><section><h2>Source and updates</h2><p>This kit is published by I Rave You from artist information supplied for this portfolio. It is not independent press coverage. For current release availability, follow the label links on the release page. For a website correction, use the <a href="../../legal/copyright/">site contact page</a>.</p><p><a href="../">Ahmed Masum / ACND artist profile →</a> · <a href="../../journal/ahmed-masum-acnd-name-guide/">Artist-name guide →</a></p></section>`,
   );
   return page;
 }
@@ -388,7 +448,7 @@ export function journalPages(artists, next, tracks) {
     );
     page.html = shell(
       page,
-      `<article class="journal-article"><p class="eyebrow">${esc(post.category)} · Artist journal</p><h1>${esc(post.title)}</h1><p class="byline">By <a href="../#editorial">I Rave You editorial</a> · <time datetime="${post.date ?? PUBLICATION_DATE}">${longDate(post.date ?? PUBLICATION_DATE)}</time></p><p class="intro article-answer">${esc(post.answer)}</p><figure class="article-figure"><img src="../../${esc(post.image)}" alt="${esc(post.imageAlt)}" width="1200" height="630" fetchpriority="high"><figcaption>Image from the existing I Rave You artist portfolio.</figcaption></figure><nav class="contents" aria-label="In this article"><strong>In this article</strong><ol>${toc}</ol></nav>${body}<aside class="source-note"><h2>About this article</h2><p>Published by I Rave You, this artist portfolio. Artist identity, biography and project credits are based on information supplied for this website. External music and label links identify listening destinations; they are not independent verification of every biographical statement. Genre and listening explanations are editorial guidance.</p></aside><section class="related"><h2>Related reading</h2><ul>${related}</ul><p>${internal("acnd/", "ACND artist profile")} · ${internal("journal/", "All journal posts")}</p></section></article>`,
+      `<article class="journal-article"><p class="eyebrow">${esc(post.category)} · Artist journal</p><h1>${esc(post.title)}</h1><p class="byline">By <a href="../#editorial">I Rave You editorial</a> · <time datetime="${post.date ?? PUBLICATION_DATE}">${longDate(post.date ?? PUBLICATION_DATE)}</time></p><p class="intro article-answer">${esc(post.answer)}</p><figure class="article-figure">${picture("../../", post.image, post.imageAlt, 'fetchpriority="high"')}<figcaption>Image from the existing I Rave You artist portfolio.</figcaption></figure><nav class="contents" aria-label="In this article"><strong>In this article</strong><ol>${toc}</ol></nav>${body}<aside class="source-note"><h2>About this article</h2><p>Published by I Rave You, this artist portfolio. Artist identity, biography and project credits are based on information supplied for this website. External music and label links identify listening destinations; they are not independent verification of every biographical statement. Genre and listening explanations are editorial guidance.</p></aside><section class="related"><h2>Related reading</h2><ul>${related}</ul><p>${internal("acnd/", "ACND artist profile")} · ${internal("journal/", "All journal posts")}</p></section></article>`,
     );
     return page;
   });
@@ -426,7 +486,7 @@ export function journalPages(artists, next, tracks) {
   };
   hub.html = shell(
     hub,
-    `<p class="eyebrow">Artist stories · Credits · Listening guides</p><h1>Inside the music</h1><p class="intro">Explore Ahmed Masum’s work as ACND, the people and projects connected to it, and practical ways to listen.</p><div class="journal-grid">${posts.map((post) => `<article class="journal-card"><a href="${esc(post.slug)}/"><img src="../${esc(post.image)}" alt="${esc(post.imageAlt)}" width="600" height="340" loading="lazy"><p class="eyebrow">${esc(post.category)}</p><h2>${esc(post.title)}</h2><p>${esc(post.description)}</p><span>Read article →</span></a></article>`).join("")}</div><section id="editorial"><h2>About the journal</h2><p>This is the I Rave You artist portfolio’s own journal. It connects first-party artist information with listening notes, credit explanations and links to the recordings discussed. It is not independent press coverage.</p><p>We distinguish known artist facts from general listening guidance, preserve collaborator credits and update release information when confirmed. Questions or corrections can be sent through the <a href="../legal/copyright/">site contact page</a>.</p></section>`,
+    `<p class="eyebrow">Artist stories · Credits · Listening guides</p><h1>Inside the music</h1><p class="intro">Explore Ahmed Masum’s work as ACND, the people and projects connected to it, and practical ways to listen.</p><div class="journal-grid">${posts.map((post) => `<article class="journal-card"><a href="${esc(post.slug)}/">${picture("../", post.image, post.imageAlt, 'loading="lazy" decoding="async"')}<p class="eyebrow">${esc(post.category)}</p><h2>${esc(post.title)}</h2><p>${esc(post.description)}</p><span>Read article →</span></a></article>`).join("")}</div><section id="editorial"><h2>About the journal</h2><p>This is the I Rave You artist portfolio’s own journal. It connects first-party artist information with listening notes, credit explanations and links to the recordings discussed. It is not independent press coverage.</p><p>We distinguish known artist facts from general listening guidance, preserve collaborator credits and update release information when confirmed. Questions or corrections can be sent through the <a href="../legal/copyright/">site contact page</a>.</p></section>`,
   );
   return [hub, ...pages];
 }
@@ -513,11 +573,11 @@ const releaseLine = (title, by, note, url) =>
  * self-referencing canonical, structured data and crawlable content. The app
  * renders them for visitors; these files are what search engines read.
  */
-export function artistSubPages(artists, meta = {}) {
+export function artistSubPages(artists, meta = {}, next) {
   const pages = [];
   for (const a of Object.values(artists)) {
     const listen = { path: `${a.id}/listen/`, sub: true, artist: a, image: a.hero, label: `${a.name} releases`, ...meta[`${a.id}/listen/`] };
-    const items = a.releases.map((r) => ({
+    const items = a.releases.map((r) => next && r.title === next.title ? releaseRecording(next, ORIGIN, credited(next.artist, ORIGIN)) : ({
       "@type": "MusicRecording",
       name: r.title,
       url: r.url,
@@ -607,7 +667,7 @@ export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "
   const tracks = (sets.find((x) => x.slug === FIRST_SET) ?? sets[sets.length - 1]).tracklist;
   const pages = [
     ...discoveryPages(artists, next, tracks, meta),
-    ...artistSubPages(artists, meta),
+    ...artistSubPages(artists, meta, next),
     musicPage(artists, next, sets),
     ...radioPages(sets),
     pressPage(artists.acnd),
@@ -666,7 +726,11 @@ export function seoPlugin({ artists, next, sets, events = [], meta = {}, ga4 = "
         const up = "../".repeat(page.path.split("/").filter(Boolean).length);
         // The hero photo is the largest paint on artist pages; fetch it first, then the logo.
         const hero = page.artist.hero.replace(/\.(jpe?g|png)$/, ".webp");
-        const early = `<link rel="preload" as="image" href="${up}${hero}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="${up}img/logo-${page.artist.id}.webp" type="image/webp">`;
+        // The logo as the hero shows it (src/artist.ts LOGO_SIZES 'a-mark-logo'), and the
+        // faces the hero's text is set in, so the copy does not reflow when they arrive.
+        const lg = `${up}img/logo-${page.artist.id}`;
+        const font = (f) => `<link rel="preload" as="font" href="${up}fonts/${f}.woff2" type="font/woff2" crossorigin>`;
+        const early = `<link rel="preload" as="image" href="${up}${hero}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="${lg}.webp" imagesrcset="${lg}-320.webp 320w, ${lg}-640.webp 640w, ${lg}.webp 800w" imagesizes="(max-width: 700px) 160px, 340px" type="image/webp">${font("hind-siliguri-latin-500")}${font("hind-siliguri-latin-700")}${font("doto-latin-variable")}`;
         writeRoute(dir, index, page.path, head(page) + early, page.body);
       }
       for (const page of pages.filter((p) => p.sub)) writeRoute(dir, index, page.path, head(page), page.body);

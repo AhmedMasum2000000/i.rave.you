@@ -2,10 +2,12 @@ import { isPlaying, sample } from './audio';
 import { reducedMotion } from './ui';
 
 /**
- * The mix drives the page. One requestAnimationFrame loop reads the analyser
- * and writes a handful of CSS variables, 0..1, onto the chrome present on every
- * page (the player bar and its windows) and anything marked
- * `data-pulse`:
+ * The mix drives the page. One requestAnimationFrame loop reads the beat clock
+ * and writes a handful of CSS variables, 0..1, onto the few small elements that
+ * read them: the now-playing name, the feed's EQ, and the wordmark, names and
+ * hero logo inside a `data-pulse` region. The variables inherit, so writing
+ * them on a large container would restyle its whole subtree every frame:
+ * they go on the leaves only, in steps of 1/25, at most 30 times a second.
  *
  *   --lv-low   low-end energy, smoothed: drives the weight of the Doto type and
  *              how brightly the doorway is lit
@@ -23,7 +25,7 @@ export function mountFx(): void {
 
   let targets: HTMLElement[] = [];
   const collect = (): void => {
-    targets = [...document.querySelectorAll<HTMLElement>('.fbar, .tid, .np-now, [data-pulse]')];
+    targets = [...document.querySelectorAll<HTMLElement>('.np-now, .f-eq[data-pulse], [data-pulse] :is(.brand, .side-name, .ah-mark)')];
   };
   collect();
   window.addEventListener('routechange', () => requestAnimationFrame(collect));
@@ -44,6 +46,7 @@ export function mountFx(): void {
   // 30 fps is plenty for light and type, and leaves the main thread to the page.
   const gap = 1000 / 30;
   let written = '';
+  let vuAt = '';
   const loop = (now: number): void => {
     requestAnimationFrame(loop);
     if (document.hidden || now - last < gap) return;
@@ -59,16 +62,25 @@ export function mountFx(): void {
     level += ((on ? Math.min(1, lv.all * 2.2) : 0) - level) * 0.3;
     const beat = on ? lv.beat : 0;
     const high = on ? Math.min(1, lv.high * 3) : 0;
-    // Two decimals is below what the eye can see; skip frames that change nothing.
-    const key = `${low.toFixed(2)}|${beat.toFixed(2)}|${high.toFixed(2)}|${level.toFixed(2)}`;
+    // Steps of 1/25 are below what the eye follows in light and weight; a frame
+    // that lands on the same steps writes nothing and costs no style work.
+    const q = (v: number): string => (Math.round(v * 25) / 25).toFixed(2);
+    const L = q(low);
+    const Bt = q(beat);
+    const H = q(high);
+    const V = q(level);
+    const key = `${L}|${Bt}|${H}`;
+    if (V !== vuAt) {
+      vuAt = V;
+      vu.style.transform = `scaleX(${V})`;
+    }
     if (key === written) return;
     written = key;
     for (const el of targets) {
-      el.style.setProperty('--lv-low', low.toFixed(2));
-      el.style.setProperty('--lv-beat', beat.toFixed(2));
-      el.style.setProperty('--lv-high', high.toFixed(2));
+      el.style.setProperty('--lv-low', L);
+      el.style.setProperty('--lv-beat', Bt);
+      el.style.setProperty('--lv-high', H);
     }
-    vu.style.transform = `scaleX(${level.toFixed(2)})`;
   };
   requestAnimationFrame(loop);
 }

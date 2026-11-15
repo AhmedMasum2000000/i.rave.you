@@ -3,7 +3,7 @@
 
 :root {
   --fbar-air: 30px;
-  --fbar-seek: 62px;
+  --fbar-seek: 61px; /* Mixcloud's mini player, 60px, and its hairline */
   --fbar-row: 52px;
   --fbar-h: calc(var(--fbar-air) + var(--fbar-seek) + var(--fbar-row) + var(--safe-bottom, 0px));
   --bar-ink: #000;
@@ -137,7 +137,8 @@
   transform: translateY(8px);
   transition: opacity 0.2s, transform 0.25s, visibility 0.2s;
 }
-body.tid-open .tid { opacity: 1; visibility: visible; transform: none; }
+/* Visible at once on open (so focus can move in), faded out on close. */
+body.tid-open .tid { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s, transform 0.25s, visibility 0s; }
 .tid button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .tid a { color: inherit; }
 .tid :focus-visible { outline: 2px solid var(--bar-ink); outline-offset: -2px; }
@@ -221,12 +222,12 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   .fbar-mark { padding: 0 20px; font-size: 22px; }
 }
 @media (max-width: 760px) {
-  :root { --fbar-seek: 34px; --fbar-row: 58px; }
+  :root { --fbar-row: 56px; }
   .fbar-seek { gap: 12px; padding: 0 12px; }
   .fbar-time { font-size: 11px; }
   .fbar-knob { --kw: 38px; height: 21px; }
   .fbar-actions { flex: none; min-width: 0; }
-  .fbar-mark, .fbar-share { display: none; }
+  .fbar-mark { display: none; }
   .fbar-now { gap: 10px; padding: 0 12px; }
   .fbar-actions { padding: 0 10px; }
   .fbar-cta { flex: none; padding: 0 16px; height: 38px; }
@@ -249,7 +250,7 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
   letter-spacing: 0.08em !important;
 }
 .fbar-air-run { display: inline-flex; white-space: nowrap; animation: air 48s linear infinite; will-change: transform; }
-.fbar-air:hover .fbar-air-run { animation-play-state: paused; }
+.fbar-air:hover .fbar-air-run, .fbar:focus-within .fbar-air-run { animation-play-state: paused; }
 .fbar-air-item { display: inline-flex; align-items: center; gap: 0.6em; padding-right: 2.4em; line-height: var(--fbar-air); }
 .fbar-air-item strong { font-weight: 800; color: #fff; }
 .fbar-air-item strong.bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; }
@@ -427,7 +428,7 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-mix { display: none; }
   /* Phones: the mix's name takes the seek row's left side; the eye shows the position. */
   .fbar-seek { grid-template-columns: minmax(0, 1fr); padding: 0 6px; }
-  .fbar-mix-m { display: none; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
+  .fbar-mix-m { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 12px; letter-spacing: 0; color: #000; }
   /* The tracklist sits below the header and above the menu button while open. */
@@ -445,7 +446,7 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-actions { flex: 0 1 auto; min-width: 0; }
 }
 @media (min-width: 761px) and (max-width: 900px) {
-  .fbar-mix, .fbar-share { display: none; }
+  .fbar-mix { display: none; }
   .fbar-mix-m { display: none; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; color: var(--red, #b3121c); }
   .fbar-mix-m i { font-style: normal; }
   .fbar-mix-m .bn { font-family: 'Hind Siliguri', sans-serif; font-size: 13px; letter-spacing: 0; color: #000; }
@@ -479,6 +480,64 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-cta { height: 46px; padding: 0 12px; gap: 0; border-radius: 23px; }
   .fbar-cta-art, .fbar-cta-when { display: none; }
   .fbar-cta-text { gap: 1px; max-width: 80px; }
-  .fbar-cta-k { font-size: 8.5px; letter-spacing: 0.04em; }
+  .fbar-cta-k { font-size: 10px; letter-spacing: 0.04em; }
   .fbar-cta-t { font-size: 12px; line-height: 1.1; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
+
+/* ── The set's badge: "On air" while it plays, "Recorded set" while it does not ── */
+.fbar-onair-off { display: none; }
+.paused .fbar-onair-on { display: none; }
+.paused .fbar-onair-off { display: inline; }
+.paused .fbar-onair { color: #bdbdbd; }
+.paused .fbar-onair i { display: none; }
+
+/* ── Share as an icon where the bar is narrow ── */
+.fbar-share-i { display: none; width: 18px; height: 18px; flex: none; }
+@media (max-width: 900px) {
+  .fbar-share { flex: none; width: 44px; height: 44px; padding: 0; gap: 0; }
+  .fbar-share-i { display: block; }
+  .fbar-share-t { display: none; }
+}
+
+/* ── A link the browser would not copy, shown to copy by hand ── */
+.np-now.np-link { pointer-events: auto; }
+.np-now.np-link .np-now-t { font-size: 13px; font-weight: 500; text-transform: none; word-break: break-all; user-select: all; -webkit-user-select: all; }
+.np-now.np-link .np-now-a { display: none; }
+
+/* ── Phones and short screens: no ticker row; the bar is Mixcloud's player over one control row ── */
+@media (max-width: 760px), (max-height: 940px) {
+  :root { --fbar-air: 0px; }
+  .fbar { grid-template-rows: var(--fbar-seek) var(--fbar-row); }
+  .fbar-air { display: none; }
+}
+
+/* ── Touch: every control at least 44px ── */
+@media (max-width: 760px), (pointer: coarse) {
+  .fbar-play { width: 44px; height: 44px; }
+  .fbar-play svg { width: 36px; height: 36px; }
+  .tid-bar { padding-top: 2px; padding-bottom: 2px; padding-right: 4px; }
+  .tid-bar button { width: 44px; height: 44px; }
+  .tid-transport button { width: 44px; height: 44px; }
+}
+
+@media (max-width: 760px) {
+  .fbar-seek { padding: 0; }
+  .fbar-now { gap: 8px; padding: 0 6px 0 8px; }
+  .fbar-play { margin-left: 0; }
+  .fbar-tl { width: 46px; justify-content: center; padding: 0 !important; }
+  .fbar-actions { gap: 6px; padding: 0 8px; }
+  .fbar-cta-text { max-width: 76px; }
+  /* The tracklist window: centred, a short headline, most of the height for the tracks. */
+  .tid { left: 10px; right: 10px; width: auto; }
+  .tid-hero { padding: 10px 14px; gap: 2px; }
+  .tid-hero-t { font-size: 24px; }
+  .tid-hero-a { font-size: 16px; }
+  .tid-hero-link { display: none; }
+  .tid-head { padding: 6px 8px 6px 14px; }
+  .tid-title span { display: none; }
+  .tid-list li button { min-height: 48px; padding: 8px 12px; grid-template-columns: 44px minmax(0, 1fr); }
+}
+/* The narrowest phones: the cover goes (the title opens the tracklist too) so the names stay readable. */
+@media (max-width: 400px) {
+  .fbar-art { display: none; }
 }

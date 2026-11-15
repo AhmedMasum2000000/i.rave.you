@@ -1,8 +1,8 @@
-# One address for search engines: https://iraveyou.online (HTTPS itself is
-# enforced by the host).
+# One address for search engines: https://iraveyou.online. Every variant
+# (www, plain http, an old path) reaches its final https address in one hop.
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  # www → the bare domain, in one hop.
+  # www → the bare domain over https, in one hop (http://www too).
   RewriteCond %{HTTP_HOST} ^www\.iraveyou\.online$ [NC]
   RewriteRule ^(.*)$ https://iraveyou.online/$1 [R=301,L]
   # The sequencer pages were removed: send their old addresses to the artist page.
@@ -11,6 +11,17 @@
   # for by name, not when the server serves the folder's index itself).
   RewriteCond %{THE_REQUEST} \s/+((?:[^\s?]*/)?)index\.html[\s?]
   RewriteRule ^ https://iraveyou.online/%1 [R=301,L]
+  # Folders without a page of their own answer with their nearest page
+  # instead of a bare 403: the sets live on /radio/, the legal pages start
+  # with the terms.
+  RewriteRule ^mix(?:es)?/?$ https://iraveyou.online/radio/ [R=301,L]
+  RewriteRule ^legal/?$ https://iraveyou.online/legal/terms/ [R=301,L]
+  # Plain http → https://iraveyou.online (a proxy in front of Apache may have
+  # ended TLS already, so its X-Forwarded-Proto counts as https). The rules
+  # above already send their own addresses straight to https.
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+  RewriteRule ^(.*)$ https://iraveyou.online/$1 [R=301,L]
   # The mix only plays from this site: a request for the audio that does not
   # come from one of its pages (an address pasted into a browser or a download
   # manager, another site embedding it) is refused.
@@ -19,6 +30,11 @@
   RewriteCond %{HTTP_REFERER} !^https://((www\.)?iraveyou\.online|[a-z0-9-]+\.hostingersite\.com)/ [NC]
   RewriteRule ^ - [F,L]
 </IfModule>
+
+# Unknown addresses get the site's own page (still with a 404 or 403 status),
+# with a way back to the music, instead of the host's stock page.
+ErrorDocument 404 /404.html
+ErrorDocument 403 /404.html
 
 # The mix's file name carries its content hash, so it can be cached for a
 # year: repeat visits play the set from disk instead of the network.
@@ -29,6 +45,11 @@
   # Pages always revalidate, so a deploy never serves old HTML pointing at
   # removed assets; so does the release list, which changes without a new build.
   <FilesMatch "\.(html|json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # The two unhashed stylesheets in public/ revalidate too (a cheap 304), so a
+  # deploy never pairs new HTML with yesterday's styles.
+  <FilesMatch "^(seo|brand)\.css$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
   # Fonts and images change rarely: a month, refreshed quietly in the background.

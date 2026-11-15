@@ -24,7 +24,15 @@ const icon = {
   prev: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h2v11H3zM13 2.5v11L5.5 8z"/></svg>',
   next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.5h2v11h-2zM3 2.5v11L10.5 8z"/></svg>',
   list: '<span class="fbar-tl-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>',
+  share: '<svg class="fbar-share-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
 };
+
+/**
+ * The set's badge: "On air" (red dot) only while the set plays; paused, it
+ * reads "Recorded set", since what plays here is the recording, not the
+ * live broadcast. Which one shows is CSS, keyed on the `paused` class.
+ */
+const badge = '<b class="fbar-onair"><i></i><span class="fbar-onair-on">On air</span><span class="fbar-onair-off">Recorded set</span></b>';
 
 const two = (n: number): string => String(n).padStart(2, '0');
 /** A track's cover; an unreleased ID shows the set's own artwork. */
@@ -48,7 +56,7 @@ const listHtml = (): string =>
 
 /** The tracklist window's headline for the set on air. */
 const heroHtml = (): string => `
-      <span class="tid-hero-k"><b class="fbar-onair"><i></i>On air</b> ${esc(MIX.station)}</span>
+      <span class="tid-hero-k">${badge} ${esc(MIX.station)}</span>
       <strong class="tid-hero-t">${esc(MIX.show)} <span class="tid-hero-v">${esc(MIX.volume)}</span></strong>
       <span class="tid-hero-a">${hosts()}</span>
       <span class="tid-hero-s">${esc(MIX.description)} ${Math.round(MIX.duration / 60)} minutes, ${TRACKLIST.length} tracks.</span>
@@ -57,12 +65,12 @@ const heroHtml = (): string => `
 export function mountPlayer(): void {
   const root = document.documentElement.dataset.root ?? '';
   const bar = document.createElement('div');
-  bar.className = 'fbar';
+  bar.className = 'fbar paused';
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'Mix player');
   // The credit, said like a broadcast: who made this set, and for whom.
   const opener = (): string => (TRACKLIST[0] ? `, opening with “${esc(TRACKLIST[0].title.replace(/\s*\(unreleased ID\)/i, ''))}”` : '');
-  const air = (): string => `<span class="fbar-air-item"><b class="fbar-onair"><i></i>On air</b> <strong>${hosts()}</strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(MIX.duration / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> <em>—</em> ${TRACKLIST.length} tracks${opener()} <em>✶</em></span>`;
+  const air = (): string => `<span class="fbar-air-item">${badge} <strong>${hosts()}</strong> <em>:</em> ${esc(MIX.show)} ${esc(MIX.volume)} <em>—</em> a ${Math.round(MIX.duration / 60)}-minute set made for <strong>${esc(MIX.station)}</strong> <em>—</em> ${TRACKLIST.length} tracks${opener()} <em>✶</em></span>`;
   // The release the button points to, said the same way in the ticker.
   let featured: Featured | null = null;
   const news = (): string => {
@@ -72,8 +80,8 @@ export function mountPlayer(): void {
     return `<span class="fbar-air-item"><b class="fbar-new">${esc(featured.kicker)}</b> <strong>${esc(r.title)}</strong> <em>—</em> ${esc(r.artists)}${more} <em>✶</em></span>`;
   };
   bar.innerHTML = `
-    <button type="button" class="fbar-air" aria-controls="track-id" aria-expanded="false" aria-label="${esc(MIX.hosts)}, ${esc(MIX.show)} ${esc(MIX.volume)}: a set for ${esc(MIX.station)}. Open the tracklist.">
-      <span class="fbar-air-run" aria-hidden="true">${air().repeat(3)}</span>
+    <button type="button" class="fbar-air" tabindex="-1" aria-hidden="true">
+      <span class="fbar-air-run">${air().repeat(3)}</span>
     </button>
     <div class="fbar-seek">
       <span class="fbar-mix-m">${hosts()} · ${esc(MIX.show)} ${esc(MIX.volume)}</span>
@@ -85,11 +93,11 @@ export function mountPlayer(): void {
         <span class="fbar-mix-t">${esc(MIX.show)} · ${esc(MIX.volume)}</span>
       </div>
       <div class="fbar-now">
-        <button type="button" class="fbar-art" aria-controls="track-id" aria-expanded="false" aria-label="Open mix tracklist">
+        <button type="button" class="fbar-art" tabindex="-1" aria-hidden="true">
           <img class="fbar-cover" src="${cover(TRACKLIST[0])}" alt="" width="44" height="44" decoding="async" />
         </button>
-        <button type="button" class="fbar-text" aria-controls="track-id" aria-expanded="false">
-          <span class="fbar-k" aria-hidden="true">Up next</span>
+        <button type="button" class="fbar-text" tabindex="-1" aria-hidden="true">
+          <span class="fbar-k">Up next</span>
           <span class="fbar-title"></span>
           <span class="fbar-artist"></span>
         </button>
@@ -100,7 +108,7 @@ export function mountPlayer(): void {
       </button>
       <a class="fbar-mark" href="${root}" aria-label="I Rave You home">I RAVE YOU</a>
       <div class="fbar-actions">
-        <button type="button" class="fbar-pill fbar-share"><span class="fbar-share-t">Share this page</span></button>
+        <button type="button" class="fbar-pill fbar-share">${icon.share}<span class="fbar-share-t">Share this page</span></button>
         <a class="fbar-pill fbar-cta" href="${root}music/" target="_blank" rel="noopener" hidden>
           <img class="fbar-cta-art" src="" alt="" width="36" height="36" decoding="async" />
           <span class="fbar-cta-text"><span class="fbar-cta-k"><b></b><span class="fbar-cta-when"></span></span><span class="fbar-cta-t"></span></span>
@@ -110,7 +118,7 @@ export function mountPlayer(): void {
 
   const panel = document.createElement('section');
   panel.id = 'track-id';
-  panel.className = 'tid';
+  panel.className = 'tid paused';
   panel.setAttribute('aria-label', 'Mix tracklist');
   panel.inert = true;
   panel.innerHTML = `
@@ -138,13 +146,15 @@ export function mountPlayer(): void {
   now.setAttribute('aria-live', 'polite');
   now.innerHTML = `<span class="np-now-k"></span><b class="np-now-t"></b><span class="np-now-a"></span>`;
 
-  document.body.append(panel, now, bar);
+  // The window follows the bar in the page, so Tab from the bar reaches the tracks.
+  document.body.append(now, bar, panel);
   // Mixcloud's player sits in the bar, where its own controls stay in reach.
   mountWidget(bar.querySelector<HTMLElement>('[data-mc]')!);
 
   const playBtn = bar.querySelector<HTMLButtonElement>('.fbar-play')!;
+  // Four ways in for the pointer; for the keyboard and screen readers, one: Tracklist.
   const openers = [...bar.querySelectorAll<HTMLButtonElement>('.fbar-art, .fbar-text, .fbar-tl, .fbar-air')];
-  const textBtn = bar.querySelector<HTMLButtonElement>('.fbar-text')!;
+  const tlBtn = bar.querySelector<HTMLButtonElement>('.fbar-tl')!;
   const tlCount = bar.querySelector<HTMLElement>('.fbar-tl-n')!;
   const title = bar.querySelector<HTMLElement>('.fbar-title')!;
   const artist = bar.querySelector<HTMLElement>('.fbar-artist')!;
@@ -164,7 +174,6 @@ export function mountPlayer(): void {
     const src = cover(t);
     if (coverImg.getAttribute('src') !== src) coverImg.src = src;
     tlCount.textContent = `${two(i + 1)}/${TRACKLIST.length}`;
-    textBtn.setAttribute('aria-label', `Open mix tracklist: ${t.title} by ${t.artist}`);
   };
 
   const reveal = (): void => {
@@ -188,28 +197,38 @@ export function mountPlayer(): void {
         /* ignore */
       }
     }
+    if (on === document.body.classList.contains('tid-open')) return;
     document.body.classList.toggle('tid-open', on);
-    openers.forEach((b) => b.setAttribute('aria-expanded', String(on)));
+    tlBtn.setAttribute('aria-expanded', String(on));
     panel.inert = !on;
-    if (!on && panel.contains(document.activeElement)) textBtn.focus();
+    if (!on && panel.contains(document.activeElement)) tlBtn.focus({ preventScroll: true });
     if (on) {
-      panel.querySelector<HTMLButtonElement>('[data-act="close"]')?.focus({ preventScroll: true });
+      // The window turns visible at once (bar.css), so focus can move into it now;
+      // one frame later as a fallback for a browser that has not restyled yet.
+      const close = panel.querySelector<HTMLButtonElement>('[data-act="close"]')!;
+      close.focus({ preventScroll: true });
+      if (document.activeElement !== close) requestAnimationFrame(() => document.body.classList.contains('tid-open') && close.focus({ preventScroll: true }));
       window.setTimeout(reveal, 300);
     }
   };
 
   let nowTimer = 0;
   let firstTrack = true;
-  const announce = (t: MixTrack, i: number): void => {
-    now.querySelector('.np-now-k')!.textContent = `Now playing · ${two(i + 1)}/${TRACKLIST.length}`;
-    now.querySelector('.np-now-t')!.textContent = t.title;
-    now.querySelector('.np-now-a')!.textContent = t.artist;
+  /** Show the small window: a kicker, a line, a second line. `link` makes the line a selectable URL. */
+  const notice = (k: string, t: string, a: string, ms = 5200, link = false): void => {
+    now.querySelector('.np-now-k')!.textContent = k;
+    const line = now.querySelector<HTMLElement>('.np-now-t')!;
+    line.textContent = t;
+    now.querySelector('.np-now-a')!.textContent = a;
+    now.classList.toggle('np-link', link);
     now.classList.remove('show');
     void now.offsetWidth;
     now.classList.add('show');
+    if (link) window.getSelection()?.selectAllChildren(line);
     clearTimeout(nowTimer);
-    nowTimer = window.setTimeout(() => now.classList.remove('show'), 5200);
+    nowTimer = window.setTimeout(() => now.classList.remove('show', 'np-link'), ms);
   };
+  const announce = (t: MixTrack, i: number): void => notice(`Now playing · ${two(i + 1)}/${TRACKLIST.length}`, t.title, t.artist);
 
   onTrack((t, i) => {
     if (!firstTrack && isPlaying() && !document.body.classList.contains('tid-open')) announce(t, i);
@@ -246,6 +265,7 @@ export function mountPlayer(): void {
     started ||= playing;
     label(playing);
     bar.classList.toggle('paused', !playing);
+    panel.classList.toggle('paused', !playing);
   });
   onTrack(() => label(isPlaying()));
   label(false);
@@ -301,15 +321,24 @@ export function mountPlayer(): void {
   window.addEventListener('routechange', syncShare);
   share.addEventListener('click', async () => {
     const data = { title: document.title, text: `${shareName === 'this page' || shareName === 'this article' ? document.title : shareName} on I Rave You`, url: location.href };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(data.url);
-        shareText.textContent = 'Link copied';
-        window.setTimeout(syncShare, 1800);
+    if (navigator.share) {
+      try {
+        await navigator.share(data);
+        return;
+      } catch (e) {
+        // Dismissed: nothing to say. Refused for another reason: copy instead.
+        if ((e as DOMException)?.name === 'AbortError') return;
       }
+    }
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('no clipboard');
+      await navigator.clipboard.writeText(data.url);
+      shareText.textContent = 'Link copied';
+      window.setTimeout(syncShare, 1800);
+      notice('Link copied', data.url, '', 2600);
     } catch {
-      /* the visitor dismissed the share sheet */
+      // The browser would not copy: show the link, selected, to copy by hand.
+      notice('Copy this link', data.url, '', 12000, true);
     }
   });
 
@@ -327,6 +356,10 @@ export function mountPlayer(): void {
     else if (el.dataset.act === 'next') skip(1);
     else if (el.dataset.act === 'close') open(false);
   });
-  window.addEventListener('keydown', (e) => e.key === 'Escape' && open(false));
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    open(false);
+    now.classList.remove('show', 'np-link');
+  });
   window.addEventListener('routechange', () => open(false));
 }

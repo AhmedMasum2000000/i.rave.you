@@ -118,7 +118,8 @@ export const SETS: RadioSet[] = typeof __SETS__ !== 'undefined' ? __SETS__ : [];
 const SET_KEY = 'iry:set';
 const chosen = (): string | null => {
   try {
-    return new URLSearchParams(location.search).get('set') ?? localStorage.getItem(SET_KEY);
+    // Every visit opens on the newest set; only a link that names one (?set=) opens another.
+    return new URLSearchParams(location.search).get('set');
   } catch {
     return null;
   }
@@ -178,32 +179,61 @@ export interface CalendarEvent {
   title: string;
   /** ISO date-time with offset. */
   start: string;
+  /** When it ends, for a broadcast slot (ISO date-time with offset). */
+  end?: string;
   /** How the date reads on the page. */
   when: string;
-  /** Ignored by the build, which works out upcoming or past from `start`. */
-  status: 'scheduled' | 'done';
+  /** Before the date: what it is and where to tune in. */
   detail: string;
   href: string;
   cta: string;
+  /** A broadcast: the set in the radio library (sets/<slug>/) that is its recording. */
+  set?: string;
+  /** Once it has aired: what to say and where to send listeners instead. */
+  aired?: { detail: string; href: string; cta: string };
 }
 
-/** Confirmed dates only; each set's broadcast is added from the radio library. */
+/**
+ * Confirmed dates only. Upcoming or past is never set by hand: the build and
+ * the home page (src/home.ts) both work it out from `start` and `end`.
+ */
 export const EVENTS: CalendarEvent[] = [
   {
-    // Source: the artists' HKCR resident dashboard (slot booked for Fri 6 Nov, 01:00 HKT).
-    title: 'Qbic Pulse on Hong Kong Community Radio',
-    start: '2026-11-06T01:00:00+08:00',
-    when: 'Fri 6 Nov 2026 · 01:00 HKT',
-    status: 'scheduled',
-    detail: 'ACND & অপূর্ব in their slot on Hong Kong Community Radio. Tune in live on hkcr.live; between broadcasts the latest set plays here.',
+    // Source: HKCR's show page and cover (13.11.2026, 0400–0500 HKT / 0200–0300 GMT+6).
+    title: 'Qbic Pulse Vol. 02 on Hong Kong Community Radio',
+    start: '2026-11-13T04:00:00+08:00',
+    end: '2026-11-13T05:00:00+08:00',
+    when: 'Fri 13 Nov 2026 · 04:00 HKT',
+    set: 'qbic-pulse-vol-2',
+    detail: 'Ash Army, ACND & অপূর্ব in a one-hour collective DJ mix on Hong Kong Community Radio. Tune in live on hkcr.live.',
     href: 'https://hkcr.live/',
     cta: 'Hong Kong Community Radio',
+    aired: {
+      detail: 'Ash Army, ACND & অপূর্ব, one hour on Hong Kong Community Radio. The recording plays here, with the full tracklist.',
+      href: 'mixes/qbic-pulse-vol-2/',
+      cta: 'Tracklist & player',
+    },
+  },
+  {
+    // Source: HKCR's show page, "Frequency & Unity — অপূর্ব × ACND | Qbic Pulse volume 01" (slot 01:00–02:00 HKT).
+    title: 'Frequency & Unity: Qbic Pulse Vol. 1 on Hong Kong Community Radio',
+    start: '2026-11-06T01:00:00+08:00',
+    end: '2026-11-06T02:00:00+08:00',
+    when: 'Fri 6 Nov 2026 · 01:00 HKT',
+    set: 'qbic-pulse-vol-1',
+    detail: 'ACND & অপূর্ব in their slot on Hong Kong Community Radio. Tune in live on hkcr.live.',
+    href: 'https://hkcr.live/',
+    cta: 'Hong Kong Community Radio',
+    aired: {
+      detail: 'ACND & অপূর্ব, one hour on Hong Kong Community Radio, opening with their unreleased “Initiate”. The recording plays here, with the full tracklist.',
+      href: 'mixes/qbic-pulse/',
+      cta: 'Tracklist & player',
+    },
   },
   {
     title: 'Down In Bossa — Ash Army & ACND',
     start: '2026-10-30T00:00:00+06:00',
     when: 'Fri 30 Oct 2026',
-    status: 'done',
     detail: 'The Afro House single is out on Profi Music, distributed by ADA Central Europe, Warner Music Group’s distribution arm: the original (2:26) and an Extended Edit (3:24).',
     href: 'music/down-in-bossa/',
     cta: 'Release details',
@@ -338,6 +368,8 @@ export const ARTISTS: Record<ArtistId, Artist> = {
     ],
     releases: [
       { title: 'Down In Bossa', artists: 'Ash Army & ACND · Profi Music', year: 2026, tag: 'Out now · 30 Oct 2026', cover: NEXT_RELEASE.cover, url: NEXT_RELEASE.presave },
+      // Spotify credits Ahmed Masum (ACND) on this track.
+      { title: 'Opening', artists: 'অপূর্ব, Hridnic, ACND (Ahmed Masum), Prothey', year: 2025, tag: '2025', cover: 'img/opening.jpg', url: 'https://open.spotify.com/track/1qDaML7JOjR84zWEuOHjDS' },
     ],
     extras: {
       heading: 'Remix credits',

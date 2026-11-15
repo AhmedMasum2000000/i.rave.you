@@ -5,7 +5,7 @@ import { ROOT } from './router';
 /**
  * The home feed is static HTML built into index.html (scripts/home.mjs). This
  * module only adds what needs script: one fade per block, the catalogue tabs,
- * the play buttons, the bar behind MENU and the broadcast countdown. Nothing here loops on its own;
+ * the play buttons, the bar behind MENU and the broadcast block. Nothing here loops on its own;
  * the only motion while idle is the countdown text.
  * Arriving on the home page from another route, the feed is fetched once from
  * index.html, so there is one source for it.
@@ -125,19 +125,33 @@ function enhance(feed: HTMLElement): () => void {
     });
   }
 
-  /* ── broadcast countdown: days, hours and minutes are enough for a weekly slot ── */
-  const cd = feed.querySelector<HTMLElement>('[data-countdown]');
-  const cdText = cd?.querySelector<HTMLElement>('[data-cd-text]');
-  if (cd && cdText) {
-    const at = Date.parse(cd.dataset.countdown!);
+  /* ── broadcast: a countdown before the slot, "on air" during it, and once it
+     has ended the block becomes "Latest broadcast" with its recording's link
+     (the <template> built with it), however long ago the page was built ── */
+  const bc = feed.querySelector<HTMLElement>('[data-broadcast]');
+  const cdText = bc?.querySelector<HTMLElement>('[data-cd-text]');
+  const aired = bc?.querySelector<HTMLTemplateElement>('template[data-b-aired]');
+  if (bc && cdText && aired) {
+    const start = Date.parse(bc.dataset.start!);
+    const end = Date.parse(bc.dataset.end!);
+    let id = 0;
     const tick = (): void => {
-      const s = Math.floor((at - Date.now()) / 1000);
-      if (s <= 0) return void (cdText.textContent = ' · on air now or just aired');
+      const now = Date.now();
+      if (now >= end) {
+        bc.querySelector('[data-b-label]')!.textContent = 'Latest broadcast';
+        bc.querySelector('[data-b-body]')!.replaceChildren(aired.content.cloneNode(true));
+        aired.remove();
+        cdText.textContent = ' · aired';
+        clearInterval(id);
+        return;
+      }
+      const s = Math.floor((start - now) / 1000);
+      if (s <= 0) return void (cdText.textContent = ' · on air now');
       const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
       cdText.textContent = ` · in ${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
     };
+    id = window.setInterval(() => !document.hidden && tick(), 15000);
     tick();
-    const id = window.setInterval(() => !document.hidden && tick(), 15000);
     off.push(() => clearInterval(id));
   }
 

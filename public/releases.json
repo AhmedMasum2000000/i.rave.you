@@ -128,13 +128,14 @@
       "title": "Opening",
       "artists": "অপূর্ব, Hridnic, Ahmed Masum & Prothey",
       "for": [
-        "apurba"
+        "apurba",
+        "acnd"
       ],
       "date": "2025-05-27T07:00:00Z",
       "url": "https://music.apple.com/us/album/opening-single/1821995432",
       "cover": "img/releases/1821995432.webp",
       "apple": 1821995432,
-      "source": "apple"
+      "source": "manual"
     }
   ]
 }

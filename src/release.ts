@@ -27,6 +27,8 @@ export interface Release {
   cover?: string;
   label?: string;
   genre?: string;
+  /** The artists whose pages feature it: "acnd", "apurba". */
+  for?: string[];
 }
 
 export interface Featured {
@@ -50,8 +52,16 @@ const day = (iso: string): string => {
 };
 const coverOf = (r: Release): string => (r.cover ? (/^https?:/.test(r.cover) ? r.cover : asset(r.cover)) : asset('img/mix-art.jpg'));
 
-/** The next release that can be pre-saved, else the newest one out. */
-export function pick(list: Release[], now = Date.now()): Featured | null {
+/**
+ * The next release that can be pre-saved, else the newest one out. On an
+ * artist's page (`artist` is "acnd" or "apurba") the pick comes from that
+ * artist's releases first, and from the whole list when none is theirs.
+ */
+export function pick(list: Release[], now = Date.now(), artist = ''): Featured | null {
+  if (artist) {
+    const own = pick(list.filter((r) => r?.for?.includes(artist)), now);
+    if (own) return own;
+  }
   const dated = list.filter((r) => r && r.title && r.url && Number.isFinite(Date.parse(r.date)));
   const next = dated.filter((r) => Date.parse(r.date) > now).sort((a, b) => Date.parse(a.date) - Date.parse(b.date))[0];
   if (next) return { release: next, state: 'presave', kicker: 'Pre-save', when: `out ${day(next.date)}`, href: next.presave ?? next.url, cover: coverOf(next) };
@@ -61,6 +71,13 @@ export function pick(list: Release[], now = Date.now()): Featured | null {
   return { release: latest, state: today ? 'today' : 'latest', kicker: today ? 'Out today' : 'Latest release', when: '', href: latest.url, cover: coverOf(latest) };
 }
 
+/** The artist whose page is open, if any: the release button follows them. */
+const artistOf = (): string => {
+  const p = location.pathname.slice((document.documentElement.dataset.root ?? '/').length);
+  return /^(acnd|apurba)\//.exec(p)?.[1] ?? '';
+};
+const current = (): Featured | null => pick(list, Date.now(), artistOf());
+
 let list = built;
 let key = '';
 let lastFetch = 0;
@@ -68,7 +85,7 @@ const listeners = new Set<(f: Featured | null) => void>();
 const keyOf = (f: Featured | null): string => (f ? JSON.stringify([f.release, f.state, f.when]) : '');
 
 function emit(): void {
-  const f = pick(list);
+  const f = current();
   const k = keyOf(f);
   if (k === key) return;
   key = k;
@@ -94,11 +111,14 @@ let started = false;
 /** Call `fn` now and whenever the featured release or its state changes. */
 export function onRelease(fn: (f: Featured | null) => void): void {
   listeners.add(fn);
-  fn(pick(list));
-  key = keyOf(pick(list));
+  const f = current();
+  fn(f);
+  key = keyOf(f);
   if (started) return;
   started = true;
   void refresh();
+  // Moving between artists' pages hands the button to the artist on screen.
+  window.addEventListener('routechange', () => emit());
   // The clock: a pre-save turns into "Out today" the minute it is out.
   window.setInterval(() => emit(), 30_000);
   window.setInterval(() => !document.hidden && void refresh(), 10 * 60_000);

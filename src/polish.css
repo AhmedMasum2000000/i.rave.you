@@ -144,6 +144,9 @@ body.flooding .news, body.peeking .news { opacity: 0; pointer-events: none; tran
   text-transform: uppercase;
 }
 .home-cred span { color: rgba(255, 255, 255, 0.45); }
+/* The line may cross the S-curve into the white half: like the wordmark, it
+   inverts against whatever is under it, so it reads on both halves. */
+.home-cred { mix-blend-mode: difference; }
 .home-cred i { font-style: normal; color: var(--red-hi); padding: 0 6px; }
 
 /* ── Artist pages: selected credits and the invitation ── */
@@ -181,12 +184,26 @@ body.flooding .news, body.peeking .news { opacity: 0; pointer-events: none; tran
   .cred-list li { grid-template-columns: 96px minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
-  .news { top: calc(296px + var(--safe-top, 0px)); left: 16px; right: 16px; translate: none; justify-content: space-between; gap: 8px; font-size: 11px; }
-  .news-go { display: none; }
+  /* A short chip in the empty top-right corner, clear of the emblem on the seam. */
+  .news { top: calc(64px + var(--safe-top, 0px)); left: auto; right: 16px; translate: none; max-width: calc(100% - 160px); gap: 8px; padding: 5px 12px 5px 5px; font-size: 11px; }
+  .news-go, .news-d, .news-a { display: none; }
   .news-t { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .home-cred { display: none; }
   .side-cta { padding: 11px 18px; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cta, .side-cta, .a-hero-listen, .fbar-cta, .news, .release-cover, .a-media-img, .a-door-img { animation: none !important; }
+}
+
+/* Phones: the hero ends where the player bar begins, so both ways in sit above it. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .home { height: calc(100svh - var(--fbar-h)); min-height: 0; }
+  body[data-view='home'] #app { min-height: calc(100svh - var(--fbar-h)); }
+}
+@media (max-width: 760px) {
+  .home .side { padding-bottom: 20px; }
+  .home .side-light { padding-bottom: 36px; }
+}
+@media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  .news { top: calc(14px + var(--safe-top, 0px)); left: 50%; right: auto; translate: -50% 0; }
 }

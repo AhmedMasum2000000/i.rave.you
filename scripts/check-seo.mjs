@@ -292,6 +292,27 @@ console.log(
   console.log(`PASS legal pages: iraveyou.online, contact, licensing statement, analytics notice (${ga4 ? "GA4 on" : "no analytics"})`);
 }
 
+// The privacy notice names the embedded Mixcloud player; legal pages share like the rest of the site.
+{
+  const privacy = readFileSync(resolve(root, "legal/privacy/index.html"), "utf8");
+  assert.match(privacy, /https:\/\/www\.mixcloud\.com\/privacy\//, "Mixcloud privacy policy linked");
+  assert.doesNotMatch(privacy, /players are not embedded|DJ sets are served from this website/, "stale no-embed claim");
+  for (const page of ["terms", "privacy", "copyright"]) {
+    const html = readFileSync(resolve(root, "legal", page, "index.html"), "utf8");
+    for (const tag of ["og:title", "og:description", "og:image", "twitter:card"]) assert.match(html, new RegExp(`"${tag}" content="[^"]+"`), `${tag} on legal/${page}`);
+    const description = html.match(/<meta name="description" content="([^"]+)"/)[1];
+    assert.ok(description.length >= 110 && description.length <= 160, `legal/${page} description length ${description.length}`);
+  }
+  // http and www reach https in one hop; unknown addresses get the site's own 404 page.
+  const htaccess = readFileSync(resolve(root, ".htaccess"), "utf8");
+  assert.match(htaccess, /RewriteCond %\{HTTPS\} off\s+RewriteCond %\{HTTP:X-Forwarded-Proto\} !https \[NC\]\s+RewriteRule \^\(\.\*\)\$ https:\/\/iraveyou\.online\/\$1 \[R=301,L\]/);
+  assert.match(htaccess, /^ErrorDocument 404 \/404\.html$/m);
+  const notFound = readFileSync(resolve(root, "404.html"), "utf8");
+  assert.match(notFound, /name="robots" content="noindex"/);
+  for (const path of ["acnd/", "apurba/", "radio/", "journal/", "seo.css", "fonts/brand.css"]) assert.ok(notFound.includes(`"/${path}"`) && existsSync(resolve(root, path.endsWith("/") ? path + "index.html" : path)), `404 page link /${path}`);
+  console.log("PASS legal sharing tags, Mixcloud privacy notice, https redirect and branded 404 page");
+}
+
 // The release button's feed: served as-is, every entry usable, every cover on disk.
 {
   const feed = JSON.parse(readFileSync(resolve(root, "releases.json"), "utf8"));

@@ -18,7 +18,7 @@ import { track, trackOutbound, trackPage } from './analytics';
 import { mountDuality, type DualityHandle } from './duality';
 import { mountPlayer } from './player';
 import { mountFx, transition } from './fx';
-import { asset, autoplay, esc, mountGate, reducedMotion } from './ui';
+import { announce, asset, autoplay, bn, esc, focusView, mountGate, reducedMotion } from './ui';
 import { ROOT, interceptLinks, link, parse, retireSequencer, routeHref, upgradeLegacyHash } from './router';
 import { entry, initHistory, push, rememberScroll, restoreScroll, stamp } from './history';
 import { mountBack } from './back';
@@ -47,13 +47,24 @@ const teardown = (): void => {
  * home. A new page opens at the top; Back and Forward (`restore`) reopen a
  * page where the visitor left it.
  */
+/** Set once the first view has rendered: later views move focus and announce themselves. */
+let booted = false;
+/** The next content page to load in the frame came from a route change, not the first render. */
+let announceDoc = false;
+
+/** Fixed controls get a solid backing once content scrolls under them. */
+const markScrolled = (y: number): void => void document.body.classList.toggle('scrolled', y > 8);
+window.addEventListener('scroll', () => document.body.dataset.view !== 'doc' && markScrolled(scrollY), { passive: true });
+
 const route = (restore = false): void => {
   const { artist, page, doc } = parse();
   const { y, fy } = restore ? entry() : { y: 0, fy: 0 };
+  announceDoc = booted && !!doc;
   // Moving between content pages reuses the open frame.
   if (doc && showDoc(doc, fy)) return void window.dispatchEvent(new Event('routechange'));
   teardown();
   window.scrollTo({ top: 0, behavior: 'instant' });
+  markScrolled(0);
   if (doc) cleanup.push(renderDoc(doc, fy));
   else if (artist) cleanup.push(renderArtist(app, ARTISTS[artist], page as Page));
   else renderHome();
@@ -62,6 +73,12 @@ const route = (restore = false): void => {
   // Content pages report their view once their frame has loaded (renderDoc).
   if (!doc) trackPage();
   window.dispatchEvent(new Event('routechange'));
+  // Keyboard and screen-reader users land on the new page and hear its title.
+  if (booted && !doc) {
+    focusView(app);
+    announce(document.title);
+  }
+  booted = true;
 };
 
 /** The content frame's own scroll position, when one is open. */
@@ -149,10 +166,17 @@ function renderDoc(path: string, y = 0): () => void {
     if (pendingFrameY) restoreScroll(pendingFrameY, win);
     pendingFrameY = 0;
     win.addEventListener('scroll', saveSoon, { passive: true });
+    markScrolled(win.scrollY);
+    win.addEventListener('scroll', () => markScrolled(win.scrollY), { passive: true });
     // A navigation the shell didn't route (a form, a typed URL): follow it.
     const at = framePath(f);
     if (at && at !== location.pathname + location.hash) stamp({}, at);
     window.dispatchEvent(new Event('routechange'));
+    if (announceDoc) {
+      announceDoc = false;
+      focusView(app);
+      announce(document.title);
+    }
   });
   return () => {
     frame = null;
@@ -188,22 +212,22 @@ function renderHome(): void {
       </header>
       <a class="news" href="${link('music/down-in-bossa/')}">
         <b class="news-k">New</b>
-        <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong> · ${esc(NEXT_RELEASE.artist)}</span>
+        <span class="news-t"><strong>${esc(NEXT_RELEASE.title)}</strong><span class="news-a"> · ${esc(NEXT_RELEASE.artist)}</span></span>
         <span class="news-d">Out now</span>
         <span class="news-go">Details →</span>
       </a>
       <p class="home-cred mono"><span>Heard on</span> Hong Kong Community Radio <i>·</i> <span>Down In Bossa out on</span> Profi Music</p>
 
       <a class="side side-dark" href="${routeHref('apurba')}" data-side="apurba">
-        ${logo(A, 'side-logo')}
-        <span class="side-name bn">${esc(A.name)}</span>
-        <span class="side-cta mono">Enter →</span>
+        ${mark(A)}
+        <span class="side-name bn" lang="bn">${esc(A.name)}</span>
+        <span class="side-cta mono">Enter <span aria-hidden="true">→</span></span>
       </a>
 
       <a class="side side-light" href="${routeHref('acnd')}" data-side="acnd">
-        ${logo(C, 'side-logo')}
+        ${mark(C)}
         <span class="side-name">${esc(C.name)}</span>
-        <span class="side-cta mono">← Enter</span>
+        <span class="side-cta mono"><span aria-hidden="true">←</span> Enter</span>
       </a>
 
     </main>`;
@@ -250,14 +274,28 @@ function renderHome(): void {
   });
   let pinned: ArtistId | null = null;
 
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
   app.querySelectorAll<HTMLAnchorElement>('.side').forEach((el) => {
     const side = el.dataset.side === 'apurba' ? -1 : 1;
-    el.addEventListener('pointerenter', (e) => {
-      if (e.pointerType === 'touch') return;
+    // Lean only on a real hover: a mouse that moves over the half. A pointer
+    // left resting where the gate's button was must not favour either artist.
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !fine.matches || (!e.movementX && !e.movementY)) return;
+      if (document.body.classList.contains('gated') || document.body.dataset.lean === el.dataset.side) return;
       fx.lean(-side);
       document.body.dataset.lean = el.dataset.side;
     });
     el.addEventListener('pointerleave', () => {
+      fx.lean(0);
+      delete document.body.dataset.lean;
+    });
+    // A keyboard visitor sees the same lean as a pointer hovering that half.
+    el.addEventListener('focus', () => {
+      if (!el.matches(':focus-visible')) return;
+      fx.lean(-side);
+      document.body.dataset.lean = el.dataset.side;
+    });
+    el.addEventListener('blur', () => {
       fx.lean(0);
       delete document.body.dataset.lean;
     });
@@ -285,6 +323,9 @@ function renderHome(): void {
 
 }
 
+/** The hero logo: decorative, since the link already carries the artist's name. */
+const mark = (a: (typeof ARTISTS)[ArtistId]): string => logo(a, 'side-logo').replace(/ alt="[^"]*"/, ' alt=""');
+
 /** The window into one artist's world shown beside the emblem. */
 function peekCard(id: ArtistId): HTMLElement {
   const a = ARTISTS[id];
@@ -294,16 +335,16 @@ function peekCard(id: ArtistId): HTMLElement {
   el.className = `peek peek-${id}`;
   el.setAttribute('aria-hidden', 'true');
   el.innerHTML = `
-    <header class="peek-bar"><span class="${id === 'apurba' ? 'bn' : ''}">${esc(a.name)}</span><span>Sneak peek</span></header>
+    <header class="peek-bar"><span>${bn(a.name)}</span><span>Sneak peek</span></header>
     <div class="peek-body">
       <img src="${asset(next ? NEXT_RELEASE.cover.replace(/\.jpg$/, '.webp') : r.cover ?? a.hero)}" alt="" width="84" height="84" />
       <div>
         <span class="peek-k">${next ? `Out now · ${esc(NEXT_RELEASE.genre)}` : `Latest release · ${r.year}`}</span>
         <b>${esc(next ? NEXT_RELEASE.title : r.title)}</b>
-        <span class="peek-sub">${esc(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
+        <span class="peek-sub">${bn(next ? `${NEXT_RELEASE.artist} · ${NEXT_RELEASE.label}` : r.artists)}</span>
       </div>
     </div>
-    <p class="peek-summary">${esc(a.about?.summary ?? a.bio[0])}</p>
+    <p class="peek-summary">${bn(a.about?.summary ?? a.bio[0])}</p>
     <footer class="peek-foot"><span>${esc(a.origin)}</span><span class="peek-go">Click to enter →</span></footer>`;
   return el;
 }
@@ -337,7 +378,7 @@ window.addEventListener(
     const warm = (): void => {
       if (!roomForExtras()) return void window.setTimeout(warm, 500);
       for (const a of Object.values(ARTISTS)) {
-        for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}.webp`)]) {
+        for (const href of [asset(a.hero.replace(/\.(jpe?g|png)$/, '.webp')), asset(`img/logo-${a.id}-640.webp`)]) {
           const l = document.createElement('link');
           l.rel = 'prefetch';
           l.as = 'image';
@@ -351,11 +392,11 @@ window.addEventListener(
   { once: true },
 );
 
-// Only a first visit to the home page asks about sound; every other page
-// simply starts the mix (or waits for the first tap if autoplay is blocked).
+// Only a first visit to the home page asks about sound. Other pages resume the
+// mix only for a visitor who chose sound before; a first visit there stays
+// silent until the play button is pressed.
 if (parse().artist || parse().doc) autoplay();
 else void mountGate({
   kicker: 'অপূর্ব ◐ ACND',
   line: 'Qbic Pulse on Hong Kong Community Radio, hosted by ACND & অপূর্ব.',
-  cta: 'Click to enter',
 });

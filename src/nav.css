@@ -26,6 +26,20 @@
 .back-btn:hover svg { transform: translateX(-2px); }
 body.menu-open .back-btn { visibility: hidden; }
 
+/* Once a page scrolls under them, MENU gets the same solid backing as Back,
+   so neither sits on top of body text. */
+body.scrolled:not([data-view='home']):not(.menu-open) .menu-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(244, 242, 236, 0.22);
+  border-radius: 2px;
+  background: rgba(8, 8, 8, 0.78);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #f4f2ec;
+  mix-blend-mode: normal;
+}
+
 /* The artist bar starts after the button. */
 body[data-view='artist'] .a-nav { padding-left: calc(var(--gutter) + 100px); }
 @media (max-width: 900px) {

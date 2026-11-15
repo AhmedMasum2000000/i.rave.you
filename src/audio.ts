@@ -183,15 +183,27 @@ export function start(): void {
   emitState();
 }
 
+/**
+ * Only called after the visitor chose sound (the gate's "Enter with sound",
+ * the play button, or a stored "sound" choice). If the browser still refused,
+ * the next deliberate tap or Enter / Space starts it; Tab, arrows, modifiers
+ * and Escape never do, and nothing fires while the entry gate is up.
+ */
 function armRetry(): void {
   if (playing || userPaused) return;
-  const retry = (event: Event): void => {
-    // The play button and the quiet / legal links handle their own taps.
-    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play')) return;
+  const off = (): void => {
     window.removeEventListener('pointerdown', retry, true);
     window.removeEventListener('keydown', retry, true);
-    if (!playing && !userPaused) void widget?.play();
   };
+  function retry(event: Event): void {
+    if (playing || userPaused) return off();
+    if (document.body.classList.contains('gated')) return;
+    if (event instanceof KeyboardEvent && (event.key !== 'Enter' && event.key !== ' ')) return;
+    // The play button and the quiet / legal links handle their own taps.
+    if (event.target instanceof Element && event.target.closest('[data-quiet], [data-legal-link], .fbar-play, .gate')) return;
+    off();
+    void widget?.play();
+  }
   window.addEventListener('pointerdown', retry, true);
   window.addEventListener('keydown', retry, true);
 }
