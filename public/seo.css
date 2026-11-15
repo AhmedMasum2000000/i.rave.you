@@ -241,10 +241,11 @@ figcaption {
 }
 .article-figure img {
   display: block;
-  width: 100%;
-  height: clamp(220px, 45vw, 420px);
-  object-fit: contain;
-  background: #151515;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 420px;
+  margin-inline: auto;
   border-radius: 6px;
 }
 .article-figure figcaption {
@@ -410,17 +411,28 @@ h1 { line-height: 1.02; }
 .journal-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 /* Content guard without script: these pages run none (see src/guard.ts, which
-   adds the rest when the site shows them in its frame). No selecting, no
-   long-press menu, no dragging or saving images, no printing. */
+   adds the rest when the site shows them in its frame). The interface is not
+   selectable and has no long-press menu; reading text is, so select-to-speak,
+   Look Up and translation work. No dragging or saving images, no printing. */
 html {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
 input,
-textarea {
+textarea,
+:is(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article) {
   -webkit-user-select: text;
   user-select: text;
+}
+:is(p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, td, th, article) {
+  -webkit-touch-callout: default;
+}
+:is(button, nav, summary, .site-bar, .play-strip),
+:is(button, nav, summary, .site-bar, .play-strip) * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 img,
 a {
@@ -441,3 +453,108 @@ img {
     color: #000;
   }
 }
+
+/* ── The app's frame, without its script ──
+   Wordmark left, MENU right (a <details> disclosure), and a slim strip along
+   the bottom that opens the player on the newest set. Inside the site shell
+   the app draws its own menu and player, so these step aside. */
+header.site-bar {
+  flex-wrap: nowrap;
+  position: relative;
+  z-index: 20;
+}
+.site-bar .brand {
+  font-weight: 900;
+  font-size: 20px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-menu { position: relative; }
+.site-menu summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 4px;
+  list-style: none;
+  cursor: pointer;
+  color: #fff;
+  font: 700 17px/1 'Doto', ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.site-menu summary::-webkit-details-marker { display: none; }
+.menu-icon { display: grid; gap: 4px; width: 22px; }
+.menu-icon i { display: block; height: 3px; background: currentColor; }
+.site-menu[open] summary { color: #fff; }
+.site-menu[open] .menu-icon i:first-child { transform: translateY(3.5px) rotate(45deg); }
+.site-menu[open] .menu-icon i:last-child { transform: translateY(-3.5px) rotate(-45deg); }
+.site-menu nav {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: grid;
+  gap: 0;
+  min-width: 220px;
+  padding: 8px 0;
+  background: #000;
+  border: 1px solid #333;
+  border-top: 2px solid #d4202b;
+}
+.site-menu nav a {
+  min-height: 44px;
+  padding: 0 20px;
+  color: #f2f2f2;
+  text-decoration: none;
+  font: 600 13px/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-menu nav a [lang='bn'] { font: 600 16px/1 'Hind Siliguri', sans-serif; letter-spacing: 0; }
+.site-menu nav a:hover,
+.site-menu nav a[aria-current='page'] { color: #fff; background: #111; box-shadow: inset 3px 0 0 #d4202b; }
+
+body.has-strip { padding-bottom: 56px; }
+.play-strip {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 8px clamp(16px, 5vw, 64px) calc(8px + env(safe-area-inset-bottom, 0px));
+  background: #f4f4f4;
+  color: #000;
+  border-top: 1px solid #000;
+  text-decoration: none;
+  font: 600 12px/1.2 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.play-strip:hover { color: #000; }
+.play-strip:focus-visible { outline: 3px solid #d4202b; outline-offset: -3px; }
+.ps-i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.play-strip:hover .ps-i { background: #d4202b; }
+.ps-t { font-weight: 800; white-space: nowrap; }
+.ps-v { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; }
+.ps-v [lang='bn'] { font-family: 'Hind Siliguri', sans-serif; letter-spacing: 0; text-transform: none; }
+.ps-go { margin-left: auto; white-space: nowrap; color: #d4202b; font-weight: 800; }
+@media (max-width: 560px) {
+  .ps-go { display: none; }
+  .play-strip { gap: 10px; }
+}
+html.in-shell .site-menu,
+html.in-shell .play-strip { display: none; }
+html.in-shell body.has-strip { padding-bottom: 0; }

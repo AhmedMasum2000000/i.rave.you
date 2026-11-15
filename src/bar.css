@@ -484,12 +484,14 @@ body.flooding .peek { opacity: 0 !important; }
   .fbar-cta-t { font-size: 12px; line-height: 1.1; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 }
 
-/* ── The set's badge: "On air" while it plays, "Recorded set" while it does not ── */
-.fbar-onair-off { display: none; }
-.paused .fbar-onair-on { display: none; }
-.paused .fbar-onair-off { display: inline; }
-.paused .fbar-onair { color: #bdbdbd; }
-.paused .fbar-onair i { display: none; }
+/* ── The set's badge: "Recorded set"; "On air" with the red dot only during its broadcast slot ── */
+.fbar-onair-on { display: none; }
+:is(.fbar, .tid) .fbar-onair { color: #bdbdbd; }
+:is(.fbar, .tid) .fbar-onair i { display: none; }
+:is(.fbar, .tid).on-air .fbar-onair { color: var(--red-hi, #d4202b); }
+:is(.fbar, .tid).on-air .fbar-onair i { display: block; }
+.on-air .fbar-onair-on { display: inline; }
+.on-air .fbar-onair-off { display: none; }
 
 /* ── Share as an icon where the bar is narrow ── */
 .fbar-share-i { display: none; width: 18px; height: 18px; flex: none; }
@@ -537,7 +539,56 @@ body.flooding .peek { opacity: 0 !important; }
   .tid-title span { display: none; }
   .tid-list li button { min-height: 48px; padding: 8px 12px; grid-template-columns: 44px minmax(0, 1fr); }
 }
-/* The narrowest phones: the cover goes (the title opens the tracklist too) so the names stay readable. */
+/* The narrowest phones: the cover, the "Up next" kicker and the share pill go (the title opens the
+   tracklist too; the browser's own menu shares the page) so the artist names can take two lines. */
 @media (max-width: 400px) {
-  .fbar-art { display: none; }
+  .fbar-art, .fbar-k, .fbar-share { display: none; }
+  .fbar-text { gap: 1px; }
+  .fbar-artist { white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+}
+
+/* ── Qbic Pulse volumes: the set name (and, where it is hidden, a small "Vol." chip) opens the picker ── */
+.fbar .fbar-mix { padding: 0 18px; background: #000; color: #fff; text-align: left; }
+.fbar .fbar-mix:hover .fbar-mix-t { text-decoration: underline; text-underline-offset: 3px; }
+.fbar .fbar-mix:focus-visible, .fbar .fbar-vol:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.fbar-mix-c { display: inline-block; margin-left: 2px; font-size: 10px; color: #fff; opacity: 0.7; }
+.fbar .fbar-vol { display: none; flex: none; width: 48px; border-left: 0 !important; background: #000; color: #fff; }
+.fbar-vol-k { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; line-height: 1; color: #bdbdbd; }
+.fbar-vol-n { font-family: var(--brand-font); font-size: 19px; font-weight: 900; line-height: 1; color: #ff4d57; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .fbar .fbar-vol { display: grid; place-content: center; justify-items: center; gap: 3px; }
+}
+
+.tid { grid-template-rows: auto auto auto auto minmax(0, 1fr); }
+.tid-sets { display: grid; gap: 8px; padding: 10px 14px 12px; border-bottom: 1px solid #d9d9d9; }
+.tid-sets-k { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+.tid-vols { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.tid-vols li { flex: 1 0 200px; min-width: 0; display: flex; }
+.tid .tid-vol {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid #000;
+  text-align: left;
+}
+.tid .tid-vol:hover { background: #f3f3f3; }
+.tid-vol-k { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #555; }
+.tid-vol-k b { font-weight: 700; color: #000; }
+.tid-vol-on { display: none; margin-left: auto; padding-left: 8px; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #ff4d57; }
+.tid-vol-h { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.tid .tid-vol[aria-pressed='true'] { background: #000; color: #fff; cursor: default; }
+.tid-vol[aria-pressed='true'] .tid-vol-k, .tid-vol[aria-pressed='true'] .tid-vol-k b { color: #fff; }
+.tid-vol[aria-pressed='true'] .tid-vol-on { display: inline; }
+.tid .tid-vol[aria-pressed='true']:focus-visible { outline-color: var(--red-hi, #d4202b); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .tid-sets { gap: 6px; padding: 8px 10px 10px; }
+  .tid-vols li { flex: 1 0 136px; }
+  .tid .tid-vol { padding: 6px 9px; }
+  .tid-vol-k { gap: 3px; font-size: 10px; letter-spacing: 0.02em; }
+  .tid-vol-h { font-size: 13px; }
+  /* No room for the words: the volume on air keeps a red dot (and aria-pressed says it). */
+  .tid-vol-on { width: 7px; height: 7px; margin: 0 0 0 auto; padding: 0; overflow: hidden; border-radius: 50%; background: #ff4d57; color: transparent; align-self: center; flex: none; }
 }
