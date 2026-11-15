@@ -316,7 +316,7 @@ console.log(
   // The sets stream through Mixcloud's player: its script and frame are allowed, and no audio ships.
   assert.match(htaccess, /script-src [^;]*https:\/\/widget\.mixcloud\.com/, "Mixcloud widget API allowed");
   assert.match(htaccess, /frame-src [^;]*https:\/\/player-widget\.mixcloud\.com/, "Mixcloud player frame allowed");
-  assert.match(htaccess, /autoplay=\(self \\"https:\/\/player-widget\.mixcloud\.com\\"\)/, "Mixcloud player may autoplay");
+  assert.match(htaccess, /Permissions-Policy '[^'\\]*autoplay=\(self "https:\/\/player-widget\.mixcloud\.com"\)'/, "Mixcloud player may autoplay (single-quoted, no backslashes)");
   assert.ok(!existsSync(resolve(root, "audio")) || readdirSync(resolve(root, "audio")).length === 0, "no self-hosted audio");
   for (const f of walk(root).filter((f) => f.endsWith(".html")))
     assert.doesNotMatch(readFileSync(f, "utf8"), /<script(?![^>]*\bsrc=)(?! type="application\/ld\+json")[^>]*>/, `inline script in ${f}`);

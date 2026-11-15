@@ -47,7 +47,7 @@
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://www.googletagmanager.com https://widget.mixcloud.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://player-widget.mixcloud.com https://www.mixcloud.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
   # The page may not use the microphone, the camera, screen or tab capture,
   # location or any device ports, and neither may anything injected into it.
-  Header always set Permissions-Policy "camera=(), microphone=(), display-capture=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), midi=(), browsing-topics=(), picture-in-picture=(), fullscreen=(self), autoplay=(self \"https://player-widget.mixcloud.com\")"
+  Header always set Permissions-Policy 'camera=(), microphone=(), display-capture=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), midi=(), browsing-topics=(), picture-in-picture=(), fullscreen=(self), autoplay=(self "https://player-widget.mixcloud.com")'
   Header always set Strict-Transport-Security "max-age=31536000"
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
