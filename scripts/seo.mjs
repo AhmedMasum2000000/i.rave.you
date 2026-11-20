@@ -192,7 +192,7 @@ function shell(page, body) {
   const root = "../".repeat(page.path.split("/").filter(Boolean).length);
   const menu = [
     ["", "Home"],
-    ["radio/", "Qbic Pulse"],
+    ["radio/", "Qbic Pulse Radio"],
     ["acnd/", "ACND"],
     ["apurba/", '<span lang="bn">অপূর্ব</span>'],
     ["music/", "Music"],
@@ -542,8 +542,8 @@ export function radioPages(sets) {
   const pages = [];
   const radio = {
     path: "radio/",
-    label: "Qbic Pulse",
-    title: "Qbic Pulse — DJ sets by ACND, অপূর্ব & guests",
+    label: "Qbic Pulse Radio",
+    title: "Qbic Pulse Radio — DJ sets by ACND, অপূর্ব & guests",
     description: `Every Qbic Pulse DJ set by ACND & অপূর্ব, newest first: ${sets.length} set${sets.length === 1 ? "" : "s"} with full tracklists, play in the site player.`,
     lastmod: sets[0]?.date,
   };
@@ -561,7 +561,7 @@ export function radioPages(sets) {
     },
   ]);
   const card = (set, i) => `<article class="radio-set"><p class="eyebrow">${i === 0 ? "Latest set · " : ""}<time datetime="${esc(set.date)}">${esc(longDay(set.date))}</time> · ${esc(set.station)}</p><h2>${esc(set.show)} ${esc(set.volume)}</h2><p>${esc(set.description)}</p><dl class="fact-list"><div><dt>Hosts</dt><dd>${esc(set.hosts)}</dd></div><div><dt>Length</dt><dd>${clock(set.duration)}</dd></div><div><dt>Tracks</dt><dd>${set.tracklist.length}</dd></div></dl><p><a class="button" href="../?set=${esc(set.slug)}" data-play-set="${esc(set.slug)}">Play this set</a> <a href="../${setPath(set)}">Full tracklist →</a></p><details><summary>Tracklist</summary><ol class="tracks">${set.tracklist.map((t) => `<li><span class="timestamp">${clock(t.at)}</span><div class="track-recording"><strong>${esc(t.title)}</strong><span>${esc(t.artist)}</span></div></li>`).join("")}</ol></details></article>`;
-  radio.html = shell(radio, `<p class="eyebrow">ACND &amp; অপূর্ব · DJ sets</p><h1>Qbic Pulse</h1><p class="intro">Every Qbic Pulse set, newest first. Press play to hear it in the site player, streamed by Mixcloud; it keeps playing as you browse.</p>${sets.map(card).join("")}<section><h2>About Qbic Pulse</h2><p>Qbic Pulse is the shared DJ series of <a href="../acnd/">ACND (Ahmed Masum)</a> and <a href="../apurba/">অপূর্ব (Opurbo / Apurba)</a>, first made for Hong Kong Community Radio. The sets stream through Mixcloud’s player. For rights questions see the <a href="../legal/copyright/">copyright contact page</a>.</p></section>`);
+  radio.html = shell(radio, `<p class="eyebrow">ACND &amp; অপূর্ব · DJ sets</p><h1>Qbic Pulse Radio</h1><p class="intro">Every Qbic Pulse set, newest first. Press play to hear it in the site player, streamed by Mixcloud; it keeps playing as you browse.</p>${sets.map(card).join("")}<section><h2>About Qbic Pulse</h2><p>Qbic Pulse is the shared DJ series of <a href="../acnd/">ACND (Ahmed Masum)</a> and <a href="../apurba/">অপূর্ব (Opurbo / Apurba)</a>, first made for Hong Kong Community Radio. The sets stream through Mixcloud’s player. For rights questions see the <a href="../legal/copyright/">copyright contact page</a>.</p></section>`);
   pages.push(radio);
   for (const set of sets.filter((x) => x.slug !== FIRST_SET)) {
     const page = {

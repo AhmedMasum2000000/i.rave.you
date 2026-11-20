@@ -83,6 +83,23 @@ The build authenticates every original AES-GCM fragment using Node.js and emits 
 
 Terms, Privacy and Copyright contact pages are at `legal/terms/`, `legal/privacy/` and `legal/copyright/`. The public contact is khalidbinalam250@gmail.com. These notices do not replace copyright clearance or provide statutory safe-harbour protection. The site owner is confirming permissions for the existing mix. Fonts are self-hosted from Fontsource packages pinned at 5.3.0, with original SIL OFL licenses retained in `public/fonts/`.
 
+## Qbic Pulse Radio: changing a set's Mixcloud link
+
+Every Qbic Pulse volume plays through Mixcloud's player. To change which Mixcloud upload a volume plays,
+open its `sets/<slug>/set.json` and replace the `"mixcloud"` value with the new link, exactly as Mixcloud's
+Share button copies it (the `?utm_…` tracking part is fine, it is stripped). Then commit and push: the site
+rebuilds with the new link everywhere (player, Qbic Pulse Radio page, menu, tracklist pages). A link that is
+not a single Mixcloud set stops the build with a message saying which file to fix, so the live site keeps the
+previous working version.
+
+| Volume | File |
+| --- | --- |
+| Qbic Pulse Vol. 1 | `sets/qbic-pulse-vol-1/set.json` |
+| Qbic Pulse Vol. 02 | `sets/qbic-pulse-vol-2/set.json` |
+
+A new volume is a new folder with its own `set.json` holding `"mixcloud"`, `"duration"` (seconds) and the
+details; it appears in the menu's **Qbic Pulse Radio** row and on `/radio/` automatically.
+
 ## Qbic Pulse Radio: adding a set
 
 Every set lives in `sets/<slug>/`: `set.json` (title, volume, date, station, description, tracklist) and `audio/` (encrypted ~10 s fragments). The build turns each set into a hashed, year-cached, range-streamable `.m4a`, lists all sets newest first on `/radio/` and in the menu's **Qbic Pulse Radio** row, gives each new set a tracklist page at `/mixes/<slug>/`, and adds them to the generated sitemap. The newest set plays by default; visitors can switch sets from the radio page and each set resumes where they left it.

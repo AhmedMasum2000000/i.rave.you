@@ -13,6 +13,35 @@ const label = (url, title = "") => (!url ? (/unreleased/i.test(title) ? "Unrelea
 /** The public page of a Mixcloud upload, from its key. */
 export const mixcloudUrl = (key) => (key ? `https://www.mixcloud.com${key}` : undefined);
 
+const decode = (segment) => {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+};
+
+/**
+ * set.json's "mixcloud" may be the link exactly as Mixcloud's Share button copies it
+ * (https://www.mixcloud.com/USER/SET/?utm_...), a link without the tracking, or the
+ * bare key (/USER/SET/). Every form comes out as the key Mixcloud's player wants:
+ * /USER/SET/, each part percent-encoded once. A link that is not a Mixcloud set
+ * stops the build, so a typo never reaches the live player.
+ */
+export function mixcloudKey(value, where = "set.json") {
+  if (value == null || value === "") return undefined;
+  const raw = String(value).trim();
+  let path = raw;
+  if (/^(?:https?:)?\/\//i.test(raw) || /^(?:www\.)?mixcloud\.com\//i.test(raw)) {
+    const url = new URL(/^https?:/i.test(raw) ? raw : `https://${raw.replace(/^\/\//, "")}`);
+    if (!/(^|\.)mixcloud\.com$/i.test(url.hostname)) throw new Error(`${where}: "mixcloud" must be a mixcloud.com link, got ${raw}`);
+    path = url.pathname;
+  }
+  const parts = path.split(/[?#]/)[0].split("/").filter(Boolean).map((p) => encodeURIComponent(decode(p)));
+  if (parts.length !== 2) throw new Error(`${where}: "mixcloud" must point to one set, like https://www.mixcloud.com/USER/SET-NAME/ (got ${raw})`);
+  return `/${parts.join("/")}/`;
+}
+
 export function loadSets(root) {
   const dir = resolve(root, "sets");
   if (!existsSync(dir)) return [];
@@ -20,6 +49,7 @@ export function loadSets(root) {
     .filter((d) => d.isDirectory() && existsSync(resolve(dir, d.name, "set.json")))
     .map((d) => {
       const json = JSON.parse(readFileSync(resolve(dir, d.name, "set.json"), "utf8"));
+      json.mixcloud = mixcloudKey(json.mixcloud, `sets/${d.name}/set.json`);
       const manifest = resolve(dir, d.name, "audio", "m.json");
       return {
         slug: d.name,
