@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 /**
  * The home feed: everything below the duality hero, as static HTML.
@@ -66,6 +66,48 @@ export const calendar = (events, sets, now = Date.now()) =>
     .sort((a, b) => (a.status === b.status ? (a.status === "scheduled" ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)) : a.status === "scheduled" ? -1 : 1));
 
 const setPath = (set) => (set.slug === "qbic-pulse-vol-1" ? "mixes/qbic-pulse/" : `mixes/${set.slug}/`);
+
+/**
+ * The next pre-save, from public/releases.json (the same entry the player's
+ * release button uses): a hand-added release with a "presave" link that is not
+ * out yet at build time, soonest first. None, and the home page shows no block.
+ */
+const nextPresave = () => {
+  const file = resolve(import.meta.dirname, "../public/releases.json");
+  const { releases = [] } = JSON.parse(readFileSync(file, "utf8"));
+  const now = Date.now();
+  return releases
+    .filter((r) => r.presave && Date.parse(r.date) > now)
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date))[0];
+};
+
+/**
+ * The pre-save block above the featured record. It reads "Pre-save · out 4 Dec
+ * 2026" with a Pre-save button; on the release moment src/home.ts turns it into
+ * "Out now" with a Listen button to the release link, however old the build is.
+ */
+const presaveBlock = (r) => {
+  // The calendar day where it is released (the date's own offset), not in UTC.
+  const out = day(r.date.slice(0, 10));
+  const facts = [r.genre, r.label].filter(Boolean).map(esc).join(" · ");
+  const art = r.cover ? `<a class="f-rec-art" href="${esc(r.presave)}" ${ext} data-release-link aria-label="Pre-save ${esc(r.title)} (opens in a new tab)">
+        <img src="${esc(r.cover)}" alt="${esc(r.title)} cover art" width="512" height="512" loading="lazy" decoding="async">
+      </a>` : "";
+  return `<section class="f-record f-presave" aria-labelledby="presave-title" data-release-date="${esc(r.date)}" data-release-url="${esc(r.url ?? r.presave)}" data-release-facts="${facts}">
+    <article class="f-rec k-fade" data-reveal>
+      ${art}
+      <div class="f-rec-text">
+        <p class="k-label" data-release-label>Pre-save · out ${esc(out)}${facts ? ` · ${facts}` : ""}</p>
+        <h2 id="presave-title" class="k-display f-rec-t">${esc(r.title)}</h2>
+        <p class="f-rec-by">${bnw(r.artists)}</p>
+        <p class="f-rec-p" data-release-text>The new single from ${bnw(r.artists)}${r.label ? `, out on ${esc(r.label)}` : ""} on ${esc(out)}. Pre-save it now and hear it the day it lands.</p>
+        <div class="f-acts">
+          <a class="k-btn k-primary" href="${esc(r.presave)}" ${ext} data-release-link data-release-btn data-cta="presave">Pre-save ↗</a>
+        </div>
+      </div>
+    </article>
+  </section>`;
+};
 
 /** Every release, remix and set, newest first, as one catalogue the grid can filter. */
 export function catalogue({ artists, next, sets }) {
@@ -166,6 +208,7 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
   const A = artists.apurba;
   const C = artists.acnd;
   const set = sets[0];
+  const presave = nextPresave();
   const items = catalogue({ artists, next, sets });
   const upcoming = events.filter((e) => e.status === "scheduled");
   const [nx, ...later] = upcoming;
@@ -211,6 +254,8 @@ export function homeFeed({ artists, next, sets, posts, events: confirmed }) {
       ${broadcast ? nextBlock(broadcast, link) : ""}
     </div>
   </section>
+
+  ${presave ? presaveBlock(presave) : ""}
 
   <section class="f-record" aria-labelledby="feature-title">
     <article class="f-rec k-fade" data-reveal>

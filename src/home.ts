@@ -155,5 +155,30 @@ function enhance(feed: HTMLElement): () => void {
     off.push(() => clearInterval(id));
   }
 
+  /* ── pre-save: from the release moment on, the block says "Out now" and its
+     links go to the release itself, however long ago the page was built ── */
+  const rel = feed.querySelector<HTMLElement>('[data-release-date]');
+  if (rel) {
+    const at = Date.parse(rel.dataset.releaseDate!);
+    let rid = 0;
+    const release = (): void => {
+      if (Date.now() < at) return;
+      clearInterval(rid);
+      const facts = rel.dataset.releaseFacts;
+      rel.querySelector('[data-release-label]')!.textContent = `Out now${facts ? ` · ${facts}` : ''}`;
+      rel.querySelectorAll<HTMLAnchorElement>('[data-release-link]').forEach((a) => {
+        a.href = rel.dataset.releaseUrl!;
+        a.setAttribute('aria-label', a.getAttribute('aria-label')?.replace(/^Pre-save/, 'Listen to') ?? '');
+        if (!a.getAttribute('aria-label')) a.removeAttribute('aria-label');
+      });
+      const btn = rel.querySelector<HTMLAnchorElement>('[data-release-btn]');
+      if (btn) btn.textContent = 'Listen ↗';
+      rel.querySelector('[data-release-text]')?.remove();
+    };
+    rid = window.setInterval(() => !document.hidden && release(), 30000);
+    release();
+    off.push(() => clearInterval(rid));
+  }
+
   return () => off.forEach((fn) => fn());
 }
