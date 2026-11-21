@@ -10,6 +10,8 @@ import './polish.css';
 import './menu.css';
 import './home.css';
 import './nav.css';
+import './studio.css';
+import './hud';
 import { renderArtist, logo, type Page } from './artist';
 import { mountChrome } from './chrome';
 import { ARTISTS, CURRENT, NEXT_RELEASE, TRACKLIST, onSetChange, type ArtistId } from './data';

@@ -1,0 +1,271 @@
+/* ════════════════════════════════ STUDIO ════════════════════════════════
+   The visual layer over everything else. Loaded last by every entry.
+   - Colour: black, white, one light grey for panels, and a subtle red for the
+     one live / primary thing on a screen. The old blue / orange / amber accents
+     map onto those tokens here, so this file is the single place to change them.
+   - Type: Geist (text and display), Geist Mono (labels, data, UI), Hind Siliguri
+     for Bangla. Display is set lower-case-friendly, regular weight, tight tracking.
+   - Shape: square, with chamfered (cut) corners on panels; hairline rules;
+     corner crosshairs as registration marks.
+   - Motion: images resolve out of pixels, labels decode, headings rise out of a
+     mask, pages change with a short scan-line wipe. All of it switches off with
+     prefers-reduced-motion. Scripted parts live in src/hud.ts. */
+
+:root {
+  --ink: #0a0a0a;
+  --paper: #ececec;
+  --panel: #e6e6e8;
+  --red: #e0242e;
+  --red-hi: #e0242e;
+  /* legacy accents, now monochrome + red */
+  --blue: #ececec;
+  --orange: #e0242e;
+  --amber: #e0242e;
+  --mono: 'Geist Mono', 'Hind Siliguri', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font: 'Geist', 'Hind Siliguri', system-ui, sans-serif;
+  --display: 'Geist', 'Hind Siliguri', system-ui, sans-serif;
+  /* design-kit tokens (system.css) */
+  --k-ink: #0a0a0a;
+  --k-paper: #ececec;
+  --k-mute: #8c8c8c;
+  --k-line: rgba(236, 236, 236, 0.13);
+  --k-red: #e0242e;
+  --k-acnd: #e0242e;
+  --k-apurba: #ececec;
+  --k-text: 'Geist', 'Hind Siliguri', system-ui, sans-serif;
+  --k-mono: 'Geist Mono', 'Hind Siliguri', ui-monospace, Menlo, monospace;
+  --k-display: 'Geist', 'Hind Siliguri', system-ui, sans-serif;
+  --bar-mono: 'Geist Mono', 'Hind Siliguri', ui-monospace, Menlo, monospace;
+  --cut: 14px;
+  --ease-x: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ── Themes: every artist is black and white; the red is the accent ── */
+body, body[data-artist='apurba'], body[data-artist='ash'] { --bg: #0a0a0a; --fg: #ececec; --glow: #ececec; }
+body[data-artist='acnd'] { --bg: #0a0a0a; --fg: #ececec; --glow: var(--red); }
+body { font-weight: 400; letter-spacing: -0.01em; font-feature-settings: 'ss01', 'tnum' 0; }
+b, strong { font-weight: 600; }
+::selection { background: var(--red); color: #fff; }
+
+/* ── Type ── */
+.mono, .k-label {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.k-label .bn, .mono .bn, .mono:lang(bn) { font-family: var(--bn); text-transform: none; letter-spacing: 0; }
+.k-display {
+  font-family: var(--display);
+  font-weight: 450;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+  text-transform: none;
+}
+.k-h2 { font-weight: 500; letter-spacing: -0.04em; line-height: 1.02; }
+h1, h2, h3 { font-weight: 500; letter-spacing: -0.035em; }
+.bn, [lang='bn'] { letter-spacing: 0; }
+
+/* Large statements read as Swiss display: regular weight, very tight. */
+.a-big, .vibe-title, .gate-sleeve-word, .f-h1, .f-rec-t, .tid-hero-t, .m-big, .release-title, .ft-h1 {
+  font-family: var(--display);
+  font-weight: 450;
+  letter-spacing: -0.05em;
+}
+
+/* The audio-driven weight wobble suited a monospaced dot face; a proportional
+   face would reflow on every beat, so the weight stays still. */
+html.fx .brand, html.fx .side-name:not(.bn), html.fx .cd b, html.fx .np-now-t { font-variation-settings: normal; }
+
+/* ── Buttons: square, hairline, mono label; the primary one is red ── */
+.k-btn, .side-cta, .a-hero-listen, .vibe-yes, .vibe-alt {
+  border-radius: 0;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.k-primary, .vibe-yes { background: var(--red); border-color: var(--red); color: #fff; }
+.k-primary:hover, .vibe-yes:hover { background: #fff; border-color: #fff; color: var(--ink); }
+.side-dark .side-cta { color: #fff; border-color: rgba(255, 255, 255, 0.7); background: transparent; }
+.side-light .side-cta { color: #0a0a0a; border-color: #0a0a0a; background: transparent; }
+
+/* ── Panels: cut corners, no shadow, no radius ── */
+.vibe, .m-inner, .tid, .k-card, .f-next, .peek {
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+}
+.vibe { background: #0d0d0d; border-color: #262626; }
+
+/* Glows go: the reference is flat light on flat dark. */
+.side-logo { filter: none; }
+.a-hero::before { background: radial-gradient(ellipse 24% 40% at 50% 45%, rgba(236, 236, 236, 0.10), transparent 70%); }
+.a-mark-logo { filter: none; }
+body[data-view='home'] .vu { background: var(--red); }
+.vu { background: var(--red); height: 1px; }
+
+/* ── Images: cover art and photos sit on a flat grey until they resolve ── */
+img { image-rendering: auto; }
+.px-wrap { position: relative; }
+canvas.px {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  image-rendering: pixelated;
+}
+
+/* ── HUD: registration marks in the four corners, a coordinate rail, a crosshair cursor ── */
+.hud { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.hud-x {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  opacity: 0.55;
+  color: var(--fg, #ececec);
+  mix-blend-mode: difference;
+}
+.hud-x::before, .hud-x::after { content: ''; position: absolute; background: #fff; }
+.hud-x::before { left: 5px; top: 0; width: 1px; height: 11px; }
+.hud-x::after { top: 5px; left: 0; height: 1px; width: 11px; }
+.hud-x.tl { left: 10px; top: 10px; }
+.hud-x.tr { right: 10px; top: 10px; }
+.hud-x.bl { left: 10px; bottom: calc(10px + var(--fbar-h, 0px)); }
+.hud-x.br { right: 10px; bottom: calc(10px + var(--fbar-h, 0px)); }
+.hud-rail {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: left center;
+  translate: 6px 0;
+  white-space: nowrap;
+  font: 400 10px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.4;
+  mix-blend-mode: difference;
+  font-variant-numeric: tabular-nums;
+}
+.hud-rail i { font-style: normal; color: var(--red); mix-blend-mode: normal; }
+.hud-cur {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 61;
+  width: 21px;
+  height: 21px;
+  margin: -10px 0 0 -10px;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  opacity: 0;
+  transition: opacity 0.2s, width 0.25s var(--ease-x), height 0.25s var(--ease-x), margin 0.25s var(--ease-x);
+}
+.hud-cur::before, .hud-cur::after { content: ''; position: absolute; background: #fff; }
+.hud-cur::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+.hud-cur::after { top: 50%; left: 0; right: 0; height: 1px; }
+.hud-cur.on { opacity: 1; }
+.hud-cur.link { width: 35px; height: 35px; margin: -17px 0 0 -17px; }
+.hud-cur.link::before, .hud-cur.link::after { opacity: 0.9; }
+@media (hover: hover) and (pointer: fine) {
+  html.hud-cursor, html.hud-cursor a, html.hud-cursor button { cursor: none; }
+  html.hud-cursor input, html.hud-cursor textarea { cursor: text; }
+}
+
+/* ── Labels decode: Geist Mono is monospaced, so the scramble never moves the line ── */
+.dec { font-variant-numeric: tabular-nums; }
+
+/* ── Headings rise out of a mask once, as they arrive ── */
+.rise { display: block; overflow: hidden; padding-bottom: 0.06em; margin-bottom: -0.06em; }
+.rise > span { display: block; transform: translateY(105%); transition: transform 0.9s var(--ease-x) calc(var(--d, 0) * 70ms); }
+.rise.in > span { transform: none; }
+
+/* ── Page change: a scan-line wipe instead of a plain fade ── */
+::view-transition-old(root) { animation: vt-scan-out 0.38s var(--ease-x) both; }
+::view-transition-new(root) { animation: vt-scan-in 0.55s var(--ease-x) both; }
+@keyframes vt-scan-out {
+  0% { clip-path: inset(0 0 0 0); filter: none; }
+  40% { filter: contrast(1.4) brightness(1.2); }
+  100% { clip-path: inset(0 0 100% 0); opacity: 0.2; }
+}
+@keyframes vt-scan-in {
+  0% { clip-path: inset(100% 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+.scan {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(236, 236, 236, 0.9) 0 2px, transparent 2px 7px);
+  mix-blend-mode: difference;
+  opacity: 0;
+}
+.scan.go { animation: scan 0.5s steps(6, end) both; }
+@keyframes scan {
+  0% { opacity: 0.9; clip-path: inset(0 0 82% 0); }
+  35% { opacity: 0.75; clip-path: inset(30% 0 40% 0); }
+  70% { opacity: 0.5; clip-path: inset(62% 0 8% 0); }
+  100% { opacity: 0; clip-path: inset(100% 0 0 0); }
+}
+
+/* ── Barcode strip: a quiet decorative rule used in panels ── */
+.barcode {
+  display: block;
+  width: 64px;
+  height: 18px;
+  background: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 3px, currentColor 3px 5px, transparent 5px 6px, currentColor 6px 7px, transparent 7px 10px);
+  opacity: 0.6;
+}
+
+/* ── Phones: marks and rail give the screen back; the cursor never shows ── */
+@media (max-width: 900px), (pointer: coarse) {
+  .hud-rail, .hud-cur { display: none; }
+  .hud-x { width: 9px; height: 9px; opacity: 0.4; }
+  .hud-x::before { left: 4px; height: 9px; }
+  .hud-x::after { top: 4px; width: 9px; }
+  .hud-x.tl, .hud-x.tr { top: 6px; }
+  .hud-x.tl { left: 6px; }
+  .hud-x.tr { right: 6px; }
+  .hud-x.bl, .hud-x.br { display: none; }
+  :root { --cut: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise > span { transform: none; transition: none; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  .scan, canvas.px, .hud-cur { display: none; }
+}
+
+/* ── Weight and flatness reset ──
+   Older sheets set 700–900 and glows on many components. `:is(#app, #_)` carries
+   ID specificity, so these win over those class rules without !important. */
+:is(body, #_) * { font-weight: 400; text-shadow: none; }
+:is(body, #_) :is(h1, h2, h3, .k-display, .k-h2, .a-big, .f-h1, .f-h1-a, .f-rec-t, .release-title, .vibe-title, .gate-sleeve-word, .tid-hero-t, .m-big, .side-name, .brand),
+:is(.fbar, .tid, .menu, .gate, .m-inner, #_) :is(h1, h2, h3, b, strong, .m-big, .tid-hero-t, .vibe-title, .gate-sleeve-word, .side-name, .brand) { font-weight: 500; }
+:is(body, #_) :is(b, strong) { font-weight: 600; }
+
+/* Gate: flat black, one red action. */
+.gate { background: #0a0a0a; }
+.gate-sleeve { box-shadow: none; outline: 1px solid #262626; outline-offset: 10px; }
+.vibe-alt { background: transparent; border-color: rgba(236, 236, 236, 0.45); color: #ececec; }
+.vibe-alt:hover { background: #ececec; border-color: #ececec; color: #0a0a0a; }
+.vibe-kicker::before { background: var(--red); }
+
+/* Feature headline: flat white, no gradient or glow. */
+.f-h1-a { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #ececec; filter: none; font-weight: 500; letter-spacing: -0.055em; }
+body .p-title { text-shadow: none; }
+:is(body, #_) [style*='box-shadow'], .side, .side-logo, .gate-record { box-shadow: none; }
+
+/* Legal pages: monochrome links and tabs, red for the current page. */
+.legal-top-nav a, footer a { border-radius: 0; }
+:is(body, #_) main a, :is(body, #_) footer a { color: #ececec; text-decoration-color: rgba(236, 236, 236, 0.4); }
+.legal-top-nav a[aria-current='page'] { background: transparent; border-color: var(--red); color: #fff; }
+:is(body, #_) .brand { font-weight: 500; }
+:is(body, #_) button:not([class]) { border-radius: 0; font-family: var(--mono); text-transform: uppercase; font-size: 12px; }
+body:has(.legal-top-nav) a { color: #ececec; text-decoration-color: rgba(236, 236, 236, 0.4); }
+.legal-top-nav a { border-color: rgba(236, 236, 236, 0.28); }
+.legal-top-nav a[aria-current='page'] { border-color: var(--red); }

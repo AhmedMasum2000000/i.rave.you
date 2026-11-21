@@ -5,6 +5,8 @@ import './mobile.css';
 import './bar.css';
 import './polish.css';
 import './menu.css';
+import './studio.css';
+import './hud';
 import { mountChrome } from './chrome';
 import { trackOutbound, trackPage } from './analytics';
 import { inShell, installGuard } from './guard';

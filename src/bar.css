@@ -75,7 +75,7 @@
 .fbar-title { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
 /* Artist names carry the row: a heavier face that also renders Bangla well. */
 .fbar-artist {
-  font-family: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Geist', 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0;
@@ -320,13 +320,13 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
 }
 .tid-hero-k { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #ccc; }
 .tid-hero-t { font-family: var(--brand-font); font-size: clamp(34px, 6vw, 52px); font-weight: 900; line-height: 1; letter-spacing: -0.01em; }
-.tid-hero-a { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.tid-hero-a { font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 22px; font-weight: 700; line-height: 1.2; }
 .tid-hero-a i { font-style: normal; opacity: 0.6; padding: 0 4px; }
-.tid-hero-s { max-width: 52ch; color: #cfcfcf; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+.tid-hero-s { max-width: 52ch; color: #cfcfcf; font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
 .tid-hero-link { justify-self: start; margin-top: 4px; padding: 7px 14px; border: 1px solid #fff; border-radius: 999px; color: #fff !important; text-decoration: none; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
 .tid-hero-link:hover { background: #fff; color: #000 !important; }
 .tid-track { display: grid; gap: 2px; min-width: 0; }
-.tid-artist { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.tid-artist { font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
 .tid-list li > a {
   align-self: center;
   justify-content: center;
@@ -377,10 +377,10 @@ body[data-view='doc'] { overflow: hidden; background: #0b0b0b; }
 .peek-body > div { display: grid; align-content: start; gap: 3px; }
 .peek-k { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #555; }
 .peek-body b { font-family: var(--brand-font); font-size: 20px; font-weight: 900; line-height: 1.1; }
-.peek-sub { font-family: 'Hind Siliguri', system-ui, sans-serif; font-weight: 700; font-size: 13px; }
+.peek-sub { font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-weight: 700; font-size: 13px; }
 .peek-cd { margin-top: 4px; font-variant-numeric: tabular-nums; }
 .peek-cd b { font-family: var(--bar-mono); font-size: 13px; font-weight: 700; }
-.peek-summary { margin: 0; padding: 0 12px 12px; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 13px; line-height: 1.5; color: #222; }
+.peek-summary { margin: 0; padding: 0 12px 12px; font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 13px; line-height: 1.5; color: #222; }
 .peek-foot { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; border-top: 1px solid #ddd; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
 .peek-go { font-weight: 700; }
 body.flooding .peek { opacity: 0 !important; }
@@ -418,7 +418,7 @@ body.flooding .peek { opacity: 0 !important; }
   color: #fff;
   border-left: 0 !important;
 }
-.fbar-mix-a { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1.1; white-space: nowrap; }
+.fbar-mix-a { font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1.1; white-space: nowrap; }
 .fbar-mix-a i { font-style: normal; color: var(--red-hi, #d4202b); padding: 0 2px; }
 .fbar-mix-t { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--red-hi, #d4202b); white-space: nowrap; }
 .fbar-mix-m { display: none; }
@@ -464,7 +464,7 @@ body.flooding .peek { opacity: 0 !important; }
 .fbar-cta-k { font-size: 10px; letter-spacing: 0.1em; color: #b8b8b8; }
 .fbar-cta-k b { font-weight: 700; color: #fff; }
 .fbar-cta[data-state='presave'] .fbar-cta-k b, .fbar-cta[data-state='today'] .fbar-cta-k b { color: #ff5a63; }
-.fbar-cta-t { font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.fbar-cta-t { font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0; text-transform: none; }
 @media (min-width: 761px) {
   .fbar-actions { flex: 1.3 1 0; }
   .fbar-pill { padding: 0 14px; }
@@ -578,7 +578,7 @@ body.flooding .peek { opacity: 0 !important; }
 .tid-vol-k { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #555; }
 .tid-vol-k b { font-weight: 700; color: #000; }
 .tid-vol-on { display: none; margin-left: auto; padding-left: 8px; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #ff4d57; }
-.tid-vol-h { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.tid-vol-h { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: 'Geist', 'Hind Siliguri', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
 .tid .tid-vol[aria-pressed='true'] { background: #000; color: #fff; cursor: default; }
 .tid-vol[aria-pressed='true'] .tid-vol-k, .tid-vol[aria-pressed='true'] .tid-vol-k b { color: #fff; }
 .tid-vol[aria-pressed='true'] .tid-vol-on { display: inline; }

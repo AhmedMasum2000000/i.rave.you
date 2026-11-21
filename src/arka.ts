@@ -5,6 +5,8 @@ import './mobile.css';
 import './bar.css';
 import './polish.css';
 import './menu.css';
+import './studio.css';
+import './hud';
 import { sample } from './audio';
 import { ARTISTS, MIX, NEXT_RELEASE, fmt, type ArtistId } from './data';
 import { mountPlayer } from './player';
